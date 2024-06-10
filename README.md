@@ -195,10 +195,10 @@ The Invariant agent analyzer can also be used to monitor an AI agent in real-tim
 from invariant import Monitor
 from openai import OpenAI
 
-# create an Invariant 'Monitor' for a given policy
+# create an Invariant Monitor initialized with a policy
 monitor = Monitor.from_string(
 """
-raise PolicyViolation("Disallowed flow flow", a=call1, b=call2) if:
+raise PolicyViolation("Disallowed tool sequence", a=call1, b=call2) if:
     (call1: ToolCall) -> (call2: ToolCall)
     print(call1, call2)
     call1 is tool:something
