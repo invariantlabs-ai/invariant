@@ -320,9 +320,9 @@ raise PolicyViolation("The assistant should not reply affirmatively", message=ms
 
 Here, we define a predicate `is_affirmative_assistant` that checks if a message's content contains the words "yes" or "true". We then use this predicate in a rule that checks if the assistant specifically replies in an affirmative manner as defined by the predicate.
 
-#### Value Matching
+<!-- TODO #### Value Matching: write more about <EMAIL>, <LOCATION>, regex and moderated content matching-->
 
-#### External Functions and Standard Library
+<!-- TODO #### External Functions and Standard Library: write about different parts of the stdlib library, how to important functions and where they are defined -->
 
 ### Integration
 
