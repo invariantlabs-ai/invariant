@@ -15,7 +15,7 @@ class UnhandledError(Exception):
     def __str__(self):
         errors_noun = "errors" if len(self.errors) > 1 else "error"
         errors_list = "\n".join([" - " + type(error).__name__ + ": " + str(error) for error in self.errors])
-        return f"A policy analysis resulted in {len(self.errors)} unhandled {errors_noun} (install specific or catch-all handlers to avoid this exception):\n\n{errors_list}.\n"
+        return f"A policy analysis resulted in {len(self.errors)} unhandled {errors_noun}:\n{errors_list}.\n"
 
 class AnalysisResult:
     """

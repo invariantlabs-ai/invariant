@@ -4,8 +4,12 @@ Models input data passed to the Invariant Agent Analyzer.
 Creates dataflow graphs and derived data from the input data.
 """
 
-import invariant.language.types as types
+import warnings
+import textwrap
+import termcolor
 from copy import deepcopy
+
+import invariant.language.types as types
 
 def merge(lists):
     if not lists:
@@ -60,7 +64,11 @@ class Dataflow(InputProcessor):
         so_far = set()
         # iterate over messages in chat
         for i in value_list:
-            if type(i) is not dict: continue
+            msg_type = derive_type(i)
+            if msg_type is None:
+                continue
+
+            # if type(i) is not dict: continue
             # flow from all messages to subsequent messages
             self.edges.setdefault(id(i), set()).update(so_far)
             so_far.add(id(i))
@@ -129,6 +137,47 @@ class DerivedData(InputProcessor):
             return all
         return all.get(key)
 
+class InputSchemaValidator(InputProcessor):
+    def __init__(self):
+        self.valid = False
+        self.n_messages = 0
+        self.invalid_msg_objects = []
+
+    def visit_top_level(self, value_list, name=None):
+        any_valid = False
+
+        for msg in value_list:
+            t = derive_type(msg)
+            if t is not None:
+                self.n_messages += 1
+                if t == "Message":
+                    # check tool calls
+                    tool_calls = msg.get("tool_calls")
+                    if tool_calls is not None:
+                        for tc in tool_calls:
+                            tct = derive_type(tc)
+                            if tct == "ToolCall":
+                                any_valid = True
+                                break
+                            else:
+                                self.invalid_msg_objects.append(tc)
+                any_valid = True
+            else:
+                self.invalid_msg_objects.append(msg)
+        
+        self.valid = any_valid or self.valid
+
+    def is_valid(self):
+        if self.n_messages == 0:
+            return True
+        return self.valid and len(self.invalid_msg_objects) == 0
+    
+    def print_warnings(self):
+        if len(self.invalid_msg_objects) > 0:
+            warnings.warn("warning: the analysis input contains several objects that could not be recognized by the analyzer as a Message, ToolCall, ToolOutput, etc. Please make sure your input data conforms to the Invariant trace format.", UserWarning)
+            for msg in self.invalid_msg_objects:
+                warnings.warn(f"warning: unrecognized object: {msg}", UserWarning)
+
 class Selectable:
     def __init__(self, data):
         self.data = data
@@ -146,12 +195,19 @@ class Selectable:
             result = []
             if "type" in data and data["type"] == type_name:
                 result.append(data)
-            elif self.derive_type(data) == type_name:
+            elif derive_type(data) == type_name:
                 result.append(data)
             elif type_name == "dict":
                 result.append(data)
             for key, value in data.items():
                 if key.startswith("_"): continue
+                result += self.select(type_name, value)
+            return result
+        elif hasattr(data, "to_dict"):
+            result = []
+            if derive_type(data) == type_name:
+                result.append(data)
+            for key,value in data.to_dict().items():
                 result += self.select(type_name, value)
             return result
         elif type(data) is str or type(data) is int or data is None or type(data) is bool: 
@@ -168,22 +224,56 @@ class Selectable:
         else:
             print("cannot sub-select type", type(data))
             return []
-
-    def derive_type(self, dict_value):
-        if "role" in dict_value.keys() and "content" in dict_value.keys():
-            if "tool_call_id" in dict_value.keys():
-                return "ToolOutput"
-            return "Message"
-        elif "type" in dict_value.keys() and "function" in dict_value.keys():
-            return "ToolCall"
-        else:
-            return None
         
     def type_name(self, selector):
         if type(selector) is types.NamedUnknownType:
             return selector.name
         else:
             return selector
+        
+def derive_type(dict_value):
+    if not hasattr(dict_value, "keys"):
+        return None
+
+    if "role" in dict_value.keys() and "content" in dict_value.keys():
+        if "tool_call_id" in dict_value.keys():
+            return "ToolOutput"
+        return "Message"
+    elif "type" in dict_value.keys() and "function" in dict_value.keys():
+        return "ToolCall"
+    else:
+        return None
+
+class InputInspector(InputProcessor):
+    def __init__(self):
+        self.value_lists = []
+
+    def visit_top_level(self, value_list, name=None):
+        result = []
+
+        for msg in value_list:
+            msg_type = derive_type(msg) or "<unknown>"
+            msg_repr = "- " + msg_type + ": " + str(msg)
+            if msg_type == "Message":
+                for tc in msg.get("tool_calls", []):
+                    tct = derive_type(tc) or "<unknown>"
+                    msg_repr += "\n  - " + tct + ": " + str(tc)
+            result += [msg_repr]
+
+        self.value_lists.append((name, "\n".join(result)))
+    
+    def __str__(self):
+        result = ""
+        for name, l in self.value_lists:
+            if name is None:
+                result += "<root>:\n"
+            else:
+                result += f"{name}:\n"
+            
+            result += textwrap.indent(l, "  ")
+        
+        return result
+
 class Input(Selectable):
     """
     An Input object represents the input to an analyzer call.
@@ -192,8 +282,22 @@ class Input(Selectable):
         self.data = deepcopy(input_dict) if copy else input_dict
         # creates derived data from the input (e.g. extra links between different objects)
         self.derived_data = DerivedData.from_input(self.data)
+        # check for valid schema
+        self.schema_validator = InputSchemaValidator.from_input(self.data)
+        self.schema_validator.print_warnings()
+        if not self.schema_validator.is_valid(): 
+            raise ValueError("the provided input does not conform to the Invariant trace format (see warnings above). Use Input.inspect(obj) to understand how the analyzer interprets your input.")
         # creates a dataflow graph from the input
         self.dataflow = Dataflow.from_input(self.data)
+    
+    @staticmethod
+    def inspect(obj):
+        """
+        Prints a string representation of the input object, 
+        as the analyzer would see it.
+        """
+        inspector = InputInspector.from_input(obj)
+        return str(inspector)
 
     def has_flow(self, a, b):
         return self.dataflow.has_flow(a, b)
@@ -203,3 +307,10 @@ class Input(Selectable):
     
     def __repr__(self):
         return str(self)
+    
+    def validate(self):
+        """
+        Validates whether the provided input conforms to a schema that
+        can be handled by the analyzer.
+        """
+        

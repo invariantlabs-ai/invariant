@@ -74,7 +74,7 @@ class Monitor(Policy):
     it persists in the application state. This allows the client to handle or ignore errors as they see fit, without
     having to worry about duplicate error reports.
     """
-    def __init__(self, policy_root: PolicyRoot, policy_parameters: dict):
+    def __init__(self, policy_root: PolicyRoot, policy_parameters: dict, raise_unhandled=False):
         """Creates a new monitor with the given policy source.
 
         Args:
@@ -88,6 +88,8 @@ class Monitor(Policy):
         self.handlers = {}
         # policy parameters used in `check()` calls
         self.policy_parameters = policy_parameters
+        # whether to raise unhandled errors in `check()`
+        self.raise_unhandled = raise_unhandled or policy_parameters.pop("raise_unhandled", False)
     
     @classmethod
     def from_file(cls, path: str, **policy_parameters):
@@ -100,6 +102,8 @@ class Monitor(Policy):
     def check(self, input: Input | dict):
         analysis_result = self.analyze(input, **self.policy_parameters)
         analysis_result.execute_handlers()
+        if self.raise_unhandled and len(analysis_result.errors) > 0:
+            raise UnhandledError(analysis_result.errors)
         return analysis_result.errors
     
     def add_error_to_result(self, error, analysis_result):

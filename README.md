@@ -32,7 +32,7 @@ AI agents are a powerful new paradigm in computing, finding applications in cust
 
 * Expressive rule language for defining security policies and constraints with support for incremental checking.
 
-* Dataflow analysis for tracking flows of private data within agents, APIs and services.
+* Dataflow analysis for tracking flows of private and untrusted data inbetween agents, APIs and services.
 
 * Real-time monitoring and analysis of AI agents and other tool-calling LLM applications.
 
@@ -180,16 +180,20 @@ Contents
 
 ### Policy Language
 
-### Invariant Trace Format
+#### Invariant Trace Format
  
 ### Integration
+
+The Invariant Policy Language is used by the Invariant Security Analyzer and can be used either to analyze agent traces or to monitor agents in real-time. 
 
 #### Analyzing Agent Traces
 TODO
 
 #### Real-Time Monitoring of an OpenAI Agent
 
-The Invariant agent analyzer can also be used to monitor an AI agent in real-time, to prevent security violations and data breaches before they occur. For instance, consider the following example of a chat agent that uses the OpenAI tool calling API:
+ISA can also be used to monitor AI agents in real-time. This allows you to prevent security issues and data breaches before they happen, and to take the appropriate steps to secure your deployed agents.
+
+For instance, consider the following example of an OpenAI agent based on OpenAI tool calling:
 
 ```python
 from invariant import Monitor
@@ -206,31 +210,62 @@ raise PolicyViolation("Disallowed tool sequence", a=call1, b=call2) if:
     call2 is tool:something_else
 """, raise_unhandled=True)
 
-# ...
+# ... (prepare OpenAI agent)
 
-# in tool execution loop
+# in the core agent loop
 while True:
     # determine next agent action
     model_response = <invoke LLM>
     messages.append(model_response.to_dict())
 
-    # 1. check message trace for security 
-    # violations before calling functions
+    # 1. check message trace for security violations
     monitor.check(messages)
     
-    # actually call the tools
+    # actually call the tools, inserting results into 'messages'
     for tool_call in model_response.tool_calls:
-        ...
+        # ...
     
-    # (optional) check message trace again to 
-    # detect violations in tool outputs early
+    # (optional) check message trace again to detect violations
+    # in tool outputs right away (e.g. before sending them to the user)
     monitor.check(messages)
 ```
-> For the full snippet, see [invariant/examples/openai_agent.py](./invariant/examples/openai_agent.py)
+> For the full snippet, see [invariant/examples/openai_agent_example.py](./invariant/examples/openai_agent_example.py)
+
+Here, all tool interactions of an OpenAI agent are monitored in real-time. As soon as a violation is detected, an exception is raised. This stops the agent from executing a potentially unsafe tool call and allows you to take appropriate action, such as filtering out a tool call or ending the session.
+
+For real-time monitoring for policy violations you can use an Invariant `Monitor`, and integrate it into your agent's execution loop. Here, policy checking is performed eagerly, i.e. after each tool call, to ensure that the agent does not violate the policy at any point in time.
 
 #### Real-Time Monitoring of a `langchain` Agent
 TODO
 
+#### Automatic Issue Resolution (Handlers)
+
+ISA also offers an extension that enables to specify automatic issue resolution handlers. These handlers can be used to automatically resolve detected security issues, allowing the agent to continue its execution without manual intervention. 
+
+However, this feature is still _under development_ and not intended to be used in its current form (experimental). For a preview, see [invariant/examples/lc_example.py](./invariant/examples/lc_example.py) for an example of how to use handlers in a monitored `langchain` agent.
+
 ### Roadmap
 
 _Coming soon_
+
+## Development
+
+This project uses [`rye`](https://github.com/astral-sh/rye). To setup a development environment, run:
+
+```bash
+rye sync
+```
+
+### Testing 
+
+To run all standard unit tests, run:
+
+```bash
+rye test
+```
+
+To run all example snippets in `invariant/examples/` as unit tests, run:
+
+```bash
+rye run python -m unittest discover -s invariant/examples -p "*_example.py"
+```

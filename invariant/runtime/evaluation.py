@@ -3,6 +3,7 @@ from invariant.stdlib.invariant import ToolCall
 from invariant.runtime.patterns import SemanticPatternMatcher
 from invariant.language.scope import InputData
 from dataclasses import dataclass
+import json
 
 class symbol:
     def __init__(self, name):
@@ -332,7 +333,20 @@ class Interpreter(RaisingTransformation):
         # if either the object or the key is unknown, the result is unknown
         if obj is Unknown or key is Unknown:
             return Unknown
-        return obj[key]
+        try:
+            return obj[key]
+        except TypeError as e:
+            # HACK: this handles cases where a subobject may still be represented
+            # as a JSON string, which is not yet parsed. Ideally, this case should
+            # already be handled before invoking the analyzer. In OpenAI message logs,
+            # however, we may encounter this case in practice.
+            if "string indices must be integers" in str(e):
+                try:
+                    obj = json.loads(obj)
+                    return obj[key]
+                except (json.JSONDecodeError, KeyError):
+                    raise KeyError(f"Object {obj} has no key {key}")
+            raise KeyError(f"Object {obj} has no key {key}")
 
     def visit_FunctionCall(self, node: FunctionCall):
         function = self.visit(node.name)
