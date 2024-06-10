@@ -314,6 +314,8 @@ The following sections discuss both use cases in more detail, including how to m
 
 The simplest way to use the analyzer is to analyze a pre-recorded agent trace. This can be useful to learning more about one's agent's behavior and to detect potential security issues.
 
+To get started, make sure your traces are in [the expected format](#trace-format) and define a policy that specifies the security properties you want to check for. Then, you can use the `Policy` class to analyze the trace:
+
 ```python
 from invariant import Policy
 
