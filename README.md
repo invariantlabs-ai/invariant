@@ -184,14 +184,80 @@ Contents
  
 ### Integration
 
-The Invariant Policy Language is used by the Invariant Security Analyzer and can be used either to analyze agent traces or to monitor agents in real-time. 
+The Invariant Policy Language is used by the security analyzer and can be used either to detect and uncover security issues with pre-recorded agent traces or to monitor agents in real-time. 
+
+The following sections discuss both use cases in more detail, including how to monitor [OpenAI-based](#real-time-monitoring-of-an-openai-agent) and [`langchain`](#real-time-monitoring-of-a-langchain-agent) agents.
 
 #### Analyzing Agent Traces
-TODO
+
+The simplest way to use the analyzer is to analyze a pre-recorded agent trace. This can be useful to learning more about one's agent's behavior and to detect potential security issues.
+
+```python
+from invariant import Policy
+
+# simple chat messages
+messages = [
+    {"role": "system", "content": "You are a helpful assistant."},
+    {"role": "user", "content": "What is the temperature in Paris, France?"},
+    # assistant calls tool
+    {
+        "role": "assistant", 
+        "content": None, 
+        "tool_calls": [
+            {
+                "id": "1",
+                "type": "function",
+                "function": {
+                    "name": "get_temperature",
+                    "arguments": {
+                        "x": "Paris, France"
+                    }
+                }
+            }
+        ]
+    },
+    {
+        "role": "tool",
+        "tool_call_id": "1",
+        "content": 2001
+    }
+]
+
+policy = Policy.from_string(
+r"""
+from invariant import Message, match, PolicyViolation, ToolCall, ToolOutput
+
+# check that the agent does not leak location data
+raise PolicyViolation("Location data was passed to a get_temperature call", call=call) if:
+    (call: ToolCall)
+    call is tool:get_temperature({
+        x: <LOCATION>
+    })
+
+# check that the temperature is not too high
+raise PolicyViolation("get_temperature returned a value higher than 50", call=call) if:
+    (call: ToolOutput)
+    call.content > 50
+""")
+
+policy.analyze(messages)
+# AnalysisResult(
+#   errors=[
+#     PolicyViolation(Location data was passed to a get_temperature call, call={'id': '1', 'type': 'function', 'function':
+#     {'name': 'get_temperature', 'arguments': {'x': 'Paris, France'}}})
+#     PolicyViolation(get_temperature returned a value higher than 50, call={'role': 'tool', 'tool_call_id': '1', 'content':
+#     2001})
+#   ]
+# )
+```
+
+In this example, we define a policy that checks two things: (1) whether location data is passed to a `get_temperature` call, and (2) whether the result is higher than 50. These properties may be applicable when the agent is not supposed to handle location data, to prevent leaking personally-identifiable data (PII), or when the temperature is expected to be below a certain threshold (e.g. for sanity checks). For PII checks, the analyzer relies on the [`presidio-analyzer`](https://github.com/microsoft/presidio) library, but can also be extended to detect and classify other types of sensitive data. 
+
+Since both specified security properties are violated by the given message trace, the analyzer returns an `AnalysisResult` with two `PolicyViolation` errors.
 
 #### Real-Time Monitoring of an OpenAI Agent
 
-ISA can also be used to monitor AI agents in real-time. This allows you to prevent security issues and data breaches before they happen, and to take the appropriate steps to secure your deployed agents.
+The analyzer can also be used to monitor AI agents in real-time. This allows you to prevent security issues and data breaches before they happen, and to take the appropriate steps to secure your deployed agents.
 
 For instance, consider the following example of an OpenAI agent based on OpenAI tool calling:
 

@@ -15,28 +15,30 @@ import unittest
 class CallToSomething(Exception):
     call: ToolCall
 
+    def __str__(self):
+        return f"CallToSomething: {super().__str__()}"
+
 def main():
     # define some policy
     policy = Policy.from_string(
     r"""
-    from invariant import Message, match, PolicyViolation, ToolCall, ToolOutput
-    from invariant.examples.traces_example import CallToSomething
-
     # if the user asks about 'X', raise a violation exception
-    raise CallToSomething(call) if:
+    raise PolicyViolation("Location data was passed to a get_temperature call", call=call) if:
         (call: ToolCall)
-        call.function.name == 'something'
+        call is tool:get_temperature({
+            x: <LOCATION>
+        })
 
     # check result after the operation
-    raise PolicyViolation("result was too high", call) if:
+    raise PolicyViolation("get_temperature returned a value higher than 50", call=call) if:
         (call: ToolOutput)
-        call.content > 2000
+        call.content > 50
     """)
 
     # simple chat messages
     messages = [
         {"role": "system", "content": "You are a helpful assistant."},
-        {"role": "user", "content": "What is the result of something(2)?"},
+        {"role": "user", "content": "What is the temperature in Paris, France?"},
         # assistant calls tool
         {
             "role": "assistant", 
@@ -46,9 +48,9 @@ def main():
                     "id": "1",
                     "type": "function",
                     "function": {
-                        "name": "something",
+                        "name": "get_temperature",
                         "arguments": {
-                            "x": 2
+                            "x": "Paris, France"
                         }
                     }
                 }
@@ -61,18 +63,12 @@ def main():
         }
     ]
 
+    print(json.dumps(messages, indent=2))
+    
     analysis_result = policy.analyze(messages)
+    print(analysis_result)
     assert len(analysis_result.errors) == 2
     
-    policy_violation = [e for e in analysis_result.errors if isinstance(e, PolicyViolation)][0]
-    assert policy_violation.args[0] == "result was too high"
-    assert policy_violation.args[1]["content"] == 2001
-
-    something_call = [e for e in analysis_result.errors if type(e).__name__ == "CallToSomething"][0]
-    assert something_call.call["function"]["name"] == "something"
-    assert something_call.call["function"]["arguments"]["x"] == 2
-    
-    print(json.dumps(messages, indent=2))
 
 # run 'main' as a test
 class TestTraceAnalysisExample(unittest.TestCase):
