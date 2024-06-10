@@ -92,6 +92,8 @@ To learn more, for instance how to implement more advanced policies, read the [d
 
 ### Enforce Access Control In Your RAG-based Chat Agent
 
+> **Security Vector**: An unauthorized user gains access to sensitive data through an agent's retrieval capabilities.
+
 Retrieval-Augmented Generation (RAG) is a populare method to enhance AI agents with private knowledge and data. However, during information retrieval, it is important to ensure that the agent does not violate access control policies, e.g. enabling unauthorized access to sensitive data, especially when strict access control policies are to be enforced.
 
 To detect and prevent this, ISA supports the definition of, for instance, role-based access control policies over retrieval results and data sources:
@@ -120,6 +122,8 @@ This RBAC policy ensures that only users with the correct roles can access the d
 
 ### Prevent Data Leaks In Your Productivity Agent
 
+> **Security Vector**: An email agent inadvertently sends sensitive data to unauthorized recipients.
+
 In productivity agents (e.g. personal email assistants), sensitive data is forwarded between components such as email, calendar, and other productivity tools. This opens up the possibility of data leaks, where sensitive information is inadvertently shared with unauthorized parties. To prevent this, ISA can be used to check and enforce data flow policies.
 
 For instance, the following policy states, that after retrieving a specific email, the agent must not send an email to anyone other than the sender of the retrieved email:
@@ -140,6 +144,8 @@ raise PolicyViolation("Must not send an email to someone other than the sender",
 As shown here, ISA can be used to detect the flows of interest, select specific attributes of the data, and check them against each other. This can be used to prevent data leaks and unauthorized data sharing in productivity agents.
 
 ### Detect Vulnerabilities in Your Code Generation Agent
+
+> **Security Vector**: An AI code agent executes unsafe code generated based on untrusted input.
 
 When using AI agents that generate and execute code, a whole new set of security challenges arises. For instance, unsafe code may be generated or the agent may be actively tricked into executing malicious code, which in turn extracts secrets or private data, such as proprietary code, passwords, or other access credentials.
 
