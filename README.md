@@ -3,7 +3,7 @@
   <h1 align="center">Invariant Security Analyzer</h1>
 
   <p align="center">
-    Security scanner for LLM-based AI agents.
+    A security scanner for LLM-based AI agents.
   </p>
 </div>
 <br/>
@@ -17,14 +17,14 @@ The Invariant Security Analyzer (ISA) is an open source security scanner for det
 
 * **Scanning of agent traces** for security violations and data leaks, including tool use and data flow.
 
-* **Monitoring of practical AI agents in real-time** to prevent security threats and data breaches before they happen.
+* **Real-Time Monitoring of AI agents** to prevent security issues and data breaches during runtime.
 
-Deployment Examples: [Secure Your RAG-based Chat Agent](#enforce-access-control-in-your-rag-based-chat-agent) or  [Prevent Data Leaks In Your Productivity Agent](#prevent-data-leaks-in-your-productivity-agent) 
+To understand better what ISA can do, read about one of the example use cases: [Secure Your RAG-based Chat Agent](#enforce-access-control-in-your-rag-based-chat-agent) or  [Prevent Data Leaks In Your Productivity Agent](#prevent-data-leaks-in-your-productivity-agent) 
 or [Detect Vulnerabilities in Your Code Generation Systems](#detect-vulnerabilities-in-your-code-generation-agent).
 
 ## Why An Agent Security Analyzer?
 
-Tool-enabled AI agents are a powerful new computer interaction model, finding applications in customer support, software engineering, and data analysis. However, these systems are also vulnerable to novel types of security issues like model failure, non-deterministic behavior, prompt injections and data breaches. Due to the versatility and complexity of these systems, traditional security tools and simple safeguards are often insufficient to protect them from sophisticated attacks and failures. The Invariant Security Analyzer is designed to address these challenges by providing an advanced security scanning tool for AI agents, that tracks the data flows in agent trajectories and detects security patterns and vulnerabilities, using classifiers, rule-matching and dataflow analysis techniques.
+AI agents are a powerful new paradigm in computing, finding applications in customer support, software engineering, and data analysis. However, these systems are also vulnerable to novel types of security issues like model failure, non-deterministic behavior, prompt injections and data breaches. Due to the versatility and complexity of these systems, traditional security tools and simple safeguards are often insufficient to protect them from sophisticated attacks and failures. The Invariant Security Analyzer (ISA) is designed to address these challenges by providing an advanced security scanning tool that can track agent behavior and detects security patterns and vulnerabilities, using classifiers, rule-matching and dataflow analysis techniques.
 
 ## Features
 
