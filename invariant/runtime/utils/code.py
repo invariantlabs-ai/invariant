@@ -1,6 +1,13 @@
 import ast
+import asyncio
 from invariant.runtime.utils.base import BaseDetector, DetectorResult
 from pydantic.dataclasses import dataclass, Field
+
+@dataclass
+class CodeIssue:
+    description: str
+    severity: str
+
 
 @dataclass
 class PythonDetectorResult:
@@ -83,3 +90,21 @@ class PythonCodeDetector(BaseDetector):
         tree = ast.parse(text)
         ast_visitor.visit(tree)
         return ast_visitor.res
+
+
+class CodeShieldDetector(BaseDetector):
+    """Detector which uses Llama CodeShield for safety (currently based on regex and semgrep rules)"""
+    from codeshield.cs import CodeShield
+
+    async def scan_llm_output(self, llm_output_code):
+        result = await self.CodeShield.scan_code(llm_output_code)
+        return result
+
+    def detect_all(self, text: str) -> list[CodeIssue]:
+        res = asyncio.run(self.scan_llm_output(text))
+        if res.issues_found is None:
+            return []
+        return [
+            CodeIssue(description=issue.description, severity=str(issue.severity))
+            for issue in res.issues_found
+        ]

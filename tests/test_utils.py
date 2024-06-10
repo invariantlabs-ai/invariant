@@ -2,30 +2,7 @@ import unittest
 import json
 from invariant import Policy
 from invariant.policy import analyze_trace
-
-
-def system(content):
-    return {"role": "system", "content": content}
-
-def user(content):
-    return {"role": "user", "content": content}
-
-def assistant(content, tool_call=None):
-    return {"role": "assistant", "content": None, "tool_calls": ([tool_call] if tool_call is not None else [])}
-
-def tool_call(tool_call_id, function_name, arguments):
-    return {
-        "id": tool_call_id,
-        "type": "function",
-        "function": {
-            "name": function_name,
-            "arguments": arguments
-        }
-    }
-
-def tool(tool_call_id, content):
-    return {"role": "tool", "tool_call_id": tool_call_id, "content": content}
-
+from tests.utils import *
 
 class TestPII(unittest.TestCase):
 
@@ -218,5 +195,33 @@ class TestPythonDetector(unittest.TestCase):
         self.assertEqual(len(analyze_trace(policy_str_template, trace_good).errors), 0)
 
 
+class TestCodeShieldDetector(unittest.TestCase):
+
+    def test_raise(self):
+        policy_str = """
+        raise PolicyViolation("here: ", msg1) if:
+            (msg1: Message)
+            1 > 0
+        """
+        trace = [user("Hello, world!"), user("I am Bob!")]
+        self.assertGreater(len(analyze_trace(policy_str, trace).errors), 0)
+        
+    def test_code_shield(self):
+        policy_str = """
+        from invariant.detectors import code_shield, CodeIssue
+
+        raise PolicyViolation("found issues via code shield", out) if:
+            (out: ToolOutput)
+            3 > 2
+            # "world" in out.content
+            # (issue: CodeIssue) in code_shield(out)
+            # issue.severity in ["warning", "error"]
+        """
+        trace = [tool("1", "def hashString(input):\n\treturn hashlib.md5(input)")]
+        self.assertGreater(len(analyze_trace(policy_str, trace).errors), 0)
+        return
+        trace = [tool("1", "print('Hello, world!')")]
+        self.assertEqual(len(analyze_trace(policy_str, trace).errors), 0)
+
 if __name__ == "__main__":
-    unittest.main()    
+    unittest.main()

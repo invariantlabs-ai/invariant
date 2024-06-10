@@ -1,6 +1,6 @@
 import os
 import invariant.language.ast as ast
-from invariant.runtime.evaluation import Interpreter, EvaluationContext, VariableDomain
+from invariant.runtime.evaluation import Interpreter, EvaluationContext, VariableDomain, Unknown
 from invariant.language.linking import link
 import invariant.language.types as types
 from invariant.language.parser import parse_file
@@ -32,6 +32,10 @@ class RaiseAction(PolicyAction):
     def __init__(self, exception_or_constructor, globals):
         self.exception_or_constructor = exception_or_constructor
         self.globals = globals
+
+    def can_eval(self, input_dict, evaluation_context):
+        res = Interpreter.eval(self.exception_or_constructor, input_dict, self.globals, partial=True, evaluation_context=evaluation_context)
+        return res is not Unknown
 
     def __call__(self, input_dict, evaluation_context=None):
         if type(self.exception_or_constructor) is ast.StringLiteral:
@@ -117,7 +121,6 @@ class Rule:
                     k: VariableDomain(d.type_ref, values=[input_dict[k]]) for k,d in candidate_domains.items()
                 }
 
-                
                 if self.verbose:
                     termcolor.cprint("=== Considering Model ===", "blue")
                     for k,v in input_dict.items():
@@ -134,7 +137,7 @@ class Rule:
                 if result is False: 
                     continue
                 # if we find a complete model, we can stop
-                elif result is True:
+                elif result is True and self.action.can_eval(input_dict, evaluation_context):
                     models.append(input_dict)
                     continue
                 elif len(new_variable_domains) > 0:
