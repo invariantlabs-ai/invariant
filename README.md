@@ -180,13 +180,53 @@ Contents
 
 ### Policy Language
 
+### Invariant Trace Format
+ 
 ### Integration
 
 #### Analyzing Agent Traces
 TODO
 
 #### Real-Time Monitoring of an OpenAI Agent
-TODO
+
+The Invariant agent analyzer can also be used to monitor an AI agent in real-time, to prevent security violations and data breaches before they occur. For instance, consider the following example of a chat agent that uses the OpenAI tool calling API:
+
+```python
+from invariant import Monitor
+from openai import OpenAI
+
+# create an Invariant 'Monitor' for a given policy
+monitor = Monitor.from_string(
+"""
+raise PolicyViolation("Disallowed flow flow", a=call1, b=call2) if:
+    (call1: ToolCall) -> (call2: ToolCall)
+    print(call1, call2)
+    call1 is tool:something
+    call1.function.arguments["x"] > 2
+    call2 is tool:something_else
+""", raise_unhandled=True)
+
+# ...
+
+# in tool execution loop
+while True:
+    # determine next agent action
+    model_response = <invoke LLM>
+    messages.append(model_response.to_dict())
+
+    # 1. check message trace for security 
+    # violations before calling functions
+    monitor.check(messages)
+    
+    # actually call the tools
+    for tool_call in model_response.tool_calls:
+        ...
+    
+    # (optional) check message trace again to 
+    # detect violations in tool outputs early
+    monitor.check(messages)
+```
+> For the full snippet, see [invariant/examples/openai_agent.py](./invariant/examples/openai_agent.py)
 
 #### Real-Time Monitoring of a `langchain` Agent
 TODO
