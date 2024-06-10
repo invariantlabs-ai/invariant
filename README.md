@@ -231,12 +231,49 @@ while True:
 ```
 > For the full snippet, see [invariant/examples/openai_agent_example.py](./invariant/examples/openai_agent_example.py)
 
-Here, all tool interactions of an OpenAI agent are monitored in real-time. As soon as a violation is detected, an exception is raised. This stops the agent from executing a potentially unsafe tool call and allows you to take appropriate action, such as filtering out a tool call or ending the session.
+To enable real-time monitoring for policy violations you can use a `Monitor` as shown, and integrate it into your agent's execution loop. With a `Monitor`, policy checking is performed eagerly, i.e. after each tool call, to ensure that the agent does not violate the policy at any point in time.
 
-For real-time monitoring for policy violations you can use an Invariant `Monitor`, and integrate it into your agent's execution loop. Here, policy checking is performed eagerly, i.e. after each tool call, to ensure that the agent does not violate the policy at any point in time.
+This way, all tool interactions of the agent are monitored in real-time. As soon as a violation is detected, an exception is raised. This stops the agent from executing a potentially unsafe tool call and allows you to take appropriate action, such as filtering out the call or ending the session.
+
 
 #### Real-Time Monitoring of a `langchain` Agent
-TODO
+
+To monitor a `langchain`-based agent, you can use a `MonitoringAgentExecutor`, which will automatically intercept tool calls and check them against the policy, before they are executed.
+
+```python
+from invariant import Monitor
+from invariant.integrations.langchain_integration import MonitoringAgentExecutor
+
+from langchain_openai import ChatOpenAI
+from langchain.agents import tool, create_openai_functions_agent
+from langchain import hub
+
+monitor = Monitor.from_string(
+"""
+raise PolicyViolation("Disallowed tool call sequence", a=call1, b=call2) if:
+    (call1: ToolCall) -> (call2: ToolCall)
+    call1 is tool:something
+    call1.function.arguments["x"] > 2
+    call2 is tool:something_else
+""")
+
+# setup prompt+LLM
+prompt = hub.pull("hwchase17/openai-functions-agent")
+llm = ChatOpenAI(model="gpt-4o")
+
+# define the tools
+@tool def something(x: int) -> int: ...
+@too def something_else(x: int) -> int: ...
+# construct the tool calling agent
+agent = create_openai_functions_agent(llm, [something, something_else], prompt)
+
+# create a monitoring agent executor
+agent_executor = MonitoringAgentExecutor(agent=agent, tools=[something, something_else],
+                                         verbose=True, monitor=monitor)
+```
+> For the full snippet, see [invariant/examples/lc_flow_example.py](./invariant/examples/lc_flow_example.py)
+
+The `MonitoringAgentExecutor` will automatically check all tool calls, ensuring that the agent never violates the policy. If a violation is detected, the executor will raise an exception.
 
 #### Automatic Issue Resolution (Handlers)
 
@@ -246,7 +283,7 @@ However, this feature is still _under development_ and not intended to be used i
 
 ### Roadmap
 
-_Coming soon_
+_More Information Coming Soon_
 
 ## Development
 

@@ -311,27 +311,6 @@ class MonitoringAgentExecutor(AgentExecutor):
         chat = format_invariant_chat_messages(agent_state.inputs, agent_state.intermediate_steps, agent_action)
         tool_call_msg = chat.pop(-1)
 
-        # determine wrappers
-        # async def actual_tool(*args, **kwargs):
-        #     assert len(args) == 0, "only keyword arguments are supported"
-        #     # update the tool call arguments, based on actual arguments
-        #     tool_call_msg["tool_calls"][0]["function"]["arguments"] = json.dumps(kwargs)
-        #     update_tool_input(kwargs)
-            
-        #     # # call the actual function
-        #     # updated_args = str(agent_action.tool_input)
-        #     # if not updated_args in agent_action.log:
-        #     #     agent_action.log = agent_action.log.rstrip() + f"(after policy -> `{updated_args}`)\n"
-        #     # else:
-        #     #     agent_action.log = agent_action.log.rstrip() + "\n"
-            
-        #     # TODO patch the wrapped tool into name_to_tool_map
-
-        #     result = await super(MonitoringAgentExecutor, self)._aperform_agent_action(patched_map, color_mapping, agent_action, run_manager)
-        #     agent_action_message[0] = result
-        #     # agent_action_message[0].action.tool_input = kwargs
-        #     return result.observation
-
         # actual tool call is last fct in stack
         async def actual_tool(tool_input: dict, **kwargs):
             if kwargs.get("verbose", False) and str(tool_input) not in agent_action.log:

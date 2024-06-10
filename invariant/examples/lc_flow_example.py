@@ -8,10 +8,9 @@ import unittest
 from dataclasses import dataclass
 from langchain import hub
 
-from invariant import Policy, UnhandledError, Monitor
+from invariant import UnhandledError, Monitor
 from langchain_openai import ChatOpenAI
 from invariant.integrations.langchain_integration import MonitoringAgentExecutor, tool, create_openai_functions_agent, MutableAgentActionTuple
-from invariant.stdlib.invariant.errors import PolicyViolation
 from invariant.stdlib.invariant import ToolCall
 
 @dataclass
