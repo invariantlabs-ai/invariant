@@ -173,6 +173,9 @@ Table of Contents
 
 - [Getting Started](#getting-started)
 - [Policy Language](#policy-language)
+    * [Example Rule](#example-rule)
+    * [Trace Format](#trace-format)
+    * [Predicates](#predicates)
 - [Integration](#integration)
     * [Analyzing Agent Traces](#analyzing-agent-traces)
     * [Real-Time Monitoring of an OpenAI Agent](#real-time-monitoring-of-an-openai-agent)
