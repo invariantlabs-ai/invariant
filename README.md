@@ -182,7 +182,7 @@ Table of Contents
 
 The Invariant Policy language is a domain-specific language (DSL) for defining security policies and constraints of AI agents other LLM-based systems. It is designed to be expressive, flexible, and easy to use, allowing users to define complex security properties and constraints in a concise and readable way.
 
-**Origins**: The Invariant policy language is inspired by [Open Policy's Rego language](https://www.openpolicyagent.org/docs/latest/policy-language/), [Datalog](https://en.wikipedia.org/wiki/Datalog) and Python. It is designed to be easy to learn and use with a syntax that is familiar to ML engineers and security professionals.
+**Origins**: The Invariant policy language is inspired by [Open Policy's Rego](https://www.openpolicyagent.org/docs/latest/policy-language/), [Datalog](https://en.wikipedia.org/wiki/Datalog) and Python. It is designed to be easy to learn and use with a syntax that is familiar to ML engineers and security professionals.
 
 #### Example Rule
 
@@ -303,6 +303,26 @@ messages = [
 ```
 
 `ToolCalls` must be nested within `Message(role="assistant")` objects, and `ToolOutputs` are their own top-level objects.
+
+#### Predicates
+
+If repetitive conditions and patterns arise in your policies, you can define predicates to encapsulate these conditions and reuse them across multiple rules. Predicates are defined as follows:
+
+```python
+is_affirmative(m: Message) := 
+    "yes" in m.content or "true" in m.content
+
+raise PolicyViolation("The assistant should not reply affirmatively", message=msg) if:
+    (msg: Message)
+    m.role == "assistant"
+    is_affirmative(msg)
+```
+
+Here, we define a predicate `is_affirmative_assistant` that checks if a message's content contains the words "yes" or "true". We then use this predicate in a rule that checks if the assistant specifically replies in an affirmative manner as defined by the predicate.
+
+#### Value Matching
+
+#### External Functions and Standard Library
 
 ### Integration
 
