@@ -180,7 +180,47 @@ Table of Contents
 
 ### Policy Language
 
-#### Invariant Trace Format
+The Invariant Policy language is a domain-specific language (DSL) for defining security policies and constraints of AI agents other LLM-based systems. It is designed to be expressive, flexible, and easy to use, allowing users to define complex security properties and constraints in a concise and readable way.
+
+**Origins**: The Invariant policy language is inspired by [Open Policy's Rego language](https://www.openpolicyagent.org/docs/latest/policy-language/), Datalog and Python. It is designed to be easy to learn and use, while providing powerful features for expressing complex security properties.
+
+#### Example Rule
+
+A policy consists of a set of rules, each of which defines a security property and the corresponding conditions under which it is considered violated.
+
+A rule is defined using the `raise` keyword, followed by a condition and an optional message:
+
+```python
+raise "can only send an email within the organization after retrieving the inbox" if:
+    (call: ToolCall) -> (call2: ToolCall)
+    call is tool:get_inbox
+    call2 is tool:send_email({
+      # only emails that do *not* end in acme.com
+      to: r"^[^@]*@(?!acme\\.com)"
+    })
+```
+
+This rule states that an email can only be sent to a receiver with an `acme.com` email address after retrieving the inbox. For this, the specified conditions, or _rule body_, define several constraints that must be satisfied, for the rule to trigger. The rule body consists of two main conditions:
+
+```python
+(call: ToolCall) -> (call2: ToolCall)
+```
+
+This condition specifies that there must be two consecutive tool calls in the trace, where the data retrieved by the first call can flow into the second call. The `->` operator denotes the data flow relationship between the two calls.
+
+```python
+call is tool:get_inbox
+call2 is tool:send_email({
+    # only emails that do *not* end in acme.com
+    to: r"^[^@]*@(?!acme\\.com)"
+})
+```
+
+Secondly, the first call must be a `get_inbox` call, and the second call must be a `send_email` call with a recipient that does not have an `acme.com` email address, as expressed by the regular expression `r"^[^@]*@(?!acme\\.com)"`. 
+
+If the specified conditions are met, we consider the rule as triggered, and applying the policy will return the specified error message.
+
+#### Trace Format
  
 ### Integration
 
