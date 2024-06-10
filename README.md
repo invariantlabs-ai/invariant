@@ -94,7 +94,7 @@ To learn more, for instance how to implement more advanced policies, read the [d
 
 > **Vulnerability**: An unauthorized user gains access to sensitive data through an agent's retrieval capabilities.
 
-Retrieval-Augmented Generation (RAG) is a populare method to enhance AI agents with private knowledge and data. However, during information retrieval, it is important to ensure that the agent does not violate access control policies, e.g. enabling unauthorized access to sensitive data, especially when strict access control policies are to be enforced.
+Retrieval-Augmented Generation (RAG) is a popular method to enhance AI agents with private knowledge and data. However, during information retrieval, it is important to ensure that the agent does not violate access control policies, e.g. enabling unauthorized access to sensitive data, especially when strict access control policies are to be enforced.
 
 To detect and prevent this, ISA supports the definition of, for instance, role-based access control policies over retrieval results and data sources:
 
@@ -118,7 +118,7 @@ raise AccessControlViolation("unauthorized access", user=input.user, tool=call_r
     not should_allow(chunk, "db1", input.user, user_roles, role_grants)
 ```
 
-This RBAC policy ensures that only users with the correct roles can access the data retrieved by the agent. If they cannot, the analyzer will raise an `AccessControlViolation` error, which can then be handled by the agent (e.g. by filtering out the unauthorized chunks) or logged, if detected offline when analyzing recorded agent traces.
+This RBAC policy ensures that only users with the correct roles can access the data retrieved by the agent. If they cannot, the analyzer will raise an `AccessControlViolation` error, which can then be handled by the agent (e.g. by filtering out the unauthorized chunks) or raise an alert to the system administrator.
 
 ### Prevent Data Leaks In Your Productivity Agent
 
