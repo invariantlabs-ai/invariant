@@ -1,6 +1,6 @@
 <div align="center">
   <h1 align="center">🕵️‍♂️</h1>
-  <h1 align="center">Invariant Security Analyzer</h1>
+  <h1 align="center">Invariant Analyzer for AI Agent Security</h1>
 
   <p align="center">
     A security scanner for LLM-based AI agents.
@@ -8,7 +8,7 @@
 </div>
 <br/>
 
-The Invariant Security Analyzer (ISA) is an open source security scanner for detecting vulnerabilities and security threats in AI agents. It scans and analyzes an agent's execution traces to identify security threats like data leaks.
+The Invariant Security Analyzer is an open source security scanner that enables developers to reduce risk when building AI agents by quickly detecting vulnerabilities, bugs, and security threats. The analyzer scans and analyzes an agent's execution traces to identify threats like data leaks, prompt injections, and unsafe code execution.
 
 ![Invariant Security Analyzer](https://github.com/invariantlabs-ai/invariant/assets/17903049/709fa811-566b-4623-8601-4cab15bc688c)
 
@@ -19,12 +19,12 @@ The Invariant Security Analyzer (ISA) is an open source security scanner for det
 
 * **Real-Time Monitoring of AI agents** to prevent security issues and data breaches during runtime.
 
-To understand better what ISA can do, read about one of the example use cases: [Secure Your RAG-based Chat Agent](#enforce-access-control-in-your-rag-based-chat-agent) or  [Prevent Data Leaks In Your Productivity Agent](#prevent-data-leaks-in-your-productivity-agent) 
+To understand better what the analyzer can do, read about one of the example use cases: [Secure Your RAG-based Chat Agent](#enforce-access-control-in-your-rag-based-chat-agent) or  [Prevent Data Leaks In Your Productivity Agent](#prevent-data-leaks-in-your-productivity-agent) 
 or [Detect Vulnerabilities in Your Code Generation Systems](#detect-vulnerabilities-in-your-code-generation-agent).
 
 ## Why An Agent Security Analyzer?
 
-AI agents are a powerful new paradigm in computing, finding applications in customer support, software engineering, and data analysis. However, these systems are also vulnerable to novel types of security issues like model failure, non-deterministic behavior, prompt injections and data breaches. Due to the versatility and complexity of these systems, traditional security tools and simple safeguards are often insufficient to protect them from sophisticated attacks and failures. The Invariant Security Analyzer (ISA) is designed to address these challenges by providing an advanced security scanning tool that can track agent behavior and detects security patterns and vulnerabilities, using classifiers, rule-matching and dataflow analysis techniques.
+AI agents are a powerful new paradigm in computing, finding applications in customer support, software engineering, and data analysis. However, these systems are also vulnerable to novel types of security issues like model failure, non-deterministic behavior, prompt injections and data breaches. Due to the versatility and complexity of these systems, traditional security tools and simple safeguards are often insufficient to protect them from sophisticated attacks and failures. The Invariant Security Analyzer is designed to address these challenges by providing an advanced security scanning tool that can track agent behavior and detects security patterns and vulnerabilities, using classifiers, rule-matching and dataflow analysis techniques.
 
 ## Features
 
@@ -96,7 +96,7 @@ To learn more, for instance how to implement more advanced policies, read the [d
 
 Retrieval-Augmented Generation (RAG) is a popular method to enhance AI agents with private knowledge and data. However, during information retrieval, it is important to ensure that the agent does not violate access control policies, e.g. enabling unauthorized access to sensitive data, especially when strict access control policies are to be enforced.
 
-To detect and prevent this, ISA supports the definition of, for instance, role-based access control policies over retrieval results and data sources:
+To detect and prevent this, the analyzer supports the definition of, for instance, role-based access control policies over retrieval results and data sources:
 
 ```python
 from invariant.access_control import should_allow_rbac, AccessControlViolation
@@ -124,7 +124,7 @@ This RBAC policy ensures that only users with the correct roles can access the d
 
 > **Vulnerability**: An email agent inadvertently sends sensitive data to unauthorized recipients.
 
-In productivity agents (e.g. personal email assistants), sensitive data is forwarded between components such as email, calendar, and other productivity tools. This opens up the possibility of data leaks, where sensitive information is inadvertently shared with unauthorized parties. To prevent this, ISA can be used to check and enforce data flow policies.
+In productivity agents (e.g. personal email assistants), sensitive data is forwarded between components such as email, calendar, and other productivity tools. This opens up the possibility of data leaks, where sensitive information is inadvertently shared with unauthorized parties. To prevent this, the analyzer can be used to check and enforce data flow policies.
 
 For instance, the following policy states, that after retrieving a specific email, the agent must not send an email to anyone other than the sender of the retrieved email:
 
@@ -141,7 +141,7 @@ raise PolicyViolation("Must not send an email to someone other than the sender",
     outgoing_mail.to != sender
 ```
 
-As shown here, ISA can be used to detect the flows of interest, select specific attributes of the data, and check them against each other. This can be used to prevent data leaks and unauthorized data sharing in productivity agents.
+As shown here, the analyzer can be used to detect the flows of interest, select specific attributes of the data, and check them against each other. This can be used to prevent data leaks and unauthorized data sharing in productivity agents.
 
 ### Detect Vulnerabilities in Your Code Generation Agent
 
@@ -149,7 +149,7 @@ As shown here, ISA can be used to detect the flows of interest, select specific 
 
 When using AI agents that generate and execute code, a whole new set of security challenges arises. For instance, unsafe code may be generated or the agent may be actively tricked into executing malicious code, which in turn extracts secrets or private data, such as proprietary code, passwords, or other access credentials.
 
-For example, this policy rule detects if an agent has read an untrusted URL and then executes code that relies on the `os` module:
+For example, this policy rule detects if an agent made a request to an untrusted URL (for instance, to read the project documentation) and then executes code that relies on the `os` module:
 
 ```python
 from invariant.detectors.code import python_code
@@ -165,7 +165,7 @@ raise "tried to execute unsafe code, after visiting an untrusted URL" if:
     "os" in program_repr.imports
 ```
 
-This policy prevents an agent from following malicious instructions that may be hidden on an untrusted website. This snippet also demonstrates how ISA's analysis extends into the generated code, such as checking for unsafe imports or other security-sensitive code patterns.
+This policy prevents an agent from following malicious instructions that may be hidden on an untrusted website. This snippet also demonstrates how the analysis extends into the generated code, such as checking for unsafe imports or other security-sensitive code patterns.
 
 ## Documentation
 
@@ -491,7 +491,7 @@ The `MonitoringAgentExecutor` will automatically check all tool calls, ensuring 
 
 #### Automatic Issue Resolution (Handlers)
 
-ISA also offers an extension that enables to specify automatic issue resolution handlers. These handlers can be used to automatically resolve detected security issues, allowing the agent to continue its execution without manual intervention. 
+Invariant Analyzer also offers an extension that enables to specify automatic issue resolution handlers. These handlers can be used to automatically resolve detected security issues, allowing the agent to continue its execution without manual intervention. 
 
 However, this feature is still _under development_ and not intended to be used in its current form (experimental). For a preview, see [invariant/examples/lc_example.py](./invariant/examples/lc_example.py) for an example of how to use handlers in a monitored `langchain` agent.
 
