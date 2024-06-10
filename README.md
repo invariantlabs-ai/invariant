@@ -169,7 +169,7 @@ This policy prevents an agent from following malicious instructions that may be 
 
 ## Documentation
 
-Contents
+Table of Contents
 
 - [Getting Started](#getting-started)
 - [Policy Language](#policy-language)
