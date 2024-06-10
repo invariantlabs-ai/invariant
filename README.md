@@ -216,12 +216,94 @@ call2 is tool:send_email({
 })
 ```
 
-Secondly, the first call must be a `get_inbox` call, and the second call must be a `send_email` call with a recipient that does not have an `acme.com` email address, as expressed by the regular expression `r"^[^@]*@(?!acme\\.com)"`. 
+Secondly, the first call must be a `get_inbox` call, and the second call must be a `send_email` call with a recipient that does not have an `acme.com` email address, as expressed by the regular expression `^[^@]*@(?!acme\\.com)`. 
 
-If the specified conditions are met, we consider the rule as triggered, and applying the policy will return the specified error message.
+If the specified conditions are met, we consider the rule as triggered, and an application of the policy to an agent trace will return the specified error message.
+
+<!-- TODO: talk about `raise PolicyViolation(<msg>, **kwargs)` -->
 
 #### Trace Format
+
+The Invariant Policy Language operates on agent traces, which are sequences of messages and tool calls. For this, a simple JSON-based format is expected as an input to the analyzer. The format consists of a list of messages, based on the [OpenAI chat format](https://platform.openai.com/docs/guides/text-generation/chat-completions-api).
+
+For this we define the following structural types. To be addressable in the policy language, all messages passed to the analyzer must be in the following format:
+
+##### `Message`
+
+```python
+class Message:
+    role: str
+    content: str
+    tool_calls: Optional[List[ToolCall]]
+
+# Example input representation
+{ "role": "user", "content": "Hello, how are you?" }
+```
+
+* **role** (str): The role of the message, e.g. "user", "assistant", or "system".
+* **content** (str): The content of the message, e.g. a chat message or a tool call.
+* **tool_calls** (Optional[List[ToolCall]]): A list of tool calls made by the agent in response to the message.
+
+##### `ToolCall`
+```python
+class ToolCall:
+    id: str
+    type: str
+    function: FunctionCall
+class FunctionCall:
+    name: str
+    arguments: Dict[str, Any]
+
+# Example input representation
+{"id": "1","type": "function","function": {"name": "get_inbox","arguments": {"n": 10}}}
+```
+
+* **id** (str): A unique identifier for the tool call.
+* **type** (str): The type of the tool call, e.g. "function".
+* **function** (FunctionCall): The function call made by the agent.
+    * **name** (str): The name of the function called.
+    * **arguments** (Dict[str, Any]): The arguments passed to the function.
+
+##### `ToolOutput`
+
+```python
+class ToolOutput:
+    role: str = "tool"
+    tool_call_id: str
+    content: str | dict
+
+# Example input representation
+{"role": "tool","tool_call_id": "1","content": {"id": "1","subject": "Hello","from": "Alice","date": "2024-01-01"}]}
+```
+
+* **tool_call_id** (str): The identifier of a previous `ToolCall` that this output corresponds to.
+* **content** (str | dict): The content of the tool output, e.g. the result of a function call. This can be a parsed dictionary or a string of the JSON output.
  
+##### Trace Example
+
+The format suitable for the analyzer is a list of messages like the one shown here:
+
+```python 
+messages = [
+    # Message(role="user", ...):
+    {"role": "user", "content": "What's in my inbox?"}, 
+    # Message(role="assistant", ...):
+    {"role": "assistant", "content": None, "tool_calls": [
+        # ToolCall
+        {"id": "1","type": "function","function": {"name": "get_inbox","arguments": {}}}
+    ]}, 
+    # ToolOutput:
+    {"role": "tool","tool_call_id": "1","content": [ 
+        {"id": "1","subject": "Hello","from": "Alice","date": "2024-01-01"},
+        {"id": "2","subject": "Meeting","from": "Bob","date": "2024-01-02"}
+    ]},
+    # Message(role="user", ...):
+    {"role": "user", "content": "Say hello to Alice."}, 
+]
+```
+
+`ToolCalls` must be nested within `Message(role="assistant")` objects, and `ToolOutputs` are their own top-level objects.
+
 ### Integration
 
 The Invariant Policy Language is used by the security analyzer and can be used either to detect and uncover security issues with pre-recorded agent traces or to monitor agents in real-time. 
