@@ -180,6 +180,7 @@ Table of Contents
     * [Analyzing Agent Traces](#analyzing-agent-traces)
     * [Real-Time Monitoring of an OpenAI Agent](#real-time-monitoring-of-an-openai-agent)
     * [Real-Time Monitoring of a `langchain` Agent](#real-time-monitoring-of-a-langchain-agent)
+    * [Automatic Issue Resolution (Handlers)](#automatic-issue-resolution-handlers)
 
 ### Policy Language
 
