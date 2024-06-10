@@ -4,12 +4,11 @@
 # last locked with the following flags:
 #   pre: false
 #   features: []
-#   all-features: false
+#   all-features: true
 #   with-sources: false
 
 -e file:.
 aiohttp==3.9.5
-    # via invariant
     # via langchain
 aiosignal==1.3.1
     # via aiohttp
@@ -144,6 +143,7 @@ presidio-analyzer==2.2.354
     # via invariant
 pydantic==2.7.3
     # via confection
+    # via invariant
     # via langchain
     # via langchain-core
     # via langsmith
@@ -253,8 +253,6 @@ wasabi==1.1.3
     # via weasel
 weasel==0.4.1
     # via spacy
-websockets==12.0
-    # via invariant
 wrapt==1.16.0
     # via smart-open
 yarl==1.9.4
