@@ -30,13 +30,13 @@ AI agents are a powerful new paradigm in computing, finding applications in cust
 
 * Many *built-in checkers* for detecting **sensitive data, prompt injections, moderation violations, and more.**
 
-* Expressive rule language for defining security policies and constraints with support for incremental checking.
+* [Expressive rule language](#policy-language) for defining security policies and constraints with support for incremental checking.
 
-* Dataflow analysis for tracking flows of private and untrusted data inbetween agents, APIs and services.
+* [Dataflow analysis for tracking flows](#policy-language) of private and untrusted data inbetween agents, APIs and services.
 
-* Real-time monitoring and analysis of AI agents and other tool-calling LLM applications.
+* [Real-time monitoring](#real-time-monitoring-of-an-openai-agent) and analysis of AI agents and other tool-calling LLM applications.
 
-* Extensible architecture for adding custom checkers, predicates and data types.
+* Extensible architecture for [adding custom checkers, predicates and data types](#predicates).
 
 ### Getting Started
 
