@@ -184,7 +184,7 @@ Table of Contents
 
 ### Policy Language
 
-The Invariant Policy language is a domain-specific language (DSL) for defining security policies and constraints of AI agents other LLM-based systems. It is designed to be expressive, flexible, and easy to use, allowing users to define complex security properties and constraints in a concise and readable way.
+The Invariant Policy language is a domain-specific language (DSL) for defining security policies and constraints of AI agents and other LLM-based systems. It is designed to be expressive, flexible, and easy to use, allowing users to define complex security properties and constraints in a concise and readable way.
 
 **Origins**: The Invariant policy language is inspired by [Open Policy's Rego](https://www.openpolicyagent.org/docs/latest/policy-language/), [Datalog](https://en.wikipedia.org/wiki/Datalog) and Python. It is designed to be easy to learn and use with a syntax that is familiar to ML engineers and security professionals.
 
