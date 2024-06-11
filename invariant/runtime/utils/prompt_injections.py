@@ -1,6 +1,7 @@
 import unicodedata
 from invariant.runtime.utils.base import BaseDetector, DetectorResult
 from typing import Optional
+from invariant.extras import transformers_extra
 
 DEFAULT_PI_MODEL = "protectai/deberta-v3-base-prompt-injection-v2"
 
@@ -15,7 +16,7 @@ class PromptInjectionAnalyzer(BaseDetector):
         self.pipe_store = dict()
 
     def _load_model(self, model):
-        from transformers import pipeline
+        pipeline = transformers_extra.package("transformers").import_names("pipeline")
         self.pipe_store[model] = pipeline("text-classification", model=model, top_k=None)
 
     def _get_model(self, model):

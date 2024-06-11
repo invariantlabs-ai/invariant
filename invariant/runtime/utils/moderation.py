@@ -1,6 +1,7 @@
 from invariant.runtime.utils.base import BaseDetector
 from typing import Optional
 from typing_extensions import override
+from invariant.extras import transformers_extra
 
 
 DEFAULT_MODERATION_MODEL = "KoalaAI/Text-Moderation"
@@ -24,7 +25,7 @@ class ModerationAnalyzer(BaseDetector):
         self.pipe_store = {}
         
     def _load_model(self, model):
-        from transformers import pipeline
+        pipeline = transformers_extra.package("transformers").import_names("pipeline")
         self.pipe_store[model] = pipeline("text-classification", model=model, top_k=None)
 
     def _has_model(self, model):

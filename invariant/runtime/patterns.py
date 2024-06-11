@@ -247,3 +247,24 @@ class ModerationMatcher(SemanticPatternMatcher):
         return moderation_analyzer.detect(value)
     
 ModerationMatcher.moderation_analyzer = None
+
+@value_matcher
+@dataclass
+class ValueMatcherDummyMatcher(SemanticPatternMatcher):
+    """
+    Value matcher for <DUMMY> values.
+
+    Only used in testing, to test the integration of custom value matchers,
+    without having to rely on external libraries.
+    """
+    SUPPORTED_TYPES = ["DUMMY"]
+
+    def __init__(self, entity: str):
+        self.entity = entity
+
+    def __repr__(self):
+        return f"ValueMatcherDummyMatcher({self.entity})"
+    
+    def match(self, value) -> bool:
+        return value == "__DUMMY__"
+        

@@ -6,13 +6,7 @@ dependencies = [
     "lark>=1.1.9",
     "termcolor>=2.4.0",
     "pydantic>=2.7.3",
-    "langchain>=0.2.1",
-    "langchain-openai>=0.1.7",
-    "langchainhub>=0.1.16",
-    "presidio-analyzer>=2.2.354",
-    "transformers>=4.41.1",
-    "torch>=2.3.0",
-    "codeshield>=1.0.1",
+    "pip>=24.0"
 ]
 readme = "README.md"
 requires-python = ">= 3.10"
@@ -25,8 +19,21 @@ build-backend = "hatchling.build"
 managed = true
 dev-dependencies = [
     "pytest>=8.2.1",
-    "pip>=24.0",
+    # we declare extra dependencies as dev dependencies, so they are available when running tests
+    # for use, these have to be installed via the CLI tool 'invariant-cli add' or manually
+    "presidio-analyzer>=2.2.354",
+    "spacy>=3.7.5",
+    "langchain>=0.2.1",
+    "langchain-openai>=0.1.7",
+    "langchainhub>=0.1.16",
+    "presidio-analyzer>=2.2.354",
+    "transformers>=4.41.1",
+    "torch>=2.3.0",
+    "codeshield>=1.0.1",
 ]
+
+[project.scripts]
+invariant-cli = "invariant.cli:main"
 
 [tool.hatch.metadata]
 allow-direct-references = true

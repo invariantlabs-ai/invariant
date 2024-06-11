@@ -1,6 +1,7 @@
 import unittest
 import json
 from invariant import Policy, RuleSet
+from invariant.extras import extras_available, presidio_extra, transformers_extra
 
 def pattern_matches(semantic_pattern, arguments, tool_name="something"):
     policy = Policy.from_string(
@@ -70,6 +71,7 @@ class TestConstants(unittest.TestCase):
             "x": "2021-01-01T00:00:00"
         })
 
+    @unittest.skipUnless(extras_available(presidio_extra, transformers_extra), "At least one of presidio-analyzer, transformers, and torch are not installed")
     def test_value_type(self):
         assert pattern_matches("tool:something({to: <EMAIL_ADDRESS>})", {
             "to": "bob@mail.com"
@@ -92,6 +94,7 @@ class TestConstants(unittest.TestCase):
             "name": "Alice"
         })
 
+    @unittest.skipUnless(extras_available(presidio_extra, transformers_extra), "At least one of presidio-analyzer, transformers, and torch are not installed")
     def test_nested_args(self):
         assert pattern_matches("""tool:something({args: [
             "A.*",

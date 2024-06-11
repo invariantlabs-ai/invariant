@@ -2,6 +2,7 @@ import unittest
 import json
 from invariant import Policy, RuleSet, Monitor
 from invariant.runtime.input import Dataflow
+from invariant.extras import extras_available, presidio_extra, transformers_extra
 
 def system(content):
     return {"role": "system", "content": content}
@@ -193,6 +194,7 @@ class TestFlow(unittest.TestCase):
         result = policy.analyze(trace)
         assert len(result.errors) == 1
 
+    @unittest.skipUnless(extras_available(presidio_extra, transformers_extra), "At least one of presidio-analyzer, transformers, and torch are not installed")
     def test_moderated_to_tool(self):
         policy = Policy.from_string(
         """

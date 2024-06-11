@@ -2,6 +2,7 @@ import ast
 import asyncio
 from invariant.runtime.utils.base import BaseDetector, DetectorResult
 from pydantic.dataclasses import dataclass, Field
+from invariant.extras import codeshield_extra
 
 @dataclass
 class CodeIssue:
@@ -94,9 +95,9 @@ class PythonCodeDetector(BaseDetector):
 
 class CodeShieldDetector(BaseDetector):
     """Detector which uses Llama CodeShield for safety (currently based on regex and semgrep rules)"""
-    from codeshield.cs import CodeShield
 
     async def scan_llm_output(self, llm_output_code):
+        self.CodeShield = codeshield_extra.package("codeshield.cs").import_names("CodeShield")
         result = await self.CodeShield.scan_code(llm_output_code)
         return result
 

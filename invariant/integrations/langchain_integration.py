@@ -9,13 +9,6 @@ import contextvars
 import os
 from typing import AsyncIterator, Dict, List, Tuple, Any, Optional
 
-from langchain_core.agents import AgentAction, AgentFinish, AgentStep, AgentActionMessageLog
-from langchain_core.callbacks import AsyncCallbackManagerForChainRun, AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun
-from langchain_core.messages import BaseMessage
-from langchain_core.outputs import ChatGenerationChunk, ChatResult, LLMResult
-from langchain_core.tools import BaseTool
-from langchain.agents.format_scratchpad import format_to_openai_function_messages
-
 from invariant import parse, Monitor
 from invariant.monitor import wrappers, ValidatedOperation, OperationCall, WrappingHandler, stack
 from invariant.stdlib.invariant.errors import UpdateMessage, UpdateMessageHandler, PolicyViolation
@@ -23,55 +16,13 @@ from invariant.stdlib.invariant import ToolCall
 from dataclasses import dataclass
 import asyncio
 
-from langchain_openai import ChatOpenAI
+from invariant.extras import langchain_extra
+langchain = langchain_extra.package("langchain").import_module()
+
 from langchain.agents import AgentExecutor
 
-from langchain import hub
-from langchain.llms import BaseLLM
-from langchain.agents import AgentExecutor, create_openai_functions_agent, tool
-from langchain_openai import ChatOpenAI
-
-class CachedLLM(ChatOpenAI):
-    cache: str
-
-    async def _agenerate(self, messages: List[BaseMessage], stop: List[str] | None = None, run_manager: AsyncCallbackManagerForLLMRun | None = None, **kwargs) -> ChatResult:
-        return await super()._agenerate(messages, stop, run_manager, **kwargs)
-    
-    def get_cache(self, messages: List[BaseMessage]) -> str:
-        key = str(messages)
-        if not os.path.exists(self.cache):
-            return None
-        try:
-            with open(self.cache, "rb") as f:
-                entries = pickle.load(f)
-                return entries.get(key)
-        except Exception as e:
-            return None
-        
-    def set_cache(self, messages: List[BaseMessage], result: ChatResult):
-        key = str(messages)
-        if not os.path.exists(self.cache):
-            cache = {}
-        else:
-            with open(self.cache, "rb") as f:
-                cache = pickle.load(f)
-        with open(self.cache, "wb") as f:
-            cache[key] = result
-            pickle.dump(cache, f)
-
-    async def _astream(self, messages: List[BaseMessage], stop: List[str] | None = None, run_manager: AsyncCallbackManagerForLLMRun | None = None, **kwargs) -> AsyncIterator[ChatGenerationChunk]:
-        cache = self.get_cache(messages)
-        if cache:
-            for chunk in cache:
-                yield chunk
-            return
-        to_cache = []
-
-        async for chunk in super()._astream(messages, stop, run_manager, **kwargs):
-            to_cache.append(chunk)
-            yield chunk
-
-        self.set_cache(messages, to_cache)
+from langchain_core.agents import AgentAction, AgentFinish, AgentStep, AgentActionMessageLog
+from langchain_core.tools import BaseTool
 
 def format_invariant_chat_messages(agent_input, intermediate_steps: list[AgentAction], next_step: AgentAction | AgentFinish):
     from langchain_core.messages import AIMessage, ToolMessage, FunctionMessage

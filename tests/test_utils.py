@@ -3,9 +3,10 @@ import json
 from invariant import Policy
 from invariant.policy import analyze_trace
 from tests.utils import *
+from invariant.extras import extras_available, presidio_extra, transformers_extra
 
 class TestPII(unittest.TestCase):
-
+    @unittest.skipUnless(extras_available(presidio_extra), "presidio-analyzer is not installed")
     def test_specific_pii(self):
         policy_str = """
         from invariant.detectors import pii
@@ -17,6 +18,7 @@ class TestPII(unittest.TestCase):
         self.assertEqual(len(analyze_trace(policy_str, [user("My email is bob@gmail.com")]).errors), 1)
         self.assertEqual(len(analyze_trace(policy_str, [user("Hey Bob nice to meet you!")]).errors), 0)
 
+    @unittest.skipUnless(extras_available(presidio_extra), "presidio-analyzer is not installed")
     def test_any_pii(self):
         policy_str = """
         from invariant.detectors import pii
@@ -31,6 +33,7 @@ class TestPII(unittest.TestCase):
 
 
 class TestModerated(unittest.TestCase):
+    @unittest.skipUnless(extras_available(transformers_extra), "At least one of transformers or torch are not installed")
     def test_moderated(self):
         policy_str = """
         from invariant.detectors import moderated
@@ -52,7 +55,7 @@ class TestModerated(unittest.TestCase):
         self.assertEqual(len(analyze_trace(policy_str, trace).errors), 1)
 
 class TestPromptInjection(unittest.TestCase):
-
+    @unittest.skipUnless(extras_available(transformers_extra), "At least one of transformers or torch are not installed")
     def test_prompt_injection(self):
         policy_str = """
         from invariant.detectors import prompt_injection
@@ -134,6 +137,7 @@ class TestSecrets(unittest.TestCase):
             'SLACK_TOKEN': ['abde-123456789012-1234567890123-1234567890123-1234567890123'],
         }
 
+    @unittest.skipUnless(extras_available(presidio_extra), "presidio-analyzer is not installed")
     def test_detect_valid_secrets(self):
         policy_str_template = """
         from invariant.detectors import secrets

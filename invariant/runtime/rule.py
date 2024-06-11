@@ -10,7 +10,6 @@ from itertools import product
 import textwrap
 import termcolor
 from invariant.runtime.input import Selectable, Input
-from invariant.stdlib.invariant.errors import PolicyViolation
 
 class PolicyAction:
     def __call__(self, input_dict):
@@ -38,6 +37,8 @@ class RaiseAction(PolicyAction):
         return res is not Unknown
 
     def __call__(self, input_dict, evaluation_context=None):
+        from invariant.stdlib.invariant.errors import PolicyViolation
+
         if type(self.exception_or_constructor) is ast.StringLiteral:
             return PolicyViolation(self.exception_or_constructor.value)
         elif isinstance(self.exception_or_constructor, ast.Expression):

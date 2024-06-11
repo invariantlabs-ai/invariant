@@ -12,7 +12,8 @@ from langchain_core.agents import AgentAction, AgentFinish, AgentStep, AgentActi
 
 from invariant import Policy, Monitor
 from langchain_openai import ChatOpenAI
-from invariant.integrations.langchain_integration import tool, create_openai_functions_agent, MutableAgentActionTuple, MonitoringAgentExecutor
+from langchain.agents import tool, create_openai_functions_agent
+from invariant.integrations.langchain_integration import MutableAgentActionTuple, MonitoringAgentExecutor
 from invariant.stdlib.invariant.errors import PolicyViolation
 from invariant.stdlib.invariant import ToolCall
 

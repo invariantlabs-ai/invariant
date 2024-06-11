@@ -1,6 +1,5 @@
 import re
 from invariant.runtime.utils.base import BaseDetector, DetectorResult
-from presidio_analyzer import Pattern, PatternRecognizer
 
 # Patterns from https://github.com/Yelp/detect-secrets/tree/master/detect_secrets/plugins
 # TODO: For now, we run everything with re.IGNORECASE, ignoring the flags below
@@ -31,7 +30,10 @@ class SecretsAnalyzer(BaseDetector):
     def __init__(self):
         super().__init__()
 
-    def get_recognizers(self) -> list[PatternRecognizer]:
+    def get_recognizers(self) -> list['PatternRecognizer']:
+        from invariant.extras import presidio_extra
+        [Pattern, PatternRecognizer] = presidio_extra.package("presidio_analyzer").import_names('Pattern', 'PatternRecognizer')
+
         self.secret_recognizers = []
         for secret, regex_pattern in SECRETS_PATTERNS.items():
             patterns = [

@@ -1,5 +1,4 @@
 from invariant.language.ast import *
-from invariant.stdlib.invariant import ToolCall
 from invariant.runtime.patterns import SemanticPatternMatcher
 from invariant.language.scope import InputData
 from dataclasses import dataclass

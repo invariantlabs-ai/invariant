@@ -10,7 +10,8 @@ from langchain import hub
 
 from invariant import UnhandledError, Monitor
 from langchain_openai import ChatOpenAI
-from invariant.integrations.langchain_integration import MonitoringAgentExecutor, tool, create_openai_functions_agent, MutableAgentActionTuple
+from langchain.agents import tool, create_openai_functions_agent
+from invariant.integrations.langchain_integration import MonitoringAgentExecutor
 from invariant.stdlib.invariant import ToolCall
 
 @dataclass
