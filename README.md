@@ -115,7 +115,7 @@ raise AccessControlViolation("unauthorized access", user=input.user, tool=call_r
     # check each retrieved chunk
     (chunk: dict) in call_result.results
     # does the current user have access to the chunk?
-    not should_allow(chunk, "db1", input.user, user_roles, role_grants)
+    not should_allow_rbac(chunk, "db1", input.user, user_roles, role_grants)
 ```
 
 This RBAC policy ensures that only users with the correct roles can access the data retrieved by the agent. If they cannot, the analyzer will raise an `AccessControlViolation` error, which can then be handled by the agent (e.g. by filtering out the unauthorized chunks) or raise an alert to the system administrator.
