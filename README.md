@@ -24,18 +24,21 @@ or [Detect Vulnerabilities in Your Code Generation Systems](#detect-vulnerabilit
 
 ## Why Agent Security Matters
 
-As AI agents are becoming a reality, it has already been shown very clearly that these systems come with immense and [novel kinds of security risks](https://kai-greshake.de/posts/in-escalating-order-of-stupidity/): Any LLM-based system that performs **critical write operations in the real world**, can suffer from **model failure, prompt injections and data breaches**, which can have severe and destructive consequences. Web-browsing agents like Bing, can be [compromised using indirect prompt injection attacks](https://greshake.github.io), LLM-based applications build with e.g. `langchain` can be [exploited for remote code execution](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-29374) and Google Bard was easily tricked into [leaking your private data and conversations](https://embracethered.com/blog/posts/2023/google-bard-data-exfiltration/). 
-The Invariant security analyzer is designed to address these issues, by not just checking LLM inputs for injections, but by contextually analyzing and constraining AI agents in what they can do, to prevent these kinds of attacks and failures.
+As AI agents are becoming a reality, it has already been shown very clearly that these systems come with immense and [novel kinds of security risks](https://kai-greshake.de/posts/in-escalating-order-of-stupidity/): Any LLM-based system that performs **critical write operations in the real world**, can suffer from **model failure, prompt injections and data breaches**, which can have severe and destructive consequences. Web-browsing agents like Bing, can be [compromised using indirect prompt injection attacks](https://greshake.github.io), LLM-based applications build with can be exploited for remote code execution and other issues (e.g. [CVE-2023-29374](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-29374), [CVE-2023-32786](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-32786) and [CVE-2023-32785](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-32785)), and Google Bard was easily tricked into [leaking your private data and conversations](https://embracethered.com/blog/posts/2023/google-bard-data-exfiltration/). 
 
-<!-- AI agents are a powerful new paradigm in computing, finding applications in customer support, software engineering, and data analysis. However, these systems are also vulnerable to novel types of security issues like model failure, non-deterministic behavior, prompt injections and data breaches. Due to the versatility and complexity of these systems, traditional security tools and simple safeguards are often insufficient to protect them from sophisticated attacks and failures. The Invariant Security Analyzer is designed to address these challenges by providing an advanced security scanning tool that can track agent behavior and detects security patterns and vulnerabilities, using classifiers, rule-matching and dataflow analysis techniques. -->
+A simple indirect prompt injection can easily leak sensitive and private user data, making the deployment of AI agents inherently risky. Consider for example the following injection attack on an personal email assistant:
+
+![image](https://github.com/invariantlabs-ai/invariant/assets/17903049/f859f64b-5730-488b-9e80-fd319d9a4a9d)
+
+The Invariant security analyzer can detect such attacks by leveraging deep contextual understanding of the agent's context and data flow. For this, it relies on a purpose-built rule matching engine based on dataflow analysis, and a rich policy language for defining security policies and constraints.
 
 ## Features
 
-* Many *built-in checkers* for detecting **sensitive data, prompt injections, moderation violations, and more.**
+* A library of *built-in checkers* for detecting **sensitive data, prompt injections, moderation violations, and more.** 
 
-* [Expressive rule language](#policy-language) for defining security policies and constraints with support for incremental checking.
+* [An expressive policy language](#policy-language) for defining security policies and constraints with support for incremental checking.
 
-* [Dataflow analysis for tracking flows](#policy-language) of private and untrusted data inbetween agents, APIs and services.
+* [Dataflow analysis for a contextual understanding](#policy-language) of private and untrusted flows, allowing for fine-grained security checks.
 
 * [Real-time monitoring](#real-time-monitoring-of-an-openai-agent) and analysis of AI agents and other tool-calling LLM applications.
 
