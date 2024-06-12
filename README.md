@@ -124,7 +124,7 @@ As shown here, the analyzer can be used to detect the flows of interest, select 
 
 <hr/>
 
-**Vulnerability**: An AI agent that generates and executes code may be tricked into executing malicious code, leading to data breaches or unauthorized access to sensitive data. For instance, `langchain`-based code generation agents, were shown to be vulnerable to [remote code execution attacks](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-29374).
+**Vulnerability**: An AI agent that generates and executes code may be tricked into executing malicious code, leading to data breaches or unauthorized access to sensitive data. For instance, `langchain`-based code generation agents, were shown to be vulnerable to [remote code execution attacks (CVE-2023-29374)](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-29374).
 
 <hr/>
 
