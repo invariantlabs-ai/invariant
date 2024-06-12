@@ -152,7 +152,7 @@ This policy prevents an agent from following malicious instructions that may be 
 
 <hr/>
 
-**Vulnerability**: RAG pipelines rely on private data to augment the LLM generation process. It has also been shown however, that data exposed to the generating LLM, can be extracted by user queries. This means, a RAG application can also be [exploited](https://arxiv.org/pdf/2402.16893v1) by [attackers](https://kai-greshake.de/posts/in-escalating-order-of-stupidity/) to access otherwise protected information if not properly secured.
+**Vulnerability**: RAG pipelines rely on private data to augment the LLM generation process. It has been shown however, that data exposed to the generating LLM, can be extracted by user queries. This means, a RAG application can also be [exploited](https://arxiv.org/pdf/2402.16893v1) by [attackers](https://kai-greshake.de/posts/in-escalating-order-of-stupidity/) to access otherwise protected information if not properly secured.
 
 <hr/>
 
