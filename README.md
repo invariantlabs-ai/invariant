@@ -89,7 +89,7 @@ policy.analyze(messages)
 
 Here, we analzye the agent trace of the attack scenario from above, where both _untrusted_ and _sensitive_ data enter the agent's context and eventually lead to a data leak. By [specifying a corresponding policy](#policy-language), we can, based on the information flow of the agent, detect that sensitive data was leaked to an unauthorized recipient. Additionally, not only can the analyzer be used to detect such cases, it can also help you monitor and secure your AI agents during runtime, by [analyzing their data flows in real-time](#real-time-monitoring-of-an-openai-agent).
 
-If you want to learn more, for instance how to implement more advanced policies, read the [documentation](#documentation) below or continue reading about different [example use cases](#use-cases).
+To learn more read the [documentation](#documentation) below or continue reading about different [example use cases](#use-cases).
 
 ## Use Cases
 
@@ -242,7 +242,7 @@ call2 is tool:send_email({
 
 Secondly, the first call must be a `get_inbox` call, and the second call must be a `send_email` call with a recipient that does not have an `acme.com` email address, as expressed by the regular expression `^[^@]*@(?!acme\\.com)`. 
 
-If the specified conditions are met, we consider the rule as triggered, and an application of the policy to an agent trace will return the specified error message.
+If the specified conditions are met, we consider the rule as triggered, and a relevant policy violation will be raised.
 
 #### Trace Format
 
