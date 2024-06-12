@@ -98,7 +98,7 @@ class ImportScoping(Transformation):
         return node
 
 
-class Scoping(Transformation):
+class Scoping(RaisingTransformation):
     def __init__(self, global_scope) -> None:
         super().__init__()
         self.global_scope = global_scope
@@ -152,6 +152,7 @@ class Scoping(Transformation):
     def visit_RuleBody(self, stmts: list[Node]):
         collector = CollectVariableDeclarations(self.global_scope)
         collector.visit(stmts)
+        self.errors.extend(collector.errors)
         return stmts, declarations_to_dict(collector.declarations)
 
 
@@ -256,13 +257,15 @@ def typing(policy: PolicyRoot):
     # fresh scope for all imports in this policy file
     module_scope = Scope(parent=GlobalScope, name="global")
     ImportScoping(module_scope).visit(policy)
-    Scoping(module_scope).visit(policy)
+    scoping_transform = Scoping(module_scope)
+    scoping_transform.visit(policy)
+    # collect scoping errors
+    policy.errors.extend(scoping_transform.errors)
 
     # type check the policy
     typing_transform = TypingTransformation()
     typing_transform.visit(policy)
-    
-    # assert typing_transform.errors == [], "failed to type check"
-    policy.errors = typing_transform.errors
+    # collect typing errors
+    policy.errors.extend(typing_transform.errors)
 
     return policy

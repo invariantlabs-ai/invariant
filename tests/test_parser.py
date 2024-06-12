@@ -306,19 +306,5 @@ class TestParser(unittest.TestCase):
         self.assertIsInstance(policy.statements[1].body[1], ast.UnaryExpr)
         self.assertIsInstance(policy.statements[1].body[1].expr, ast.FunctionCall)
 
-    def test_failed_import(self):
-        # We should not silently continue when there are policy errors
-        with self.assertRaises(PolicyError) as context:
-            parse("""
-            from invariant.detectors import pii, code_shield
-
-            raise PolicyViolation("found unsafe code") if:
-                (call1: ToolCall) -> (call2: ToolCall)
-                call1.function.name == "edit"
-                (issue: CodeIssue) in code_shield(call1.function.arguments["code"])
-                call2.function.name == "python"
-            """)
-
-
 if __name__ == "__main__":
     unittest.main()

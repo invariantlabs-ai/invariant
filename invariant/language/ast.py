@@ -2,6 +2,8 @@
 Invariant Policy Language AST nodes.
 """
 import re
+import io
+import sys
 import contextvars
 import textwrap
 import termcolor
@@ -37,6 +39,23 @@ class PolicyError(ValueError):
             "message": str(e),
             "type": type(e).__name__
         }
+    
+    @staticmethod
+    def error_report(errors: list[Exception]):
+        output = io.StringIO()
+
+        for error in errors:
+            # handle 'PolicyError'
+            if hasattr(error, "node") and error.node is not None:
+                node: Node = error.node
+                node.location.print_error(error, margin=1, output=output)
+                output.write(f"\n")
+            # handle other, e.g. lark parsing errors
+            else:
+                # Location.UNKNOWN.print_error(error, margin=1, output=output)
+                output.write(str(error) + "\n")
+        
+        return output.getvalue()
 
 class SourceCode:
     def __init__(self, code, path=None, verbose=False):
@@ -44,28 +63,33 @@ class SourceCode:
         self.code: str = code
         self.verbose: bool = verbose
 
-    def print_error(self, e, error_line, error_column, window=3, margin=0):
+    def print_error(self, e, error_line, error_column, window=3, margin=0, output=None):
         if not self.verbose:
             return
         
+        # by default, we print to stderr
+        output = output or sys.stderr
+
         lines = self.code.split("\n")
-        print("\n" * margin, end="")
+        print("\n" * margin, end="", file=output)
         if self.path:
-            print(termcolor.colored(f"File {self.path}:{error_line+1}", "green"))
+            print(termcolor.colored(f"File {self.path}:{error_line+1}", "green"), file=output)
         for i in range(error_line - window, error_line + window + 1):
             if i == error_line:
                 print(
                     termcolor.colored(
                         f"{i+1:3}{'*' if i == error_line else ' '} | {lines[i]}", "red"
-                    )
+                    ),
+                    file=output,
                 )
-                termcolor.cprint("     | " + " " * (error_column - 1) + "^", "yellow")
+                termcolor.cprint("     | " + " " * (error_column - 1) + "^", "yellow", file=output)
                 termcolor.cprint(
-                    "     | " + "\n".join(str(e).split("\n")[0:]), "yellow"
+                    "     | " + "\n".join(str(e).split("\n")[0:]), "yellow",
+                    file=output
                 )
             elif i >= 0 and i < len(lines):
-                print(f"{i+1:3}  | {lines[i]}")
-        print("\n" * margin, end="")
+                print(f"{i+1:3}  | {lines[i]}", file=output)
+        print("\n" * margin, end="", file=output)
 
     def get_line(self, location):
         return self.code.split("\n")[location.line][location.column-1:]
@@ -82,21 +106,20 @@ class Location:
     def __repr__(self):
         return str(self)
 
-    def print_error(self, e, window=3, margin=0):
+    def print_error(self, e, window=3, margin=0, output=None):
         if not self.code:
             print(str(e), "(cannot localize error, no source document set)")
             return
-        self.code.print_error(e, self.line, self.column, window=window, margin=margin)
+        self.code.print_error(e, self.line, self.column, window=window, margin=margin, output=output)
 
     @classmethod
     def from_items(cls, items, mappings, code):
         if len(items) > 0 and isinstance(items[0], Node):
             return items[0].location
-
         try:
             item_line, item_column = items.line, items.column
             item_line, char = mappings.get(items.line, (0, 0))
-            item_column += char - 1
+            # item_column += char - 1
             return cls(item_line, item_column, code)
         except AttributeError:
             return cls.UNKNOWN
@@ -714,10 +737,11 @@ class RaisingTransformation(Transformation):
         rereaise (bool, optional): If True, rereaises all PolicyErrors that occur during 
             the transformation instead of re-raising them. Defaults to True.
     """
-    def __init__(self, reraise=False):
+    def __init__(self, reraise=False, printing=True):
         super().__init__()
         self.errors = []
-        self.reraise = reraise 
+        self.reraise = reraise
+        self.printing = printing
 
     def visit(self, node: Node | Any | PolicyRoot):
         try:
@@ -725,7 +749,6 @@ class RaisingTransformation(Transformation):
         except PolicyError as e:
             if hasattr(e, "node") and e.node is None:
                 e.node = node
-            node.location.print_error(e, margin=1)
             self.errors.append(e)
             if self.reraise:
                 raise e from None

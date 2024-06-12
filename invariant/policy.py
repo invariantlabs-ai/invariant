@@ -4,6 +4,7 @@ from invariant.language.ast import PolicyError, PolicyRoot
 from invariant.runtime.rule import RuleSet, Input
 import inspect
 import textwrap
+import io
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from functools import partial
@@ -47,6 +48,18 @@ class AnalysisResult:
     def __repr__(self):
         return self.__str__()
 
+@dataclass
+class PolicyLoadingError(Exception):
+    """
+    This exception is raised when a policy could not be loaded due to errors in 
+    the policy source (parsing, scoping, typing, validation, etc.).
+    """
+    msg: str
+    errors: list[PolicyError]
+
+    def __str__(self):
+        return self.msg
+
 class Policy:
     """
     A policy is a set of rules that are applied to an application state.
@@ -79,7 +92,8 @@ class Policy:
         """
         self.policy_root = policy_root
         if not (policy_root and len(policy_root.errors) == 0):
-            raise ValueError(f"failed to create policy from policy source. please check the output for errors.")
+            msg = f"Failed to create policy from policy source. The following errors were found:\n{PolicyError.error_report(policy_root.errors)}"
+            raise PolicyLoadingError(msg, policy_root.errors)
         self.rule_set = RuleSet.from_policy(policy_root, cached=cached)
         self.cached = cached
 

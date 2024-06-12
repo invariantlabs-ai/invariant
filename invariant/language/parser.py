@@ -130,9 +130,9 @@ def parse_indents(text):
                 if result.rstrip().endswith(":")
                 else result.rstrip()[:-2]
             )
-            result = result_stripped + " |INDENT|" * (n - indent) + "\n"
+            result = result_stripped + (" |INDENT|" * (n - indent))
             indent = n
-            line = line[n * indent_unit :]
+            line = line #[n * indent_unit :]
 
         dedents = ""
         while n < indent:
@@ -182,15 +182,14 @@ class IPLTransformer(lark.Transformer):
         return items[0]
 
     def full_import(self, items):
-        return Import(items[0].name, [], alias=items[0].alias)
-
+        return Import(items[0].name, [], alias=items[0].alias).with_location(self.loc(items))
     def from_import(self, items):
-        return Import(items[0], self.filter(items[1:]))
+        return Import(items[0], self.filter(items[1:])).with_location(self.loc(items))
 
     def import_spec(self, items):
         if len(items) == 1:
-            return ImportSpecifier(items[0].name, None)
-        return ImportSpecifier(items[0], items[1].name)
+            return ImportSpecifier(items[0].name, None).with_location(self.loc(items))
+        return ImportSpecifier(items[0], items[1].name).with_location(self.loc(items))
 
     def IMPORT_MODULE(self, items):
         return str(items)
@@ -208,16 +207,16 @@ class IPLTransformer(lark.Transformer):
     def def_stmt(self, items):
         return FunctionDefinition(
             items[0], self.filter(items[1:1]), self.filter(items[2:])
-        )
+        ).with_location(self.loc(items))
 
     def decl_stmt(self, items):
-        return Declaration(items[0], self.filter(items[1:]))
+        return Declaration(items[0], self.filter(items[1:])).with_location(self.loc(items))
 
     def func_signature(self, items):
-        return FunctionSignature(items[0], self.filter(items[1:]))
+        return FunctionSignature(items[0], self.filter(items[1:])).with_location(self.loc(items))
 
     def parameter_decl(self, items):
-        return ParameterDeclaration(items[0], items[1])
+        return ParameterDeclaration(items[0], items[1]).with_location(self.loc(items))
 
     def expr(self, items):
         return items[0]
@@ -228,35 +227,35 @@ class IPLTransformer(lark.Transformer):
     def binary_expr(self, items):
         if len(items) == 1:
             return items[0]
-        return BinaryExpr(items[0], items[1].strip(), items[2])
+        return BinaryExpr(items[0], items[1].strip(), items[2]).with_location(self.loc(items))
 
     def cmp_expr(self, items):
         if len(items) == 1:
             return items[0]
-        return BinaryExpr(items[0], items[1].strip(), items[2])
+        return BinaryExpr(items[0], items[1].strip(), items[2]).with_location(self.loc(items))
 
     def term(self, items):
         if len(items) == 1:
             return items[0]
-        return BinaryExpr(items[0], items[1].strip(), items[2])
+        return BinaryExpr(items[0], items[1].strip(), items[2]).with_location(self.loc(items))
 
     def factor(self, items):
         if len(items) == 1:
             return items[0]
-        return BinaryExpr(items[0], items[1].strip(), items[2])
+        return BinaryExpr(items[0], items[1].strip(), items[2]).with_location(self.loc(items))
 
     def power(self, items):
         if len(items) == 1:
             return items[0]
-        return BinaryExpr(items[0], items[1].strip(), items[2])
+        return BinaryExpr(items[0], items[1].strip(), items[2]).with_location(self.loc(items))
 
     def atom(self, items):
         if len(items) == 1:
             return items[0]
-        return BinaryExpr(items[0], items[1].strip(), items[2])
+        return BinaryExpr(items[0], items[1].strip(), items[2]).with_location(self.loc(items))
 
     def unary_expr(self, items):
-        return UnaryExpr(items[0].strip(), items[1])
+        return UnaryExpr(items[0].strip(), items[1]).with_location(self.loc(items))
 
     def typed_identifier(self, items):
         return TypedIdentifier(items[1].name, items[0].name).with_location(
@@ -273,7 +272,7 @@ class IPLTransformer(lark.Transformer):
         return (items[0].name, items[1])
 
     def object_literal(self, items):
-        return ObjectLiteral(items)
+        return ObjectLiteral(items).with_location(self.loc(items))
     
     def object_entry(self, items):
         key = items[0]
@@ -283,10 +282,10 @@ class IPLTransformer(lark.Transformer):
             key = key.value
         else:
             key = str(key)
-        return ObjectEntry(key, items[1])
+        return ObjectEntry(key, items[1]).with_location(self.loc(items))
 
     def list_literal(self, items):
-        return ArrayLiteral(items)
+        return ArrayLiteral(items).with_location(self.loc(items))
     
     def STAR(self, items):
         return Wildcard().with_location(self.loc(items))
@@ -353,9 +352,9 @@ class IPLTransformer(lark.Transformer):
 
     def NUMBER(self, items):
         try:
-            return NumberLiteral(int(str(items)))
+            return NumberLiteral(int(str(items))).with_location(self.loc(items))
         except ValueError:
-            return NumberLiteral(float(str(items)))
+            return NumberLiteral(float(str(items))).with_location(self.loc(items))
 
     def loc(self, items):
         return Location.from_items(items, self.line_mappings, self.source_code)
@@ -428,12 +427,17 @@ def parse(text, path=None, verbose=True):
 
         line, char = mappings.get(error_line, (0, 0))
         error_line = line
-        error_column += char
+        # error_column += char
 
-        # get 2 lines before and after the error line
-        source_code.print_error(e, error_line, error_column, 2)
+        policy = PolicyRoot([])
 
-        return None
+        error_node = Node().with_location(Location(error_line, error_column, source_code))
+        policy.errors = [PolicyError(str(e), error_node)]
+
+        # # get 2 lines before and after the error line
+        # source_code.print_error(e, error_line, error_column, 2)
+
+        return policy
 
 def parse_file(file):
     with open(file) as f:
