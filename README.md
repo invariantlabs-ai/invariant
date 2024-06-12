@@ -196,6 +196,7 @@ This section provides a detailed overview of the analyzer's components, includin
     * [Trace Format](#trace-format)
     * [Custom Error Types](#custom-error-types)
     * [Predicates](#predicates)
+    * [Semantic Tool Call Matching](#semantic-tool-call-matching)
 - [Integration](#integration)
     * [Analyzing Agent Traces](#analyzing-agent-traces)
     * [Real-Time Monitoring of an OpenAI Agent](#real-time-monitoring-of-an-openai-agent)
