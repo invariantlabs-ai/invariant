@@ -202,7 +202,15 @@ This section provides a detailed overview of the analyzer's components, includin
     * [Real-Time Monitoring of an OpenAI Agent](#real-time-monitoring-of-an-openai-agent)
     * [Real-Time Monitoring of a `langchain` Agent](#real-time-monitoring-of-a-langchain-agent)
     * [Automatic Issue Resolution (Handlers)](#automatic-issue-resolution-handlers)
-
+- [Standard Library](#standard-library)
+    * [Sensitive Data Detection](#sensitive-data-detection)
+    * [Prompt Injection Detection](#prompt-injection-detection)
+    * [Moderation Violation Detection](#moderation-violation-detection)
+    * [Code Analysis And Secrets Scanning](#code-analysis-and-secrets-scanning)
+    * [Custom Checkers](#custom-checkers)
+- [Development](#development)
+    * [Testing](#testing)
+    * [Dependency Management and Extras](#dependency-management-and-extras)
 ### Policy Language
 
 The Invariant Policy language is a domain-specific language (DSL) for defining security policies and constraints of AI agents and other LLM-based systems. It is designed to be expressive, flexible, and easy to use, allowing users to define complex security properties and constraints in a concise and readable way.
@@ -647,6 +655,63 @@ However, this feature is still _under development_ and not intended to be used i
 ### Roadmap
 
 _More Information Coming Soon_
+
+<!-- * [Sensitive Data Detection](#sensitive-data-detection)
+    * [Prompt Injection Detection](#prompt-injection-detection)
+    * [Moderation Violation Detection](#moderation-violation-detection)
+    * [Code Analysis And Secrets Scanning](#code-analysis-and-secrets-scanning)
+    * [Custom Checkers](#custom-checkers) -->
+
+## Standard Library
+
+The Invariant Security Analyzer comes with a built-in standard library of checkers and predicates that can be used to detect common security issues and data types. The standard library is designed to be extensible, allowing you to add custom checkers and predicates to suit your specific needs.
+
+### Sensitive Data Detection
+
+The standard library includes a set of checkers for detecting sensitive data in agent traces. These checkers can be used to detect and prevent the leakage of sensitive information, such as personally identifiable information (PII), passwords, and other confidential data.
+
+The available checkers are defined in [`invariant/stdlib/detectors/pii.py`](./invariant/stdlib/invariant/detectors/pii.py). For example, it can be used to analyze agent traces for PII leaks:
+
+```python
+from invariant.detectors import pii
+
+raise PolicyViolation("found pii", msg) if:
+    (msg: Message)
+    'EMAIL_ADDRESS' in pii(msg)
+```
+
+### Prompt Injection Detection
+
+> **Disclaimer:** Note that classifier-based prompt injection detection [is inherently flawed](https://lve-project.org/blog/how-effective-are-llm-safety-filters.html) and cannot be used as the only security measure, as classifiers can easily be tricked or circumvented. That's why it's important not to rely solely on prompt injection classifiers, but also to leverage more advanced techniques like semantic matching and data flow analysis, as provided by the Invariant analyzer.
+
+The standard library also includes checkers for statically detecting prompt injections that may be contained in individual messages or tool calls. 
+
+The available checkers are defined in [`invariant/stdlib/detectors/prompt_injection.py`](./invariant/stdlib/invariant/detectors/prompt_injection.py). For example, it can be used to analyze agent traces for prompt injections:
+
+```python
+from invariant.detectors.prompt_injection import prompt_injection
+
+raise PolicyViolation("prompt injection found in tool output", call=out) if:
+    (out: ToolOutput)
+    prompt_injection(out, threshold=0.8, model="<model>")
+```
+
+A `threshold` parameter can be used to adjust the sensitivity of the prompt injection detection, as some classifiers may have a higher false positive rate than others. The `model` parameter can be used to specify the name of the prompt injection detection model as available on [Hugging Face](https://huggingface.co/models).
+
+### Moderation Violation Detection
+
+Another concern when building AI agents is to ensure that the agent's responses are appropriate and do not contain any inappropriate, toxic or harmful content. To address this, the standard library includes checkers for detecting moderation violations in agent responses.
+
+The available checkers are defined in [`invariant/stdlib/detectors/moderated.py`](./invariant/stdlib/invariant/detectors/moderation.py). For example, it can be used to analyze agent traces for moderation violations:
+
+```python
+from invariant.detectors.moderation import moderated
+
+raise PolicyViolation("assistant message triggered moderation layer", msg=msg) if:
+    (msg: Message)
+    msg.role == "assistant"
+    moderated(msg, cat_thresholds={"self-harm": 0.4})
+
 
 ## Development
 
