@@ -97,7 +97,7 @@ If you want to learn more, for instance how to implement more advanced policies,
 
 <hr/>
 
-**Vulnerability**: An AI agent that is connected to sensitive data sources (e.g. emails, calendars) can be hijacked by attackers to leak sensitive data, e.g. in the past Google Bard was tricked into [leaking your private data and conversations](https://embracethered.com/blog/posts/2023/google-bard-data-exfiltration/).
+**Vulnerability**: An AI agent that is connected to sensitive data sources (e.g. emails, calendars) can be hijacked by attackers to leak sensitive information, e.g. in the past Google Bard was tricked into [leaking your private data and conversations](https://embracethered.com/blog/posts/2023/google-bard-data-exfiltration/).
 
 <hr/>
 
