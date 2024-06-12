@@ -106,6 +106,6 @@ class CodeShieldDetector(BaseDetector):
         if res.issues_found is None:
             return []
         return [
-            CodeIssue(description=issue.description, severity=str(issue.severity))
+            CodeIssue(description=issue.description, severity=str(issue.severity).lower())
             for issue in res.issues_found
         ]

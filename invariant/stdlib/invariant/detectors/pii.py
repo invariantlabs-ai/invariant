@@ -23,4 +23,4 @@ def pii(data: str | list, **config):
         if message["content"] is None:
             continue
         all_pii.extend(PII_ANALYZER.detect_all(message["content"]))
-        return all_pii
+    return all_pii

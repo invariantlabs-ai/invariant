@@ -216,16 +216,16 @@ class TestCodeShieldDetector(unittest.TestCase):
 
         raise PolicyViolation("found issues via code shield", out) if:
             (out: ToolOutput)
-            3 > 2
-            # "world" in out.content
-            # (issue: CodeIssue) in code_shield(out)
-            # issue.severity in ["warning", "error"]
+            (issue: CodeIssue) in code_shield(out)
+            issue.severity in ["warning", "error"]
         """
         trace = [tool("1", "def hashString(input):\n\treturn hashlib.md5(input)")]
         self.assertGreater(len(analyze_trace(policy_str, trace).errors), 0)
-        return
+        trace = [tool("1", "eval(input)")]
+        self.assertGreater(len(analyze_trace(policy_str, trace).errors), 0)
         trace = [tool("1", "print('Hello, world!')")]
         self.assertEqual(len(analyze_trace(policy_str, trace).errors), 0)
+
 
 if __name__ == "__main__":
     unittest.main()
