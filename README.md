@@ -35,9 +35,9 @@ The Invariant security analyzer this type of vulnerability by leveraging deep co
 
 * A library of *built-in checkers* for detecting **sensitive data, prompt injections, moderation violations, and more.** 
 
-* [An expressive policy language](#policy-language) for defining security policies and constraints with support for incremental checking.
+* [An expressive policy language](#policy-language) for defining security policies and constraints.
 
-* [Dataflow analysis for a contextual understanding](#policy-language) of private and untrusted flows, allowing for fine-grained security checks.
+* [Data flow analysis for a contextual understanding](#policy-language) of agent behavior, allowing for fine-grained security checks.
 
 * [Real-time monitoring](#real-time-monitoring-of-an-openai-agent) and analysis of AI agents and other tool-calling LLM applications.
 
@@ -188,12 +188,13 @@ The shown policy is _parameterized_, where `input.user` is a parameter provided 
 
 This section provides a detailed overview of the analyzer's components, including the policy language, integration with AI agents, and the available built-in standard library.
 
-Table of Contents
+`Table` of Contents
 
 - [Getting Started](#getting-started)
 - [Policy Language](#policy-language)
     * [Example Rule](#example-rule)
     * [Trace Format](#trace-format)
+    * [Custom Error Types](#custom-error-types)
     * [Predicates](#predicates)
 - [Integration](#integration)
     * [Analyzing Agent Traces](#analyzing-agent-traces)
@@ -242,8 +243,6 @@ call2 is tool:send_email({
 Secondly, the first call must be a `get_inbox` call, and the second call must be a `send_email` call with a recipient that does not have an `acme.com` email address, as expressed by the regular expression `^[^@]*@(?!acme\\.com)`. 
 
 If the specified conditions are met, we consider the rule as triggered, and an application of the policy to an agent trace will return the specified error message.
-
-<!-- TODO: talk about `raise PolicyViolation(<msg>, **kwargs)` -->
 
 #### Trace Format
 
@@ -326,6 +325,29 @@ messages = [
 ```
 
 `ToolCalls` must be nested within `Message(role="assistant")` objects, and `ToolOutputs` are their own top-level objects.
+
+#### Custom Error Types
+
+By default `raise "<msg>" if: ...` rules will raise a `PolicyViolation` error. However, you can also return richer or entirely custom error types by raising a custom exception:
+
+```python
+# => PolicyViolation("user message found")
+raise "user message found" if: 
+    (msg: Message)
+    msg.role == "user"
+
+# => PolicyViolation("assistant message found", msg=msg)
+raise PolicyViolation("assistant message found", msg=msg) if: 
+    (msg: Message)
+    msg.role == "assistant"
+
+from my_project.errors import CustomError
+
+# => CustomError("tool message found", msg=msg)
+raise CustomError("tool message found", msg=msg) if: 
+    (msg: ToolOutput)
+    msg.role == "tool"
+```
 
 #### Predicates
 
