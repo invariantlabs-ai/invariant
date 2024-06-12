@@ -188,7 +188,7 @@ The shown policy is _parameterized_, where `input.user` is a parameter provided 
 
 This section provides a detailed overview of the analyzer's components, including the policy language, integration with AI agents, and the available built-in standard library.
 
-`Table` of Contents
+**Table of Contents**
 
 - [Getting Started](#getting-started)
 - [Policy Language](#policy-language)
@@ -250,7 +250,7 @@ The Invariant Policy Language operates on agent traces, which are sequences of m
 
 The policy language supports the following structural types, to quantify over different types of agent messages. All messages passed to the analyzer must be one of the following types:
 
-##### `Message`
+**`Message`**
 
 ```python
 class Message:
@@ -266,7 +266,7 @@ class Message:
 * **content** (`str`): The content of the message, e.g. a chat message or a tool call.
 * **tool_calls** (Optional[List[ToolCall]]): A list of tool calls made by the agent in response to the message.
 
-##### `ToolCall`
+**`ToolCall`**
 ```python
 class ToolCall:
     id: str
@@ -286,7 +286,7 @@ class FunctionCall:
     * **name** (`str`): The name of the function called.
     * **arguments** (`Dict[str, Any]`): The arguments passed to the function.
 
-##### `ToolOutput`
+**`ToolOutput`**
 
 ```python
 class ToolOutput:
@@ -389,11 +389,108 @@ raise PolicyViolation("The assistant should not reply affirmatively", message=ms
 
 Here, we define a predicate `is_affirmative_assistant` that checks if a message's content contains the words "yes" or "true". We then use this predicate in a rule that checks if the assistant specifically replies in an affirmative manner as defined by the predicate.
 
-#### Value Matching
+#### Semantic Tool Call Matching
 
+At the core of agent security is the ability to match and contextualize different types of tool uses. The Invariant Policy Language supports a variety of value matching techniques, including matching against regex, content (injections, PII, toxic content), and more.
 
+For this, so-called semantic matching is used, which allows users to precisedly match exactly the tool calls and data flows they are interested in. A semantic matching expression in the policy language looks like this:
 
-<!-- TODO #### Value Matching: write more about <EMAIL>, <LOCATION>, regex and moderated content matching-->
+```python
+# assuming some selected (call: ToolCall) variable
+call is tool:tool_name({
+    arg1: <EMAIL_ADDRESS>,
+    arg2: r"[0-9]{3}-[0-9]{2}-[0-9]{4}",
+    arg3: [
+        "Alice",
+        r"Bob|Charlie"
+    ]
+})
+```
+
+This expression evaluates to `True` for a `ToolCall` where the tool name is `tool_name`, and the arguments match the specified values. In this case, `arg1` must be an email address, `arg2` must be a date in the format `XXX-XX-XXXX`, and `arg3` must be a list, where the first element is `"Alice"` and the second element is either `"Bob"` or `"Charlie"`.
+
+<details>
+
+<summary> Expand to see All Supported Value Matching Expressions </summary>
+
+Overall, the following value matching expressions are supported:
+
+**Matching Personally Identifiable Information (PII)**
+```
+<EMAIL_ADDRESS|LOCATION|PHONE_NUMBER|PERSON>
+```
+Matches arguments that contain an email address, location, phone number, or person name, respectively.
+
+Example: `call is tool:tool_name({arg1: <EMAIL_ADDRESS>})`
+
+**Matching Regular Expressions**
+```
+r"<regex>"
+```
+Matches arguments that match the specified regular expression.
+
+Example: `call is tool:tool_name({arg1: r"[0-9]{3}-[0-9]{2}-[0-9]{4}"})`
+
+**Matching Content**
+```
+"<constant>"
+```
+Matches arguments that are equal to the specified constant.
+
+Example: `call is tool:tool_name({arg1: "Alice"})`
+
+**Matching Moderated Content**
+```
+<MODERATED>
+```
+Matches arguments that contain content that has been flagged as inappropriate or toxic.
+
+Example: `call is tool:tool_name({arg1: <MODERATED>})`
+
+**Matching Tool Calls**
+```
+call is tool:tool_name({ ... })
+```
+Matches tool calls with the specified tool name and arguments.
+
+Example: `call is tool:tool_name`
+
+**Matching Argument Objects**
+```
+{ "key1": <subpattern1>, "key2": <subpattern2>, ... }
+```
+Matches an object of tool call arguments, where each argument value matches the specified subpattern.
+
+Example: `call is tool:tool_name({ arg1: "Alice", arg2: r"[0-9]{3}-[0-9]{2}-[0-9]{4}" })`
+
+**Matching Lists**
+```
+[ <subpattern1>, <subpattern2>, ... ]
+```
+Matches a list of tool call arguments, where each element matches the specified subpattern.
+
+Example: `call is tool:tool_name({ arg1: ["Alice", r"Bob|Charlie"] })`
+
+**Wildcard Matching**
+```
+call is tool({ arg1: * })
+```
+Matches any tool call with the specified tool name, regardless of the arguments. A wildcard `*` can be used to match any value.
+
+Example: `call is tool:tool_name({ arg1: * })`
+
+</details>
+
+**Side-Conditions**
+
+In addition to a semantic pattern, you can also specify manual checks on individual arguments by accessing them via `call.function.arguments`:
+
+```python
+raise PolicyViolation("Emails should must never be sent to 'Alice'", call=call) if:
+    (call: ToolCall)
+    call is tool:send_email
+    call.function.arguments.to == "Alice"
+```
 
 <!-- TODO #### External Functions and Standard Library: write about different parts of the stdlib library, how to important functions and where they are defined -->
 
