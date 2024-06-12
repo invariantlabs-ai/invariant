@@ -3,7 +3,7 @@ import json
 from invariant import Policy
 from invariant.policy import analyze_trace
 from tests.utils import *
-from invariant.extras import extras_available, presidio_extra, transformers_extra
+from invariant.extras import extras_available, presidio_extra, transformers_extra, codeshield_extra
 
 class TestPII(unittest.TestCase):
     @unittest.skipUnless(extras_available(presidio_extra), "presidio-analyzer is not installed")
@@ -210,6 +210,7 @@ class TestCodeShieldDetector(unittest.TestCase):
         trace = [user("Hello, world!"), user("I am Bob!")]
         self.assertGreater(len(analyze_trace(policy_str, trace).errors), 0)
         
+    @unittest.skipUnless(extras_available(codeshield_extra), "codeshield is not installed")
     def test_code_shield(self):
         policy_str = """
         from invariant.detectors import code_shield, CodeIssue
