@@ -2,7 +2,7 @@ name: Run Tests (all extras)
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "ci-testing" ]
 
 permissions:
   contents: read
