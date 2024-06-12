@@ -29,7 +29,7 @@ A simple indirect prompt injection can easily leak sensitive and private user da
 
 ![image](https://github.com/invariantlabs-ai/invariant/assets/17903049/f859f64b-5730-488b-9e80-fd319d9a4a9d)
 
-The Invariant security analyzer this type of vulnerability by leveraging deep contextual understanding of an agent's context and data flow. For this, it relies on a [purpose-built rule matching engine](#analyzing-agent-traces) based on information flow analysis, and [an expressive policy language](#policy-language) for defining security policies and constraints.
+The Invariant security analyzer detects this type of vulnerability by leveraging deep contextual understanding of an agent's context and data flow. For this, it relies on a [purpose-built rule matching engine](#analyzing-agent-traces) based on information flow analysis, and [an expressive policy language](#policy-language) for defining security policies and constraints.
 
 ## Features
 
