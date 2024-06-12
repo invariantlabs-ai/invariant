@@ -33,7 +33,7 @@ The Invariant security analyzer detects this type of vulnerability by leveraging
 
 ## Features
 
-* A library of *built-in checkers* for detecting **sensitive data, prompt injections, moderation violations, and more.** 
+* A [library of *built-in checkers*](#standard-library) for detecting **[sensitive data](#sensitive-data-detection-personal-identifiable-information), [prompt injections](#prompt-injection-detection), [moderation violations](#moderation-violation-detection), and more.** 
 
 * [An expressive policy language](#policy-language) for defining security policies and constraints.
 
@@ -203,7 +203,7 @@ This section provides a detailed overview of the analyzer's components, includin
     * [Real-Time Monitoring of a `langchain` Agent](#real-time-monitoring-of-a-langchain-agent)
     * [Automatic Issue Resolution (Handlers)](#automatic-issue-resolution-handlers)
 - [Standard Library](#standard-library)
-    * [Sensitive Data Detection](#sensitive-data-detection)
+    * [Sensitive Data Detection](#sensitive-data-detection-personal-identifiable-information)
     * [Prompt Injection Detection](#prompt-injection-detection)
     * [Moderation Violation Detection](#moderation-violation-detection)
     * [Code Analysis And Secrets Scanning](#code-analysis-and-secrets-scanning)
