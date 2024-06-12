@@ -182,7 +182,7 @@ raise AccessControlViolation("unauthorized access", user=input.username, chunk=c
 
 This RBAC policy ensures that only users with the correct roles can access the data retrieved by the agent. If they cannot, the analyzer will raise an `AccessControlViolation` error, which can then be handled by the agent (e.g. by filtering out the unauthorized chunks) or raise an alert to the system administrator.
 
-The shown policy is _parameterized_, where `input.user` is a parameter provided depending on the evaluation context. For instance, in this case the policy is only violated if `user` is `alice`, but not if `user` is `bob`. This allows for more policies that are aware of the authorization context and can be used to enforce fine-grained access control policies.
+The shown policy is _parameterized_, where `input.user` is a parameter provided depending on the evaluation context. For instance, in this case the policy is only violated if `user` is `alice`, but not if `user` is `bob`. This allows for policies that are aware of the authorization context and can be used to enforce fine-grained access control policies.
 
 ## Documentation
 
