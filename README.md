@@ -142,7 +142,7 @@ This policy prevents an agent from following malicious instructions that may be 
 
 ### Enforce Access Control In Your RAG-based Chat Agent
 
-> **Vulnerability**: Retrieval-augmented chat agents that access private data, can allow unauthorized users to access sensitive information that they otherwise should not have access to. 
+> **Vulnerability**: RAG pipelines rely on private data to augment the LLM generation process. It has also been shown however, that data exposed to the generating LLM, can be extracted by user queries. This means, a RAG application can also be [exploited](https://arxiv.org/pdf/2402.16893v1) by [attackers](https://kai-greshake.de/posts/in-escalating-order-of-stupidity/) to access otherwise protected information if not properly secured.
 
 Retrieval-Augmented Generation (RAG) is a popular method to enhance AI agents with private knowledge and data. However, during information retrieval, it is important to ensure that the agent does not violate access control policies, e.g. enabling unauthorized access to sensitive data, especially when strict access control policies are to be enforced.
 
