@@ -95,7 +95,11 @@ If you want to learn more, for instance how to implement more advanced policies,
 
 ### Prevent Data Leaks In Your Productivity Agent
 
-> **Vulnerability**: An AI agent that is connected to sensitive data sources (e.g. emails, calendars) can inadvertently leak sensitive data to unauthorized parties, e.g. in the past Google Bard was tricked into [leaking your private data and conversations](https://embracethered.com/blog/posts/2023/google-bard-data-exfiltration/).
+<hr/>
+
+**Vulnerability**: An AI agent that is connected to sensitive data sources (e.g. emails, calendars) can inadvertently leak sensitive data to unauthorized parties, e.g. in the past Google Bard was tricked into [leaking your private data and conversations](https://embracethered.com/blog/posts/2023/google-bard-data-exfiltration/).
+
+<hr/>
 
 In productivity agents (e.g. personal email assistants), sensitive data is forwarded between components such as email, calendar, and other productivity tools. This opens up the possibility of data leaks, where sensitive information is inadvertently shared with unauthorized parties. To prevent this, the analyzer can be used to check and enforce data flow policies.
 
@@ -118,7 +122,11 @@ As shown here, the analyzer can be used to detect the flows of interest, select 
 
 ### Detect Vulnerabilities in Your Code Generation Agent
 
-> **Vulnerability**: An AI agent that generates and executes code may be tricked into executing malicious code, leading to data breaches or unauthorized access to sensitive data. For instance, `langchain`-based code generation agents, were shown to be vulnerable to [remote code execution attacks](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-29374).
+<hr/>
+
+**Vulnerability**: An AI agent that generates and executes code may be tricked into executing malicious code, leading to data breaches or unauthorized access to sensitive data. For instance, `langchain`-based code generation agents, were shown to be vulnerable to [remote code execution attacks](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-29374).
+
+<hr/>
 
 When using AI agents that generate and execute code, a whole new set of security challenges arises. For instance, unsafe code may be generated or the agent may be actively tricked into executing malicious code, which in turn extracts secrets or private data, such as proprietary code, passwords, or other access credentials.
 
@@ -142,7 +150,11 @@ This policy prevents an agent from following malicious instructions that may be 
 
 ### Enforce Access Control In Your RAG-based Chat Agent
 
-> **Vulnerability**: RAG pipelines rely on private data to augment the LLM generation process. It has also been shown however, that data exposed to the generating LLM, can be extracted by user queries. This means, a RAG application can also be [exploited](https://arxiv.org/pdf/2402.16893v1) by [attackers](https://kai-greshake.de/posts/in-escalating-order-of-stupidity/) to access otherwise protected information if not properly secured.
+<hr/>
+
+**Vulnerability**: RAG pipelines rely on private data to augment the LLM generation process. It has also been shown however, that data exposed to the generating LLM, can be extracted by user queries. This means, a RAG application can also be [exploited](https://arxiv.org/pdf/2402.16893v1) by [attackers](https://kai-greshake.de/posts/in-escalating-order-of-stupidity/) to access otherwise protected information if not properly secured.
+
+<hr/>
 
 Retrieval-Augmented Generation (RAG) is a popular method to enhance AI agents with private knowledge and data. However, during information retrieval, it is important to ensure that the agent does not violate access control policies, e.g. enabling unauthorized access to sensitive data, especially when strict access control policies are to be enforced.
 
