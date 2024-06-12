@@ -711,7 +711,17 @@ raise PolicyViolation("assistant message triggered moderation layer", msg=msg) i
     (msg: Message)
     msg.role == "assistant"
     moderated(msg, cat_thresholds={"self-harm": 0.4})
+```
 
+The `cat_thresholds` parameter can be used to specify the threshold for each moderation category, allowing you to adjust the sensitivity of the moderation violation detection.
+
+### Code Analysis And Secrets Scanning
+
+TODO
+
+### Custom Checkers
+
+TODO
 
 ## Development
 
