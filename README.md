@@ -248,7 +248,7 @@ If the specified conditions are met, we consider the rule as triggered, and a re
 
 The Invariant Policy Language operates on agent traces, which are sequences of messages and tool calls. For this, a simple JSON-based format is expected as an input to the analyzer. The format consists of a list of messages, based on the [OpenAI chat format](https://platform.openai.com/docs/guides/text-generation/chat-completions-api).
 
-For this we define the following structural types. To be addressable in the policy language, all messages passed to the analyzer must be in the following format:
+The policy language supports the following structural types, to quantify over different types of agent messages. All messages passed to the analyzer must be one of the following types:
 
 ##### `Message`
 
@@ -326,6 +326,30 @@ messages = [
 
 `ToolCalls` must be nested within `Message(role="assistant")` objects, and `ToolOutputs` are their own top-level objects.
 
+##### Debugging and Inspecting Inputs
+
+To inspect a trace input with respect to how the analyzer will interpret it, you can use the `Input.inspect()` method:
+
+```python
+from invariant import Input
+
+messages = [
+    { "role": "user", "content": "What's in my inbox?" },
+    { "role": "assistant", "content": "Here is your inbox." },
+    { "role": "assistant", "content": "Here is your inbox.", "tool_calls": [
+        {"id": "1", "type": "function", "function": { "name": "retriever", "arguments": {} }}
+    ]}
+]
+# inspect the input from analyzer's perspective
+Input.inspect(messages)
+# <root>:
+#   - Message: {'role': 'user', 'content': "What's in my inbox?"}
+#   - Message: {'role': 'assistant', 'content': 'Here is your inbox.'}
+#   - Message: {'role': 'assistant', 'content': 'Here is your inbox.', 'tool_calls': [{'id': '1', 'type': 'function', 'function': {'name': 'retriever', 'arguments': {}}}]}
+#     - ToolCall: {'id': '1', 'type': 'function', 'function': {'name': 'retriever', 'arguments': {}}}
+```
+
+
 #### Custom Error Types
 
 By default `raise "<msg>" if: ...` rules will raise a `PolicyViolation` error. However, you can also return richer or entirely custom error types by raising a custom exception:
@@ -365,6 +389,10 @@ raise PolicyViolation("The assistant should not reply affirmatively", message=ms
 
 Here, we define a predicate `is_affirmative_assistant` that checks if a message's content contains the words "yes" or "true". We then use this predicate in a rule that checks if the assistant specifically replies in an affirmative manner as defined by the predicate.
 
+#### Value Matching
+
+
+
 <!-- TODO #### Value Matching: write more about <EMAIL>, <LOCATION>, regex and moderated content matching-->
 
 <!-- TODO #### External Functions and Standard Library: write about different parts of the stdlib library, how to important functions and where they are defined -->
@@ -377,72 +405,51 @@ The following sections discuss both use cases in more detail, including how to m
 
 #### Analyzing Agent Traces
 
-The simplest way to use the analyzer is to analyze a pre-recorded agent trace. This can be useful to learning more about one's agent's behavior and to detect potential security issues.
+The simplest way to use the analyzer is to analyze a pre-recorded agent trace. This can be useful to learning more about agent behavior or to detect potential security issues.
 
 To get started, make sure your traces are in [the expected format](#trace-format) and define a policy that specifies the security properties you want to check for. Then, you can use the `Policy` class to analyze the trace:
 
 ```python
 from invariant import Policy
 
-# simple chat messages
-messages = [
-    {"role": "system", "content": "You are a helpful assistant."},
-    {"role": "user", "content": "What is the temperature in Paris, France?"},
-    # assistant calls tool
-    {
-        "role": "assistant", 
-        "content": None, 
-        "tool_calls": [
-            {
-                "id": "1",
-                "type": "function",
-                "function": {
-                    "name": "get_temperature",
-                    "arguments": {
-                        "x": "Paris, France"
-                    }
-                }
-            }
-        ]
-    },
-    {
-        "role": "tool",
-        "tool_call_id": "1",
-        "content": 2001
-    }
-]
-
 policy = Policy.from_string(
-r"""
-from invariant import Message, match, PolicyViolation, ToolCall, ToolOutput
-
-# check that the agent does not leak location data
-raise PolicyViolation("Location data was passed to a get_temperature call", call=call) if:
+"""
+# make sure the agent never leaks the user's email via search_web
+raise PolicyViolation("User's email address was leaked", call=call) if:
     (call: ToolCall)
-    call is tool:get_temperature({
-        x: <LOCATION>
+    call is tool:search_web({
+        q: <EMAIL_ADDRESS>
     })
 
-# check that the temperature is not too high
-raise PolicyViolation("get_temperature returned a value higher than 50", call=call) if:
-    (call: ToolOutput)
-    call.content > 50
+# web results should not contain 'France'
+raise PolicyViolation("A web result contains 'France'", call=result) if:
+    (result: ToolOutput)
+    result is tool:search_web
+    "France" in result.content
 """)
+
+# simple chat messages
+messages = [
+    {"role": "system", "content": "You are a helpful assistant. Your user is signed in as bob@mail.com"},
+    {"role": "user", "content": "Please do some reasearch on Paris."},
+    # assistant calls 'search_web' tool
+    {"role": "assistant", "content": None, "tool_calls": [ { "id": "1", "type": "function",
+     "function": { "name": "search_web", "arguments": { "q": "bob@mail.com want's to know about Paris" }}}]},
+    {"role": "tool", "tool_call_id": "1", "content": "Paris is the capital of France."}
+]
 
 policy.analyze(messages)
 # AnalysisResult(
 #   errors=[
-#     PolicyViolation(Location data was passed to a get_temperature call, call={'id': '1', 'type': 'function', 'function':
-#     {'name': 'get_temperature', 'arguments': {'x': 'Paris, France'}}})
-#     PolicyViolation(get_temperature returned a value higher than 50, call={'role': 'tool', 'tool_call_id': '1', 'content':
-#     2001})
+#     PolicyViolation(User's email address was leaked, call={...})
+#     PolicyViolation(A web result contains 'France', call={...})
 #   ]
 # )
 ```
 
-In this example, we define a policy that checks two things: (1) whether location data is passed to a `get_temperature` call, and (2) whether the result is higher than 50. These properties may be applicable when the agent is not supposed to handle location data, to prevent leaking personally-identifiable data (PII), or when the temperature is expected to be below a certain threshold (e.g. for sanity checks). For PII checks, the analyzer relies on the [`presidio-analyzer`](https://github.com/microsoft/presidio) library, but can also be extended to detect and classify other types of sensitive data. 
+In this example, we define a policy that checks two things: (1) whether the user's email address is leaked via the `search_web` tool, and (2) whether the search results contain the word "France". We then analyze a message trace to check for these properties. These properties may be desirable to prevent that a web browsing agent leaks personally-identifiable information (PII) about the user or returns inappropriate search results. For PII checks, the analyzer relies on the [`presidio-analyzer`](https://github.com/microsoft/presidio) library, but can also be extended to detect and classify other types of sensitive data. 
 
-Since both specified security properties are violated by the given message trace, the analyzer returns an `AnalysisResult` with two `PolicyViolation` errors.
+Since both specified security properties are violated by the given message trace, the analyzer returns an `AnalysisResult` with two `PolicyViolation`s.
 
 #### Real-Time Monitoring of an OpenAI Agent
 

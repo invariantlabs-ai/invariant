@@ -10,6 +10,7 @@ from invariant.stdlib.invariant.errors import UpdateMessage, UpdateMessageHandle
 from invariant.stdlib.invariant import ToolCall
 from dataclasses import dataclass
 import unittest
+from invariant import Input
 
 @dataclass
 class CallToSomething(Exception):
@@ -23,44 +24,27 @@ def main():
     policy = Policy.from_string(
     r"""
     # if the user asks about 'X', raise a violation exception
-    raise PolicyViolation("Location data was passed to a get_temperature call", call=call) if:
+    raise PolicyViolation("Do not leak the user's email address", call=call) if:
         (call: ToolCall)
-        call is tool:get_temperature({
-            x: <LOCATION>
+        call is tool:search_web({
+            q: <EMAIL_ADDRESS>
         })
 
     # check result after the operation
-    raise PolicyViolation("get_temperature returned a value higher than 50", call=call) if:
-        (call: ToolOutput)
-        call.content > 50
+    raise PolicyViolation("The response should not contain 'France'", call=result) if:
+        (result: ToolOutput)
+        result is tool:search_web
+        "France" in result.content
     """)
 
     # simple chat messages
     messages = [
-        {"role": "system", "content": "You are a helpful assistant."},
-        {"role": "user", "content": "What is the temperature in Paris, France?"},
-        # assistant calls tool
-        {
-            "role": "assistant", 
-            "content": None, 
-            "tool_calls": [
-                {
-                    "id": "1",
-                    "type": "function",
-                    "function": {
-                        "name": "get_temperature",
-                        "arguments": {
-                            "x": "Paris, France"
-                        }
-                    }
-                }
-            ]
-        },
-        {
-            "role": "tool",
-            "tool_call_id": "1",
-            "content": 2001
-        }
+        {"role": "system", "content": "You are a helpful assistant. Your user is signed in as bob@mail.com"},
+        {"role": "user", "content": "Please do some reasearch on Paris."},
+        # assistant calls 'search_web' tool
+        {"role": "assistant", "content": None, "tool_calls": [ { "id": "1", "type": "function",
+            "function": { "name": "search_web", "arguments": { "q": "bob@mail.com want's to know about Paris" }}}]},
+        {"role": "tool", "tool_call_id": "1", "content": "Paris is the capital of France."}
     ]
 
     print(json.dumps(messages, indent=2))
