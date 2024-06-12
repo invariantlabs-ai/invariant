@@ -163,26 +163,30 @@ To detect and prevent this, the analyzer supports the definition of, for instanc
 ```python
 from invariant.access_control import should_allow_rbac, AccessControlViolation
 
-user_roles := {"alice": ["admin", "user"], "bob": ["user"]}}
+user_roles := {"alice": ["user"], "bob": ["admin", "user"]}
 
 role_grants := {
-  "admin": {"db1": ["read", "write"], "db2": ["read"]}, 
-  "user": {"db1": ["read"]}
+    "admin": {"public": True, "internal": True}, 
+    "user": {"public": True}
 }
 
-raise AccessControlViolation("unauthorized access", user=input.user, tool=call_result) if:
+raise AccessControlViolation("unauthorized access", user=input.username, chunk=chunk) if:
     # for any retriever call
-    (call_result: ToolOutput)
-    call_result is tool:retriever
+    (retrieved_chunks: ToolOutput)
+    retrieved_chunks is tool:retriever
     # check each retrieved chunk
-    (chunk: dict) in call_result.results
+    (chunk: dict) in retrieved_chunks.content
     # does the current user have access to the chunk?
-    not should_allow_rbac(chunk, "db1", input.user, user_roles, role_grants)
+    not should_allow_rbac(chunk, chunk.type, input.username, user_roles, role_grants)
 ```
 
 This RBAC policy ensures that only users with the correct roles can access the data retrieved by the agent. If they cannot, the analyzer will raise an `AccessControlViolation` error, which can then be handled by the agent (e.g. by filtering out the unauthorized chunks) or raise an alert to the system administrator.
 
+The shown policy is _parameterized_, where `input.user` is a parameter provided depending on the evaluation context. For instance, in this case the policy is only violated if `user` is `alice`, but not if `user` is `bob`. This allows for more policies that are aware of the authorization context and can be used to enforce fine-grained access control policies.
+
 ## Documentation
+
+This section provides a detailed overview of the analyzer's components, including the policy language, integration with AI agents, and the available built-in standard library.
 
 Table of Contents
 
@@ -543,13 +547,13 @@ Due to the nature of the analyzer and the included checkers in the standard libr
 For instance, a module that relies on `presidio-analyzer`, can import it using the following code:
 
 ```python
-# in extras.py you'll have
+# add an `Extra` declaration to extras.py describing the optional feature
 presidio_extra = Extra("PII and Secrets Scanning (using Presidio)", "Enables the detection of personally identifiable information (PII) and secret scanning in text", {
     "presidio_analyzer": ExtrasImport("presidio_analyzer", "presidio-analyzer", ">=2.2.354"),
     "spacy": ExtrasImport("spacy", "spacy", ">=3.7.5")
 })
 
-# to then import a component from the `presidio_analyzer` package, you can use
+# then import a component from the `presidio_analyzer` package, via the `presidio_extra` extra
 AnalyzerEngine = presidio_extra.package("presidio_analyzer").import_names('AnalyzerEngine')
 ```
 
