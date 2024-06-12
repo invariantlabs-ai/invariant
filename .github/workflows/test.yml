@@ -1,0 +1,21 @@
+name: Run Tests (all extras)
+
+on:
+  push:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install the latest version of rye
+      uses: eifinger/setup-rye@v3
+      with:
+        enable-cache: true
+        cache-prefix: 'optional-prefix'
