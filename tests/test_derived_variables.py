@@ -2,7 +2,7 @@ import unittest
 import json
 from invariant import Policy, RuleSet
 from invariant.policy import analyze_trace
-from tests.utils import *
+from invariant.traces import *
 
 class TestDerivedVariables(unittest.TestCase):
     def test_subselect(self):

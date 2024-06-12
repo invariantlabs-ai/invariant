@@ -56,7 +56,7 @@ You can then import and use the analyzer in your Python code:
 ```python
 from invariant import Policy
 
-# given some message trace
+# given some message trace (simple chat format)
 messages = [
     {"role": "user", "content": "Get back to Peter's message"},
     # get_inbox
@@ -513,6 +513,7 @@ To get started, make sure your traces are in [the expected format](#trace-format
 
 ```python
 from invariant import Policy
+from invariant.traces import * # for message trace helpers
 
 policy = Policy.from_string(
 """
@@ -530,14 +531,12 @@ raise PolicyViolation("A web result contains 'France'", call=result) if:
     "France" in result.content
 """)
 
-# simple chat messages
+# given some message trace (user(...), etc. helpers let you create them quickly)
 messages = [
-    {"role": "system", "content": "You are a helpful assistant. Your user is signed in as bob@mail.com"},
-    {"role": "user", "content": "Please do some reasearch on Paris."},
-    # assistant calls 'search_web' tool
-    {"role": "assistant", "content": None, "tool_calls": [ { "id": "1", "type": "function",
-     "function": { "name": "search_web", "arguments": { "q": "bob@mail.com want's to know about Paris" }}}]},
-    {"role": "tool", "tool_call_id": "1", "content": "Paris is the capital of France."}
+    system("You are a helpful assistant. Your user is signed in as bob@mail.com"),
+    user("Please do some research on Paris."),
+    assistant(None, tool_call("1", "search_web", {"q": "bob@mail.com want's to know about Paris"})),
+    tool("1", "Paris is the capital of France.")
 ]
 
 policy.analyze(messages)

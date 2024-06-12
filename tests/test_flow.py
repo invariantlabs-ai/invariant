@@ -3,44 +3,7 @@ import json
 from invariant import Policy, RuleSet, Monitor
 from invariant.runtime.input import Dataflow
 from invariant.extras import extras_available, presidio_extra, transformers_extra
-
-def system(content):
-    return {"role": "system", "content": content}
-
-def user(content):
-    return {"role": "user", "content": content}
-
-def assistant(content, tool_call=None):
-    return {"role": "assistant", "content": content, "tool_calls": ([tool_call] if tool_call is not None else [])}
-
-def tool_call(tool_call_id, function_name, arguments):
-    return {
-        "id": tool_call_id,
-        "type": "function",
-        "function": {
-            "name": function_name,
-            "arguments": arguments
-        }
-    }
-
-def tool(tool_call_id, content):
-    return {"role": "tool", "tool_call_id": tool_call_id, "content": content}
-
-
-# class TestDataflow(unittest.TestCase):
-
-#     def test_simple(self):
-#         trace = [
-#             user("How are you?"),
-#             assistant("I am fine."),
-#         ]
-#         dataflow = Dataflow.from_input(trace)
-#         self.assertTrue(dataflow.has_flow(trace[0], trace[1]))
-#         self.assertFalse(dataflow.has_flow(trace[1], trace[0]))
-
-#         with self.assertRaises(KeyError):
-#             dataflow.has_flow(user(trace[0]["content"]), trace[1])
-
+from invariant.traces import *
 class TestFlow(unittest.TestCase):
     def test_simple(self):
         policy = Policy.from_string(

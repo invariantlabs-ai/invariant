@@ -2,7 +2,7 @@ import unittest
 import json
 from invariant import Policy
 from invariant.policy import analyze_trace
-from tests.utils import *
+from invariant.traces import *
 from invariant.extras import extras_available, presidio_extra, transformers_extra, codeshield_extra
 
 class TestPII(unittest.TestCase):

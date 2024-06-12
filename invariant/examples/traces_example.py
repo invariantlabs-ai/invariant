@@ -5,6 +5,7 @@ to detect potential policy violations.
 
 import json
 from invariant import parse, Policy, Input, ValidatedOperation
+from invariant.traces import *
 
 from invariant.stdlib.invariant.errors import UpdateMessage, UpdateMessageHandler, PolicyViolation
 from invariant.stdlib.invariant import ToolCall
@@ -37,14 +38,12 @@ def main():
         "France" in result.content
     """)
 
-    # simple chat messages
+    # given some message trace (user(...), etc. help you create these quickly)
     messages = [
-        {"role": "system", "content": "You are a helpful assistant. Your user is signed in as bob@mail.com"},
-        {"role": "user", "content": "Please do some reasearch on Paris."},
-        # assistant calls 'search_web' tool
-        {"role": "assistant", "content": None, "tool_calls": [ { "id": "1", "type": "function",
-            "function": { "name": "search_web", "arguments": { "q": "bob@mail.com want's to know about Paris" }}}]},
-        {"role": "tool", "tool_call_id": "1", "content": "Paris is the capital of France."}
+        system("You are a helpful assistant. Your user is signed in as bob@mail.com"),
+        user("Please do some research on Paris."),
+        assistant(None, tool_call("1", "search_web", {"q": "bob@mail.com want's to know about Paris"})),
+        tool("1", "Paris is the capital of France.")
     ]
 
     print(json.dumps(messages, indent=2))
