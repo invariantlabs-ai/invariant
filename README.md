@@ -666,7 +666,7 @@ _More Information Coming Soon_
 
 The Invariant Security Analyzer comes with a built-in standard library of checkers and predicates that can be used to detect common security issues and data types. The standard library is designed to be extensible, allowing you to add custom checkers and predicates to suit your specific needs.
 
-### Sensitive Data Detection
+### Sensitive Data Detection (Personal Identifiable Information)
 
 The standard library includes a set of checkers for detecting sensitive data in agent traces. These checkers can be used to detect and prevent the leakage of sensitive information, such as personally identifiable information (PII), passwords, and other confidential data.
 
