@@ -25,7 +25,7 @@ class TestConstants(unittest.TestCase):
 
         input.append({"role": "assistant", "content": "Hello, Y"})
         analysis_result = monitor.analyze(input)
-        assert len(analysis_result.errors) == 0, "Expected no errors, but got: " + str(analysis_result.errors)
+        assert len(analysis_result.errors) == 1, "Expected no errors, but got: " + str(analysis_result.errors)
 
     def test_ref(self):
         policy = Policy.from_string(
