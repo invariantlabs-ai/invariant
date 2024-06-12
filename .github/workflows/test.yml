@@ -22,6 +22,7 @@ jobs:
       run: rye test
   test-examples:
     name: Test invariant.examples
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
     - name: Install the latest version of rye
