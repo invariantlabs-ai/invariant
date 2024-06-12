@@ -18,6 +18,8 @@ jobs:
       run: rye sync
     - name: Run tests
       run: rye test
+    - name: Run invariant.examples
+      run: rye run python -m unittest discover -s invariant/examples -p "*_example.py"
   test-no-extras:
     runs-on: ubuntu-latest
     steps:
@@ -27,4 +29,5 @@ jobs:
     - name: Install dependencies
       run: rye sync --no-dev
     - name: Run tests
-      run: rye test
+      # use 'unittest' explicitly, to prevent rye from install dev dependencies (no extras run)
+      run: rye run python -m unittest discover tests
