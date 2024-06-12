@@ -412,7 +412,9 @@ This expression evaluates to `True` for a `ToolCall` where the tool name is `too
 
 <details>
 
-<summary> Expand to see All Supported Value Matching Expressions </summary>
+<summary> <b>Expand to see All Supported Value Matching Expressions</b> </summary>
+
+<hr/>
 
 Overall, the following value matching expressions are supported:
 
@@ -479,6 +481,8 @@ call is tool({ arg1: * })
 Matches any tool call with the specified tool name, regardless of the arguments. A wildcard `*` can be used to match any value.
 
 Example: `call is tool:tool_name({ arg1: * })`
+
+<hr/>
 
 </details>
 
