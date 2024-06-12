@@ -30,6 +30,8 @@ class PythonDetectorResult:
     imports: list[str] = Field(default_factory=list, description="List of imported modules.")
     # built-in functions used
     builtins: list[str] = Field(default_factory=list, description="List of built-in functions used.")
+    # whether code has syntax errors
+    syntax_error: bool = Field(default=False, description="Flag which is true if code has syntax errors.")
     
     def add_import(self, module: str):
         self.imports.append(module)
@@ -88,8 +90,11 @@ class PythonCodeDetector(BaseDetector):
 
     def detect(self, text: str) -> PythonDetectorResult:
         ast_visitor = ASTDetectionVisitor(text)
-        tree = ast.parse(text)
-        ast_visitor.visit(tree)
+        try:
+            tree = ast.parse(text)
+            ast_visitor.visit(tree)
+        except Exception as e:
+            return PythonDetectorResult(syntax_error=True)
         return ast_visitor.res
 
 

@@ -197,7 +197,19 @@ class TestPythonDetector(unittest.TestCase):
         trace_good = [tool("1", "print(123)")]
         self.assertEqual(len(analyze_trace(policy_str_template, trace_bad).errors), 1)
         self.assertEqual(len(analyze_trace(policy_str_template, trace_good).errors), 0)
+        trace_syntax_err = [tool("1", """*[f"cabinet {i}"] for i in range(1,10)]""")]
+        self.assertEqual(len(analyze_trace(policy_str_template, trace_syntax_err).errors), 0)
+    
+    def test_syntax_error(self):
+        policy_str_template = """
+        from invariant.detectors import python_code
 
+        raise PolicyViolation("found syntax error") if:
+            (out: ToolOutput)
+            python_code(out).syntax_error
+        """
+        trace_syntax_err = [tool("1", """*[f"cabinet {i}"] for i in range(1,10)]""")]
+        self.assertEqual(len(analyze_trace(policy_str_template, trace_syntax_err).errors), 1)
 
 class TestCodeShieldDetector(unittest.TestCase):
 
