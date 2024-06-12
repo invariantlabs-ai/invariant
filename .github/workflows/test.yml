@@ -20,7 +20,7 @@ jobs:
     - name: Run tests
       run: rye test
     - name: Run invariant.examples
-      env:
+      with:
         OPENAI_API_KEY: {{ secrets.CI_OPENAI_API_KEY }}
       run: rye run python -m unittest discover -s invariant/examples -p "*_example.py"
   test-no-extras:
