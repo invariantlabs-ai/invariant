@@ -106,6 +106,7 @@ In productivity agents (e.g. personal email assistants), sensitive data is forwa
 For instance, the following policy states, that after retrieving a specific email, the agent must not send an email to anyone other than the sender of the retrieved email:
 
 ```python
+# in Policy.from_string:
 raise PolicyViolation("Must not send an email to someone other than the sender", sender=sender, outgoing_mail=outgoing_mail) if:
     # check all get_email -> send_email flows
     (call: ToolOutput) -> (call2: ToolCall)
@@ -133,6 +134,7 @@ When using AI agents that generate and execute code, a whole new set of security
 For example, this policy rule detects if an agent made a request to an untrusted URL (for instance, to read the project documentation) and then executes code that relies on the `os` module:
 
 ```python
+# in Policy.from_string:
 from invariant.detectors.code import python_code
 
 raise "tried to execute unsafe code, after visiting an untrusted URL" if:
@@ -161,6 +163,7 @@ Retrieval-Augmented Generation (RAG) is a popular method to enhance AI agents wi
 To detect and prevent this, the analyzer supports the definition of, for instance, role-based access control policies over retrieval results and data sources:
 
 ```python
+# in Policy.from_string:
 from invariant.access_control import should_allow_rbac, AccessControlViolation
 
 user_roles := {"alice": ["user"], "bob": ["admin", "user"]}
@@ -216,6 +219,7 @@ A policy consists of a set of rules, each of which defines a security property a
 A rule is defined using the `raise` keyword, followed by a condition and an optional message:
 
 ```python
+# in Policy.from_string:
 raise "can only send an email within the organization after retrieving the inbox" if:
     (call: ToolCall) -> (call2: ToolCall)
     call is tool:get_inbox
