@@ -1,0 +1,1 @@
+This is test data for a test that check if custom checkers from a user project can be imported in a policy.
