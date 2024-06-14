@@ -83,6 +83,7 @@ class ASTDetectionVisitor(ast.NodeVisitor):
 
     def visit_Call(self, node):
         self.res.add_function_call(ast.unparse(node.func).strip())
+        self.generic_visit(node)
 
 class PythonCodeDetector(BaseDetector):
     """Detector which extracts entities from Python code.
