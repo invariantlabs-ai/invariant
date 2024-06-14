@@ -93,3 +93,5 @@ raise PolicyViolation("message contains 'hello'", msg=msg) if:
     msg.role == "assistant"
     contains_hello(msg)
 ```
+
+Note that in the implementation of the custom checker, all inputs will be passed as dictionaries, not as classes like `Message` or `ToolOutput`. For property access, you thus must use the dictionary syntax, e.g., `msg["content"]` instead of `msg.content`.
