@@ -168,6 +168,9 @@ class FunctionCache:
     def __init__(self):
         self.cache = {}
 
+    def clear(self):
+        self.cache = {}
+
     def arg_key(self, arg):
         # cache primitives by value
         if type(arg) is int or type(arg) is float or type(arg) is str:
@@ -177,7 +180,7 @@ class FunctionCache:
             return tuple(self.arg_key(a) for a in arg)
         # cache dictionaries by id
         elif type(arg) is dict:
-            return id(arg)
+            return tuple((k, self.arg_key(v)) for k,v in sorted(arg.items(), key=lambda x: x[0]))
         # cache all other objects by id
         return id(arg)
 
@@ -255,6 +258,8 @@ class RuleSet:
         exceptions = []
         
         self.input = input_data
+        # make sure to clear the function cache if we are not caching
+        if not self.cached: self.function_cache.clear()
 
         for rule in self.rules:
             evaluation_context = InputEvaluationContext(input_data, self, policy_parameters)
