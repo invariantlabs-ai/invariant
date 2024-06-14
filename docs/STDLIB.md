@@ -72,6 +72,22 @@ raise PolicyViolation("must not use 'os' module in generated code", out=msg) if:
 
 For instance, this rule checks that the assistant does not generate code that imports the `os` module, which could be used to execute unsafe operations. The standard library function `python_code` automatically parses a string as Python code and extracts information about the code, such as imports, function calls, and more.
 
+### Secrets Scanning
+
+If an AI agent interacts with external services or systems, it is important to ensure that the agent does not leak any sensitive information, such as API keys, passwords, or other secrets. The standard library includes checkers for detecting secrets in agent messages or tool outputs.
+
+The available checkers are defined in [`invariant/stdlib/detectors/secrets.py`](../invariant/stdlib/invariant/detectors/secrets.py). For example, it can be used to analyze agent traces for secret leaks:
+
+```python
+from invariant.detectors import secrets
+
+raise PolicyViolation("found secrets", msg) if:
+    (msg: Message)
+    "AWS_ACCESS_KEY" in secrets(msg)
+```
+
+The `secrets` function can be used to detect common secret patterns in messages, such as `AWS_ACCESS`. For the list of supported secret patterns, see `SECRETS_PATTERNS` in [this file](../invariant/runtime/utils/secrets.py).
+
 ### Custom Checkers
 
 Lastly, you can also provide your own custom checking functions to the analyzer. This can be useful if you have specific security requirements or need to check for custom patterns or conditions that are not covered by the built-in checkers.

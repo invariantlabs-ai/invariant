@@ -217,6 +217,7 @@ This section provides a detailed overview of the analyzer's components, includin
     * [Prompt Injection Detection](docs/STDLIB.md#prompt-injection-detection)
     * [Moderation Violation Detection](docs/STDLIB.md#moderation-violation-detection)
     * [Code Analysis And Secrets Scanning](docs/STDLIB.md#code-analysis-and-secrets-scanning)
+    * [Secrets Scanning](docs/STDLIB.md#secrets-scanning)
     * [Custom Checkers](docs/STDLIB.md#custom-checkers)
 - [Development](docs/DEVELOPMENT.md#development)
     * [Testing](docs/DEVELOPMENT.md#testing)
