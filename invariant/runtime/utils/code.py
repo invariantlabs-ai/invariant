@@ -32,12 +32,17 @@ class PythonDetectorResult:
     builtins: list[str] = Field(default_factory=list, description="List of built-in functions used.")
     # whether code has syntax errors
     syntax_error: bool = Field(default=False, description="Flag which is true if code has syntax errors.")
-    
+    # function call identifier names
+    function_calls: set[str] = Field(default_factory=set, description="Set of function call targets as returned by 'ast.unparse(node.func).strip()'")
+
     def add_import(self, module: str):
         self.imports.append(module)
 
     def add_builtin(self, builtin: str):
         self.builtins.append(builtin)
+
+    def add_function_call(self, function: str):
+        self.function_calls.add(function)
 
     def extend(self, other: "PythonDetectorResult"):
         if type(other) != PythonDetectorResult:
@@ -75,6 +80,9 @@ class ASTDetectionVisitor(ast.NodeVisitor):
 
     def visit_ImportFrom(self, node):
         self.res.add_import(node.module)
+
+    def visit_Call(self, node):
+        self.res.add_function_call(ast.unparse(node.func).strip())
 
 class PythonCodeDetector(BaseDetector):
     """Detector which extracts entities from Python code.

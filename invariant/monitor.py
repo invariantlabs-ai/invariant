@@ -91,6 +91,10 @@ class Monitor(Policy):
         # whether to raise unhandled errors in `check()`
         self.raise_unhandled = raise_unhandled or policy_parameters.pop("raise_unhandled", False)
     
+    def reset(self):
+        """Resets the monitor to its initial state (incremental state is cleared)."""
+        self.rule_set = RuleSet.from_policy(self.policy_root, cached=self.cached)
+
     @classmethod
     def from_file(cls, path: str, **policy_parameters):
         return cls(parse_file(path), policy_parameters)

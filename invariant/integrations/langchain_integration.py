@@ -3,13 +3,14 @@ Langchain integration for the Invariant Agent Analyzer.
 """
 
 import json
+import uuid
 import termcolor
 import pickle
 import contextvars
 import os
 from typing import AsyncIterator, Dict, List, Tuple, Any, Optional
 
-from invariant import parse, Monitor
+from invariant import parse, Monitor, UnhandledError
 from invariant.monitor import wrappers, ValidatedOperation, OperationCall, WrappingHandler, stack
 from invariant.stdlib.invariant.errors import UpdateMessage, UpdateMessageHandler, PolicyViolation
 from invariant.stdlib.invariant import ToolCall
@@ -24,7 +25,7 @@ from langchain.agents import AgentExecutor
 from langchain_core.agents import AgentAction, AgentFinish, AgentStep, AgentActionMessageLog
 from langchain_core.tools import BaseTool
 
-def format_invariant_chat_messages(agent_input, intermediate_steps: list[AgentAction], next_step: AgentAction | AgentFinish):
+def format_invariant_chat_messages(run_id: str, agent_input, intermediate_steps: list[AgentAction], next_step: AgentAction | AgentFinish):
     from langchain_core.messages import AIMessage, ToolMessage, FunctionMessage
 
     messages = []
@@ -45,7 +46,7 @@ def format_invariant_chat_messages(agent_input, intermediate_steps: list[AgentAc
     def next_id():
         nonlocal msg_id
         msg_id += 1
-        return msg_id
+        return run_id + "_" + str(msg_id)
 
     for step in intermediate_steps:
         msg = step
@@ -195,21 +196,31 @@ class MutableAgentActionTuple:
 class MonitoringAgentExecutor(AgentExecutor):
     monitor: Monitor
     verbose_policy: bool = False
+    raise_on_violation: bool = True
+    run_id: str = None
+
+    async def ainvoke(self, inputs: dict, **kwargs):
+        # choose UUID for this run
+        self.run_id = str(uuid.uuid4().hex)
+        return await super().ainvoke(inputs, **kwargs)
+
+    def invoke(self, inputs: dict, **kwargs):
+        raise NotImplementedError("MonitoringAgentExecutor does not support synchronous execution yet. Use 'ainvoke' instead.")
 
     async def _atake_next_step(self, name_to_tool_map, color_mapping, inputs, intermediate_steps, run_manager = None):
         with AgentState(inputs, intermediate_steps) as state:
             # analysis current state
-            analysis_result = self.monitor.analyze(format_invariant_chat_messages(state.inputs, state.intermediate_steps, None), raise_unhandled=True)
+            analysis_result = self.monitor.analyze(format_invariant_chat_messages(self.run_id, state.inputs, state.intermediate_steps, None), raise_unhandled=True)
             # apply the handlers (make sure side-effects apply to tool_call_msg)
             analysis_result.execute_handlers()
 
             if len(analysis_result.handled_errors) > 0:
-                self.print_chat(format_invariant_chat_messages(state.inputs, state.intermediate_steps, None), heading="== POLICY APPLIED == ")
+                self.print_chat(format_invariant_chat_messages(self.run_id, state.inputs, state.intermediate_steps, None), heading="== POLICY APPLIED == ")
             
             result = await super()._atake_next_step(name_to_tool_map, color_mapping, inputs, intermediate_steps, run_manager)
             result = MutableAgentActionTuple.from_result(result)
 
-            self.print_chat(format_invariant_chat_messages(state.inputs, state.intermediate_steps, result))
+            self.print_chat(format_invariant_chat_messages(self.run_id, state.inputs, state.intermediate_steps, result))
 
             return result
 
@@ -249,7 +260,7 @@ class MonitoringAgentExecutor(AgentExecutor):
             # agent_action.message_log[0].additional_kwargs['function_call']['arguments'] = json.dumps(tool_input)
 
         # compute current chat state
-        chat = format_invariant_chat_messages(agent_state.inputs, agent_state.intermediate_steps, agent_action)
+        chat = format_invariant_chat_messages(self.run_id, agent_state.inputs, agent_state.intermediate_steps, agent_action)
         tool_call_msg = chat.pop(-1)
         self.print_chat(chat + [tool_call_msg])
 
@@ -259,7 +270,7 @@ class MonitoringAgentExecutor(AgentExecutor):
         # apply the handlers (make sure side-effects apply to tool_call_msg)
         analysis_result.execute_handlers()
 
-        chat = format_invariant_chat_messages(agent_state.inputs, agent_state.intermediate_steps, agent_action)
+        chat = format_invariant_chat_messages(self.run_id, agent_state.inputs, agent_state.intermediate_steps, agent_action)
         tool_call_msg = chat.pop(-1)
 
         # actual tool call is last fct in stack
@@ -289,9 +300,7 @@ class MonitoringAgentExecutor(AgentExecutor):
         if len(analysis_result.handled_errors) - len(wrappers(analysis_result)) > 0:
             self.print_chat(chat + [tool_call_msg], heading="== POLICY APPLIED == ")
 
-        result = await super(MonitoringAgentExecutor, self)._aperform_agent_action(patched_map, color_mapping, agent_action, run_manager)
-
-        return result
+        return await super(MonitoringAgentExecutor, self)._aperform_agent_action(patched_map, color_mapping, agent_action, run_manager)
 
 
 class WrappedOneTimeTool(BaseTool):

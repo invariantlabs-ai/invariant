@@ -97,5 +97,27 @@ class TestHTMLParsing(unittest.TestCase):
         errors = p.analyze(trace).errors
         assert len(errors) == 1, "Expected 1 error, got {}: {}".format(len(errors), errors)
 
+    def test_links_from_text(self):
+        p = Policy.from_string(
+        """
+        from invariant.parsers.html import links
+
+        raise PolicyViolation("found a non-trusted link", link=link) if:
+            (output: ToolOutput)
+            (link: str) in links(output)
+            # only allow links to trusted.com
+            not match("https://trusted.com/.+", link)
+        """
+        )
+
+        trace = [
+            user("Hello there"),
+            # injection in alt text broken html
+            tool("1", """# Getting started\n First, visit [this link](https://trusted.com/1), then [this one](https://untrusted.com/2)""")
+        ]
+
+        errors = p.analyze(trace).errors
+        assert len(errors) == 1, "Expected 1 error, got {}: {}".format(len(errors), errors)
+
 if __name__ == "__main__":
     unittest.main()

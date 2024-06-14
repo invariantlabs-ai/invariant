@@ -28,19 +28,20 @@ class HiddenDataParser(HTMLParser):
 
     def parse(self, data: str) -> HiddenHTMLData:
         self.feed(data)
-        self.links = self.links.union(get_links_regex(data))
+        self.links = self.links.union(HiddenDataParser.get_links_regex(data))
 
-def get_links_regex(data: str) -> list[str]:
-    """
-    Extracts links from a string of HTML code.
-    
-    Returns:
-        - list[str]: A list of links.
-    """
+    @staticmethod
+    def get_links_regex(data: str) -> list[str]:
+        """
+        Extracts links from a string of HTML code.
+        
+        Returns:
+            - list[str]: A list of links.
+        """
 
-    # link including path etc.
-    pattern = r"https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+" + r"(?:/[^ \n\"]+)*"
-    return list(set(re.findall(pattern, data)))
+        # link including path etc.
+        pattern = r"https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+" + r"(?:/[^ \n\"]+)*"
+        return list(set(re.findall(pattern, data)))
     
 
 def html_code(data: str | list | dict, **config: dict) -> HiddenHTMLData:
@@ -57,12 +58,33 @@ def html_code(data: str | list | dict, **config: dict) -> HiddenHTMLData:
     for message in chat:
         if message is None:
             continue
-        if message["content"] is None:
+        if "content" in message and message["content"] is None:
             continue
+        content = message.get("content", str(message))
         parser = HiddenDataParser()
-        parser.parse(message["content"])
+        parser.parse(content)
         
         res.alt_texts.extend(parser.alt_texts)
         res.links.extend(list(parser.links))
+
+    return res
+
+def links(data: str | list | dict, **config: dict) -> list[str]:
+    """
+    Extracts links from a string of HTML code or text.
+    
+    Returns:
+        - list[str]: A list of links.
+    """
+
+    chat = data if isinstance(data, list) else ([{"content": data}] if type(data) == str else [data])
+    
+    res = []
+    for message in chat:
+        if message is None:
+            continue
+        if message["content"] is None:
+            continue
+        res.extend(HiddenDataParser.get_links_regex(message["content"]))
 
     return res

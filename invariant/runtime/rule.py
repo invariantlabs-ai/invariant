@@ -239,9 +239,9 @@ class RuleSet:
         model_keys = []
         for k,v in model.items():
             if type(v) is dict and "key" in v:
-                model_keys.append((k, v["key"]))
+                model_keys.append((k.name, v["key"]))
             else:
-                model_keys.append((k, id(v)))
+                model_keys.append((k.name, id(v)))
         return (id(rule), *(vkey for k,vkey in sorted(model_keys, key=lambda x: x[0])))
 
     def log_apply(self, rule, model):

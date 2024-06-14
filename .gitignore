@@ -11,3 +11,4 @@ test.py
 # venv
 .venv
 .DS_Store
+.env.local

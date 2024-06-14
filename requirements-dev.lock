@@ -63,6 +63,7 @@ defusedxml==0.7.1
     # via semgrep
 distro==1.9.0
     # via openai
+dotfiles==0.6.4
 exceptiongroup==1.2.1
     # via semgrep
 face==22.0.0
@@ -191,6 +192,7 @@ pydantic-core==2.18.4
 pygments==2.18.0
     # via rich
 pytest==8.2.2
+python-dotenv==1.0.1
 pyyaml==6.0.1
     # via codeshield
     # via huggingface-hub

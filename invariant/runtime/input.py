@@ -221,6 +221,11 @@ class Selectable:
             for key, value in data.__dict__.items():
                 result += self.select(type_name, value)
             return result
+        elif type(data) is tuple:
+            result = []
+            for item in data:
+                result += self.select(type_name, item)
+            return result
         else:
             print("cannot sub-select type", type(data))
             return []
