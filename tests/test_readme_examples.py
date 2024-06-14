@@ -185,5 +185,25 @@ class TestReadmeExamples(unittest.TestCase):
         assert len(errors.errors) == 1, "Expected one error, but got: " + str(errors.errors)
         assert "tried to execute unsafe code, after visiting an untrusted URL" in str(errors.errors[0]), "Expected to find 'tried to execute unsafe code, after visiting an untrusted URL' in error message, but got: " + str(errors.errors[0])
 
+    def test_custom_checker(self):
+        p = Policy.from_string(
+        """
+        from tests.custom_checker_project.checker import contains_hello
+
+        raise PolicyViolation("message contains 'hello'", msg=msg) if:
+            (msg: Message)
+            msg.role == "assistant"
+            contains_hello(msg)
+        """
+        )
+
+        trace = [
+            user("Hello there"),
+            assistant("hello"),
+        ]
+
+        errors = p.analyze(trace).errors
+        assert len(errors) == 1, "Expected one error, but got: " + str(errors)
+
 if __name__ == '__main__':
     unittest.main()
