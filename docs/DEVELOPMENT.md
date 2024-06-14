@@ -1,4 +1,4 @@
-## Development
+# Development
 
 This project uses [`rye`](https://github.com/astral-sh/rye). To setup a development environment, run:
 

@@ -1,4 +1,4 @@
-## Standard Library
+# Standard Library
 
 The Invariant Security Analyzer comes with a built-in standard library of checkers and predicates that can be used to detect common security issues and data types. The standard library is designed to be extensible, allowing you to add custom checkers and predicates to suit your specific needs.
 
@@ -6,7 +6,7 @@ The Invariant Security Analyzer comes with a built-in standard library of checke
 
 The standard library includes a set of checkers for detecting sensitive data in agent traces. These checkers can be used to detect and prevent the leakage of personally identifiable information (PII), email addresses, phone numbers, and other sensitive data.
 
-The available checkers are defined in [`invariant/stdlib/detectors/pii.py`](./invariant/stdlib/invariant/detectors/pii.py). For example, it can be used to analyze agent traces for PII leaks:
+The available checkers are defined in [`invariant/stdlib/detectors/pii.py`](../invariant/stdlib/invariant/detectors/pii.py). For example, it can be used to analyze agent traces for PII leaks:
 
 ```python
 from invariant.detectors import pii
@@ -24,7 +24,7 @@ See the [`presidio` documentation](https://microsoft.github.io/presidio/supporte
 
 The standard library also includes checkers for statically detecting prompt injections that may be contained in individual messages or tool calls. 
 
-The available checkers are defined in [`invariant/stdlib/detectors/prompt_injection.py`](./invariant/stdlib/invariant/detectors/prompt_injection.py). For example, it can be used to analyze agent traces for prompt injections:
+The available checkers are defined in [`invariant/stdlib/detectors/prompt_injection.py`](../invariant/stdlib/invariant/detectors/prompt_injection.py). For example, it can be used to analyze agent traces for prompt injections:
 
 ```python
 from invariant.detectors.prompt_injection import prompt_injection
@@ -40,7 +40,7 @@ A `threshold` parameter can be used to adjust the sensitivity of the prompt inje
 
 Another concern when building AI agents is to ensure that the agent's responses are appropriate and do not contain any inappropriate, toxic or harmful content. To address this, the standard library includes checkers for detecting moderation violations in agent responses.
 
-The available checkers are defined in [`invariant/stdlib/detectors/moderated.py`](./invariant/stdlib/invariant/detectors/moderation.py). For example, it can be used to analyze agent traces for moderation violations:
+The available checkers are defined in [`invariant/stdlib/detectors/moderated.py`](../invariant/stdlib/invariant/detectors/moderation.py). For example, it can be used to analyze agent traces for moderation violations:
 
 ```python
 from invariant.detectors.moderation import moderated
@@ -59,7 +59,7 @@ If an AI agent relies on code generation and execution, it is important to ensur
 
 For this, the standard library includes checkers for analyzing code, using methods like static code analysis. For instance, the analyzer can be used to detect unsafe code patterns or imports of unsafe modules.
 
-The available checkers are defined in [`invariant/stdlib/detectors/code.py`](./invariant/stdlib/invariant/detectors/code.py). For example, it can be used to analyze agent traces for unsafe code patterns or imports:
+The available checkers are defined in [`invariant/stdlib/detectors/code.py`](../invariant/stdlib/invariant/detectors/code.py). For example, it can be used to analyze agent traces for unsafe code patterns or imports:
 
 ```python
 from invariant.detectors import python_code
