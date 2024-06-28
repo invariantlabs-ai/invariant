@@ -167,7 +167,7 @@ class SemgrepDetector(BaseDetector):
         else:
             raise ValueError(f"Unsupported language: {lang}")
 
-        cmd = ["semgrep", "scan", "--json", "--config", config, "--metrics", "off", "--quiet", temp_file]
+        cmd = ["rye", "run", "semgrep", "scan", "--json", "--config", config, "--metrics", "off", "--quiet", temp_file]
         out = subprocess.run(cmd, capture_output=True)
         semgrep_res = json.loads(out.stdout.decode("utf-8"))
         issues = []
