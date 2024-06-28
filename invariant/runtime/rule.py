@@ -184,22 +184,21 @@ class FunctionCache:
         # cache all other objects by id
         return id(arg)
 
-    def call_key(self, function, args):
-        return (id(function), *(self.arg_key(arg) for arg in args))
+    def call_key(self, function, args, kwargs):
+        id_args = (self.arg_key(arg) for arg in args)
+        id_kwargs = ((self.arg_key(k), self.arg_key(v)) for k, v in kwargs.items())
+        return (id(function), *id_args, *id_kwargs)
 
-    def contains(self, function, args):
-        return self.call_key(function, args) in self.cache
+    def contains(self, function, args, kwargs):
+        return self.call_key(function, args, kwargs) in self.cache
     
     def call(self, function, args, **kwargs):
         # check if function is marked as @nocache (see ./functions.py module)
         if hasattr(function, "__invariant_nocache__"):
             return function(*args, **kwargs)
-        # TODO: For now, avoid caching if there are kwargs
-        if kwargs:
-            return function(*args, **kwargs)
-        if not self.contains(function, args):
-            self.cache[self.call_key(function, args)] = function(*args)
-        return self.cache[self.call_key(function, args)]
+        if not self.contains(function, args, kwargs):
+            self.cache[self.call_key(function, args, kwargs)] = function(*args, **kwargs)
+        return self.cache[self.call_key(function, args, kwargs)]
 
 class InputEvaluationContext(EvaluationContext):
     def __init__(self, input, rule_set, policy_parameters):

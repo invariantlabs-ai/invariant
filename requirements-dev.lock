@@ -6,6 +6,7 @@
 #   features: []
 #   all-features: true
 #   with-sources: false
+#   generate-hashes: false
 
 -e file:.
 aiohttp==3.9.5
@@ -63,7 +64,6 @@ defusedxml==0.7.1
     # via semgrep
 distro==1.9.0
     # via openai
-dotfiles==0.6.4
 exceptiongroup==1.2.1
     # via semgrep
 face==22.0.0
@@ -233,8 +233,9 @@ ruamel-yaml-clib==0.2.8
     # via ruamel-yaml
 safetensors==0.4.3
     # via transformers
-semgrep==1.75.0
+semgrep==1.78.0
     # via codeshield
+    # via invariant
 setuptools==70.0.0
     # via marisa-trie
     # via spacy

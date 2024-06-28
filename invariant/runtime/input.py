@@ -3,7 +3,7 @@ Models input data passed to the Invariant Agent Analyzer.
 
 Creates dataflow graphs and derived data from the input data.
 """
-
+import inspect
 import warnings
 import textwrap
 import termcolor
@@ -182,7 +182,16 @@ class Selectable:
     def __init__(self, data):
         self.data = data
 
+    def should_ignore(self, data):
+        if inspect.isclass(data):
+            return True
+        if inspect.isfunction(data):
+            return True
+        return False
+
     def select(self, selector, data="<root>"):
+        if self.should_ignore(data):
+            return []
         type_name = self.type_name(selector)
         if data == "<root>":
             data = self.data

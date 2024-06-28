@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Union
 
 @dataclass
 class LLM:
@@ -26,3 +27,7 @@ class ToolOutput:
     role: str
     content: str
     tool_call_id: str
+
+@dataclass
+class Trace:
+    elements: Message | ToolCall | ToolOutput

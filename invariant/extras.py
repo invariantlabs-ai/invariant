@@ -163,6 +163,11 @@ codeshield_extra = Extra("Code Scanning with Llama CodeShield", "Enables the use
     "codeshield.cs": ExtrasImport("codeshield.cs", "codeshield", ">=1.0.1")
 })
 
+"""Extra for features that rely on the `semgrep` library."""
+semgrep_extra = Extra("Code Scanning with Semgrep", "Enables the use of Semgrep for code scanning", {
+    "semgrep": ExtrasImport("semgrep", "semgrep", ">=1.78.0")
+})
+
 """Extra for features that rely on the `langchain` library."""
 langchain_extra = Extra("langchain Integration", "Enables the use of Invariant's langchain integration", {
     "langchain": ExtrasImport("langchain", "langchain", ">=0.2.1")

@@ -1,13 +1,24 @@
 import ast
 import asyncio
+import json
+import subprocess
+import tempfile
+from enum import Enum
 from invariant.runtime.utils.base import BaseDetector, DetectorResult
 from pydantic.dataclasses import dataclass, Field
 from invariant.extras import codeshield_extra
 
+
+class CodeSeverity(str, Enum):
+    INFO = "info"
+    WARNING = "warning"
+    ERROR = "error"
+
+
 @dataclass
 class CodeIssue:
     description: str
-    severity: str
+    severity: CodeSeverity
 
 
 @dataclass
@@ -123,3 +134,48 @@ class CodeShieldDetector(BaseDetector):
             CodeIssue(description=issue.description, severity=str(issue.severity).lower())
             for issue in res.issues_found
         ]
+
+
+class SemgrepDetector(BaseDetector):
+    """Detector which uses Semgrep for safety evaluation."""
+
+    CODE_SUFFIXES = {
+        "python": ".py",
+        "bash": ".sh",
+    }
+
+    def write_to_temp_file(self, code:str, lang: str) -> str:
+        suffix = self.CODE_SUFFIXES.get(lang, ".txt")
+        temp_file = tempfile.NamedTemporaryFile(mode="w", suffix=suffix, delete=False)
+        with open(temp_file.name, "w") as fou:
+            fou.write(code)
+        return temp_file.name
+
+    def get_severity(self, severity: str) -> CodeSeverity:
+        if severity == "ERROR":
+            return CodeSeverity.ERROR
+        elif severity == "WARNING":
+            return CodeSeverity.WARNING
+        return CodeSeverity.INFO
+
+    def detect_all(self, code: str, lang: str) -> list[CodeIssue]:
+        temp_file = self.write_to_temp_file(code, lang)
+        if lang == "python":
+            config = "r/python.lang.security"
+        elif lang == "bash":
+            config = "r/bash"
+        else:
+            raise ValueError(f"Unsupported language: {lang}")
+
+        cmd = ["semgrep", "scan", "--json", "--config", config, "--metrics", "off", "--quiet", temp_file]
+        out = subprocess.run(cmd, capture_output=True)
+        semgrep_res = json.loads(out.stdout.decode("utf-8"))
+        issues = []
+        for res in semgrep_res["results"]:
+            severity = self.get_severity(res["extra"]["severity"])
+            source = res["extra"]["metadata"]["source"]
+            message = res["extra"]["message"]
+            lines = res["extra"]["lines"]
+            description = f"{message} (source: {source}, lines: {lines})"
+            issues.append(CodeIssue(description=description, severity=severity))
+        return issues
