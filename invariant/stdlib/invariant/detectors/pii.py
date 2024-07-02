@@ -1,3 +1,4 @@
+import json
 from dataclasses import dataclass
 from invariant.stdlib.invariant.nodes import LLM
 
@@ -26,7 +27,11 @@ def pii(data: str | list, **config):
     for message in chat:
         if message is None:
             continue
-        if message["content"] is None:
+        if "content" not in message:
+            content = json.dumps(message)
+        elif message["content"] is None:
             continue
-        all_pii.extend(PII_ANALYZER.detect_all(message["content"]))
+        else:
+            content = message["content"]
+        all_pii.extend(PII_ANALYZER.detect_all(content))
     return all_pii

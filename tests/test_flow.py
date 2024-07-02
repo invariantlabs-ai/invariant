@@ -192,7 +192,6 @@ class TestFlow(unittest.TestCase):
         res = policy.analyze(trace)
         self.assertEqual(len(res.errors), 1)
 
-
     def test_separate_path(self):
         policy = Policy.from_string(
         """

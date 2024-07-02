@@ -105,6 +105,8 @@ class DictMatcher(SemanticPatternMatcher):
 
         for key, matcher in self.entries.items():
             try: 
+                if not type(value) is dict:
+                    return False
                 key_var = value[key]
                 if not matcher.match(key_var):
                     return False

@@ -27,7 +27,7 @@ parser = lark.Lark(r"""
     def_stmt: "def" func_signature INDENT NEWLINE? statement* DEDENT
     decl_stmt: ( ID | func_signature ) ":=" expr | ( ID | func_signature ) INDENT NEWLINE? expr (NEWLINE expr)* DEDENT
 
-    expr: ID | binary_expr | "(" expr ("," expr)* ")" | block_expr
+    expr: ID | binary_expr | "(" expr ("," expr)* ")" | block_expr | import_stmt
                    
     block_expr: INDENT expr (NEWLINE expr)* DEDENT
     
@@ -199,8 +199,10 @@ class IPLTransformer(lark.Transformer):
         # filter hidden body tokens
         body = self.filter(body)
         # flatten exprs
-        while len(body) == 1: 
+        while type(body) is list and len(body) == 1: 
             body = body[0]
+        if not type(body) is list:
+            body = [body]
 
         return RaisePolicy(items[0], body).with_location(self.loc(items))
 

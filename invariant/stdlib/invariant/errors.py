@@ -7,6 +7,7 @@ class PolicyViolation(Exception):
     def __init__(self, *args, **kwargs):
         super().__init__(*args)
         self.kwargs = kwargs
+        self.ranges = kwargs.get("ranges", [])
 
     def __str__(self):
         kvs = ", ".join([f"{k}={v}" for k, v in self.kwargs.items()])

@@ -3,6 +3,7 @@ from invariant.runtime.patterns import SemanticPatternMatcher
 from invariant.language.scope import InputData
 from dataclasses import dataclass
 import json
+import re
 
 class symbol:
     def __init__(self, name):
@@ -58,6 +59,19 @@ class VariableDomain:
     type_ref: str
     values: list
 
+@dataclass
+class Range:
+    object_id: str
+    start: int|None
+    end: int|None
+
+    @classmethod
+    def from_object(cls, obj, start=None, end=None):
+        return cls(str(id(obj)), start, end)
+    
+    def match(self, obj):
+        return str(id(obj)) == self.object_id
+
 class Interpreter(RaisingTransformation):
     """
     The Interpreter class is used to evaluate expressions based on
@@ -71,7 +85,7 @@ class Interpreter(RaisingTransformation):
     """
 
     @staticmethod
-    def eval(expr_or_list, variable_store, globals, evaluation_context=None, return_variable_domains=False, partial=True, assume_bool=False):
+    def eval(expr_or_list, variable_store, globals, evaluation_context=None, return_variable_domains=False, partial=True, assume_bool=False, return_ranges=False):
         """Evaluates the given expression(s).
 
         Args:
@@ -127,10 +141,20 @@ class Interpreter(RaisingTransformation):
                 # definitive true
                 result = True 
 
+        return_obj = (result,)
+
         # if requested, also return new mappings
         if return_variable_domains:
-            return result, interpreter.variable_domains
-        return result
+            return_obj = (result, interpreter.variable_domains)
+        
+        # if requested, also return ranges
+        if return_ranges:
+            return_obj = return_obj + (interpreter.ranges,)
+        
+        if len(return_obj) == 1:
+            return return_obj[0]
+        else:
+            return return_obj
 
     def __init__(self, variable_store, globals, evaluation_context=None, partial=True):
         super().__init__(reraise=True)
@@ -139,6 +163,8 @@ class Interpreter(RaisingTransformation):
         self.globals = globals
         self.evaluation_context = evaluation_context or EvaluationContext()
         self.partial = partial
+
+        self.ranges = []
 
         # variable ranges describe the domain of all encountered
         # free variables. A domain of 'None' means the variable
@@ -274,6 +300,13 @@ class Interpreter(RaisingTransformation):
 
                 if isinstance(lvalue, list):
                     return [x in rvalue for x in lvalue]
+                
+                if type(rvalue) is str and type(lvalue) is str:
+                    # find all ranges where left matches right
+                    for m in re.finditer(lvalue, rvalue):
+                        self.ranges.append(Range.from_object(rvalue, m.start(), m.end()))
+                    return lvalue in rvalue
+                
                 return lvalue in rvalue
             else:
                 raise NotImplementedError(f"Unknown binary operator: {op}")

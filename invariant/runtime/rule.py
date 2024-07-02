@@ -1,6 +1,6 @@
 import os
 import invariant.language.ast as ast
-from invariant.runtime.evaluation import Interpreter, EvaluationContext, VariableDomain, Unknown
+from invariant.runtime.evaluation import Interpreter, EvaluationContext, VariableDomain, Unknown, Range
 from invariant.language.linking import link
 import invariant.language.types as types
 from invariant.language.parser import parse_file
@@ -15,17 +15,15 @@ class PolicyAction:
     def __call__(self, input_dict):
         raise NotImplementedError()
 
-class CodeExecutionAction(PolicyAction):
-    def __init__(self, code: str, globals: dict):
-        self.code = code
-        self.globals = globals
-
-    def __call__(self, input_dict):
-        try:
-            exec(self.code, {**input_dict, **self.globals})
-        except Exception as e:
-            e.args = (f"Error when executing code: '{self.code}': {e}",)
-            raise e
+@dataclass
+class Model:
+    """
+    Represents a valid assignment of variables based on some input value
+    such that a rule body evaluates to True.
+    """
+    variable_assignments: dict
+    input_value: any
+    ranges: list
 
 class RaiseAction(PolicyAction):
     def __init__(self, exception_or_constructor, globals):
@@ -36,20 +34,23 @@ class RaiseAction(PolicyAction):
         res = Interpreter.eval(self.exception_or_constructor, input_dict, self.globals, partial=True, evaluation_context=evaluation_context)
         return res is not Unknown
 
-    def __call__(self, input_dict, evaluation_context=None):
+    def __call__(self, model: Model, evaluation_context=None):
         from invariant.stdlib.invariant.errors import PolicyViolation
 
         if type(self.exception_or_constructor) is ast.StringLiteral:
-            return PolicyViolation(self.exception_or_constructor.value)
+            return PolicyViolation(self.exception_or_constructor.value, ranges=model.ranges)
         elif isinstance(self.exception_or_constructor, ast.Expression):
-            exception = Interpreter.eval(self.exception_or_constructor, input_dict, self.globals, partial=False, evaluation_context=evaluation_context)
+            exception = Interpreter.eval(self.exception_or_constructor, model.variable_assignments, self.globals, partial=False, evaluation_context=evaluation_context)
+            
             if not isinstance(exception, BaseException):
-                exception = PolicyViolation(str(exception))
+                exception = PolicyViolation(str(exception), ranges=model.ranges)
+            elif isinstance(exception, PolicyViolation):
+                exception.ranges = model.ranges
+            
             return exception
         else:
             print("raising", self.exception_or_constructor, "not implemented")
             return None
-
 class RuleApplication:
     """
     Represents the output of applying a rule to a set of input data.
@@ -58,7 +59,7 @@ class RuleApplication:
 
     def __init__(self, rule, models):
         self.rule = rule
-        self.models = models
+        self.models: list[Model] = models
 
     def applies(self):
         return len(self.models) > 0
@@ -128,8 +129,8 @@ class Rule:
                         print("  -", k, ":=", id(v), str(v)[:120] + ("" if len(str(v)) < 120 else "..."))
                     if len(input_dict) == 0: print("  - <empty>")
                     print()
-                
-                result, new_variable_domains = Interpreter.eval(self.condition, input_dict, self.globals, evaluation_context=evaluation_context, return_variable_domains=True, assume_bool=True)
+                    
+                result, new_variable_domains, ranges = Interpreter.eval(self.condition, input_dict, self.globals, evaluation_context=evaluation_context, return_variable_domains=True, assume_bool=True, return_ranges=True)
                 
                 if self.verbose:
                     print("\n    result:", termcolor.colored(result, "green" if result else "red"))
@@ -139,7 +140,12 @@ class Rule:
                     continue
                 # if we find a complete model, we can stop
                 elif result is True and self.action.can_eval(input_dict, evaluation_context):
-                    models.append(input_dict)
+                    model = Model(input_dict, input_data, ranges)
+                    # add all objects form input_dict as object ranges
+                    for k,v in input_dict.items():
+                        print("from object", v)
+                        ranges.append(Range.from_object(v))
+                    models.append(model)
                     continue
                 elif len(new_variable_domains) > 0:
                     # if more derived variable domains are found, we explore them
