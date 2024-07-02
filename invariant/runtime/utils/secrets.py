@@ -1,4 +1,6 @@
 import re
+from re import Pattern
+from pydantic.dataclasses import dataclass
 from invariant.runtime.utils.base import BaseDetector, DetectorResult
 
 # Patterns from https://github.com/Yelp/detect-secrets/tree/master/detect_secrets/plugins
@@ -22,6 +24,11 @@ SECRETS_PATTERNS = {
     ],
 }
 
+@dataclass
+class SecretPattern:
+    secret_name: str
+    patterns: list[Pattern]
+
 
 class SecretsAnalyzer(BaseDetector):
     """
@@ -29,24 +36,18 @@ class SecretsAnalyzer(BaseDetector):
     """
     def __init__(self):
         super().__init__()
+        self.secrets = self.get_recognizers()
 
-    def get_recognizers(self) -> list['PatternRecognizer']:
-        from invariant.extras import presidio_extra
-        [Pattern, PatternRecognizer] = presidio_extra.package("presidio_analyzer").import_names('Pattern', 'PatternRecognizer')
-
-        self.secret_recognizers = []
-        for secret, regex_pattern in SECRETS_PATTERNS.items():
-            patterns = [
-                Pattern(name=f"{secret}_{i}", regex=pat.pattern, score=0.5)
-                for i, pat in enumerate(regex_pattern)
-            ]
-            self.secret_recognizers.append(PatternRecognizer(secret, patterns=patterns, global_regex_flags=re.IGNORECASE))
-        return self.secret_recognizers
+    def get_recognizers(self) -> list[Pattern]:
+        secrets = []
+        for secret_name, regex_pattern in SECRETS_PATTERNS.items():
+            secrets.append(SecretPattern(secret_name, regex_pattern))
+        return secrets
     
     def detect_all(self, text: str) -> list[DetectorResult]:
-        recognizers = self.get_recognizers()
-        pres_results = []
-        for recognizer in recognizers:
-            pres_results.extend(recognizer.analyze(text, entities=recognizer.supported_entities))
-        res = [DetectorResult(pr.entity_type, pr.start, pr.end) for pr in pres_results]
+        res = []
+        for secret in self.secrets:
+            for pattern in secret.patterns:
+                for match in pattern.finditer(text):
+                    res.append(DetectorResult(secret.secret_name, match.start(), match.end()))
         return res
