@@ -8,6 +8,8 @@ import warnings
 import textwrap
 import termcolor
 from copy import deepcopy
+from typing import Optional
+from invariant.stdlib.invariant.nodes import *
 
 import invariant.language.types as types
 
@@ -189,7 +191,7 @@ class Selectable:
             return True
         return False
 
-    def select(self, selector, data="<root>"):
+    def select(self, selector, data="<root>", index: Optional[int] = None):
         if self.should_ignore(data):
             return []
         type_name = self.type_name(selector)
@@ -198,42 +200,42 @@ class Selectable:
 
         if type(data) is list:
             if type_name == "list":
-                return [data]
-            return merge([self.select(type_name, item) for item in data])
+                return [(data, index)]
+            return merge([self.select(type_name, item, item_index) for item_index, item in enumerate(data)])
         elif type(data) is dict or hasattr(data, "__objectidict__"):
             result = []
             if "type" in data and data["type"] == type_name:
-                result.append(data)
+                result.append((data, index))
             elif derive_type(data) == type_name:
-                result.append(data)
+                result.append((data, index))
             elif type_name == "dict":
-                result.append(data)
+                result.append((data, index))
             for key, value in data.items():
                 if key.startswith("_"): continue
-                result += self.select(type_name, value)
+                result += self.select(type_name, value, index)
             return result
         elif hasattr(data, "to_dict"):
             result = []
             if derive_type(data) == type_name:
-                result.append(data)
+                result.append((data, index))
             for key,value in data.to_dict().items():
-                result += self.select(type_name, value)
+                result += self.select(type_name, value, index)
             return result
         elif type(data) is str or type(data) is int or data is None or type(data) is bool: 
             if str(type(data).__name__) == type_name:
-                return [data]
+                return [(data, index)]
             return []
         elif hasattr(data, "__dict__"):
             result = []
             if data.__class__.__name__ == type_name:
-                result.append(data)
+                result.append((data, index))
             for key, value in data.__dict__.items():
-                result += self.select(type_name, value)
+                result += self.select(type_name, value, index)
             return result
         elif type(data) is tuple:
             result = []
-            for item in data:
-                result += self.select(type_name, item)
+            for item_index, item in enumerate(data):
+                result += self.select(type_name, item, item_index)
             return result
         else:
             print("cannot sub-select type", type(data))
@@ -287,6 +289,7 @@ class InputInspector(InputProcessor):
             result += textwrap.indent(l, "  ")
         
         return result
+
 
 class Input(Selectable):
     """

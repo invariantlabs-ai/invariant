@@ -1,5 +1,5 @@
-from dataclasses import dataclass
-from typing import Union
+from pydantic.dataclasses import dataclass
+from typing import Optional
 
 @dataclass
 class LLM:
@@ -7,15 +7,16 @@ class LLM:
     model: str
 
 @dataclass
-class Message:
-    content: str
-    role: str
-
-@dataclass
 class ToolCall:
     id: str
     type: str
     function: list
+
+@dataclass
+class Message:
+    content: str
+    role: str
+    tool_calls: Optional[list[ToolCall]] = None
 
 @dataclass
 class Function:
@@ -28,6 +29,8 @@ class ToolOutput:
     content: str
     tool_call_id: str
 
+TraceEvent = Message | ToolCall | ToolOutput
+
 @dataclass
 class Trace:
-    elements: Message | ToolCall | ToolOutput
+    elements: list[TraceEvent]
