@@ -67,7 +67,8 @@ class RuleApplication:
         errors = []
 
         for model in self.models:
-            exc = self.rule.action(model, evaluation_context)
+            raw_model = {k: v[0] for k, v in model.items()}
+            exc = self.rule.action(raw_model, evaluation_context)
             if exc is not None: errors.append(exc)
         
         return errors
@@ -241,12 +242,12 @@ class RuleSet:
 
     def instance_key(self, rule, model):
         model_keys = []
-        for k,v in model.items():
+        for k, v in model.items():
             if type(v) is dict and "key" in v:
                 model_keys.append((k.name, v["key"]))
             else:
-                model_keys.append((k.name, id(v)))
-        return (id(rule), *(vkey for k,vkey in sorted(model_keys, key=lambda x: x[0])))
+                model_keys.append((k.name, (str(v[0]), v[1])))
+        return (id(rule), *(vkey for k, vkey in sorted(model_keys, key=lambda x: x[0])))
 
     def log_apply(self, rule, model):
         if not self.verbose:
@@ -268,12 +269,6 @@ class RuleSet:
         for rule in self.rules:
             evaluation_context = InputEvaluationContext(input_data, self, policy_parameters)
             result = rule.apply(input_data, evaluation_context=evaluation_context)
-
-            new_models = []
-            for model in result.models:
-                raw_model = {k: v[0] for k, v in model.items()}
-                new_models.append(raw_model)
-            result.models = new_models
 
             result.models = [m for m in result.models if self.non_executed(rule, m)]
             for model in result.models:

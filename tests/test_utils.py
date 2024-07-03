@@ -137,7 +137,6 @@ class TestSecrets(unittest.TestCase):
             'SLACK_TOKEN': ['abde-123456789012-1234567890123-1234567890123-1234567890123'],
         }
 
-    @unittest.skipUnless(extras_available(presidio_extra), "presidio-analyzer is not installed")
     def test_detect_valid_secrets(self):
         policy_str_template = """
         from invariant.detectors import secrets
