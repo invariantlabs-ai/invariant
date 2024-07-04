@@ -1,4 +1,5 @@
 from invariant.stdlib.invariant.nodes import *
+from invariant.runtime.input import Input
 from invariant.stdlib.invariant.errors import *
 from invariant.stdlib.invariant.message import *
 from invariant.runtime.utils.base import DetectorResult

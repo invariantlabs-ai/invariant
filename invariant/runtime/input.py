@@ -184,6 +184,10 @@ class Selectable:
 
     def select(self, selector, data="<root>"):
         type_name = self.type_name(selector)
+        # allow to select the Input object itself
+        if type_name == "Input":
+            return [self]
+        # allow to select the root data object
         if data == "<root>":
             data = self.data
 

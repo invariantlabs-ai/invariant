@@ -4,6 +4,7 @@ from invariant.language.scope import InputData
 from dataclasses import dataclass
 import json
 import re
+import contextvars
 
 class symbol:
     def __init__(self, name):
@@ -61,6 +62,14 @@ class VariableDomain:
 
 @dataclass
 class Range:
+    """
+    Represents a range in the input object that is relevant for 
+    the currently evaluated expression.
+
+    A range can be an entire object (start and end are None) or a
+    substring (start and end are integers, and object_id refers to
+    the object that the range is part of).
+    """
     object_id: str
     start: int|None
     end: int|None
@@ -74,6 +83,8 @@ class Range:
     def match(self, obj):
         return str(id(obj)) == self.object_id
 
+INTERPRETER_STACK = contextvars.ContextVar("interpreter_stack", default=[])
+
 class Interpreter(RaisingTransformation):
     """
     The Interpreter class is used to evaluate expressions based on
@@ -85,6 +96,13 @@ class Interpreter(RaisingTransformation):
     provides some custom evaluation logic for special cases (e.g. flow
     semantics, containment checks, custom set operations).
     """
+
+    @staticmethod
+    def current():
+        stack = INTERPRETER_STACK.get()
+        if len(stack) == 0:
+            raise ValueError("Cannot access Interpreter.current() outside of an interpretation context (call stack below Interpreter.eval).")
+        return stack[-1]
 
     @staticmethod
     def eval(expr_or_list, variable_store, globals, evaluation_context=None, return_variable_domains=False, partial=True, assume_bool=False, return_ranges=False):
@@ -105,58 +123,57 @@ class Interpreter(RaisingTransformation):
             The result of the evaluation. If multiple expressions are given, a list of results is returned. For 
             boolean evaluation, always evaluates all(expr_or_list) and returns True, False or Unknown.
         """
-        interpreter = Interpreter(variable_store, globals, evaluation_context, partial=partial)
-        
-        # make sure 'expr' is a list
-        is_list_expr = isinstance(expr_or_list, list)
-        if not is_list_expr: expr = [expr_or_list]
-        else: expr = expr_or_list
-        
-        if assume_bool:
-            # use short-circuit evaluation for boolean conjunctions
-            # note: this is not just an optimization, but also prevents type errors, if only
-            # a later condition fails (e.g. `type(a) is int and a + b > 2`), where checking the 
-            # second condition fail with a type error if `a` is not an integer.
-            results = interpreter.visit_ShortCircuitedConjunction(expr)
-        else:
-            # otherwise evaluate all expressions
-            results = [interpreter.visit(e) for e in expr]
-        # remove nops
-        results = [r for r in results if r is not NOP]
-        
-        is_bool_result = all(type(r) is bool or r is Unknown for r in results)
-
-        # simply return non-boolean results
-        if not is_bool_result:
-            result = results[0] if not is_list_expr else results
-        else:
-            # special handling for true|false|unknown value evaluation
-            any_unknown_part = any(r is Unknown for r in results)
-            any_false_part = any(r is False for r in results)
-            if any_false_part: 
-                # definitive false
-                result = False 
-            elif any_unknown_part: 
-                # unknown
-                result = Unknown 
+        with Interpreter(variable_store, globals, evaluation_context, partial=partial) as interpreter:    
+            # make sure 'expr' is a list
+            is_list_expr = isinstance(expr_or_list, list)
+            if not is_list_expr: expr = [expr_or_list]
+            else: expr = expr_or_list
+            
+            if assume_bool:
+                # use short-circuit evaluation for boolean conjunctions
+                # note: this is not just an optimization, but also prevents type errors, if only
+                # a later condition fails (e.g. `type(a) is int and a + b > 2`), where checking the 
+                # second condition fail with a type error if `a` is not an integer.
+                results = interpreter.visit_ShortCircuitedConjunction(expr)
             else:
-                # definitive true
-                result = True 
+                # otherwise evaluate all expressions
+                results = [interpreter.visit(e) for e in expr]
+            # remove nops
+            results = [r for r in results if r is not NOP]
+            
+            is_bool_result = all(type(r) is bool or r is Unknown for r in results)
 
-        return_obj = (result,)
+            # simply return non-boolean results
+            if not is_bool_result:
+                result = results[0] if not is_list_expr else results
+            else:
+                # special handling for true|false|unknown value evaluation
+                any_unknown_part = any(r is Unknown for r in results)
+                any_false_part = any(r is False for r in results)
+                if any_false_part: 
+                    # definitive false
+                    result = False 
+                elif any_unknown_part: 
+                    # unknown
+                    result = Unknown 
+                else:
+                    # definitive true
+                    result = True 
 
-        # if requested, also return new mappings
-        if return_variable_domains:
-            return_obj = (result, interpreter.variable_domains)
-        
-        # if requested, also return ranges
-        if return_ranges:
-            return_obj = return_obj + (interpreter.ranges,)
-        
-        if len(return_obj) == 1:
-            return return_obj[0]
-        else:
-            return return_obj
+            return_obj = (result,)
+
+            # if requested, also return new mappings
+            if return_variable_domains:
+                return_obj = (result, interpreter.variable_domains)
+            
+            # if requested, also return ranges
+            if return_ranges:
+                return_obj = return_obj + (interpreter.ranges,)
+            
+            if len(return_obj) == 1:
+                return return_obj[0]
+            else:
+                return return_obj
 
     def __init__(self, variable_store, globals, evaluation_context=None, partial=True):
         super().__init__(reraise=True)
@@ -172,6 +189,13 @@ class Interpreter(RaisingTransformation):
         # free variables. A domain of 'None' means the variable
         # quantifies over the global input domain (cf. Input objects).
         self.variable_domains = {}
+
+    def __enter__(self):
+        INTERPRETER_STACK.get().append(self)
+        return self
+    
+    def __exit__(self, exc_type, exc_value, traceback):
+        INTERPRETER_STACK.get().pop()
 
     def visit_ShortCircuitedConjunction(self, exprs: list):
         results = []
@@ -306,12 +330,25 @@ class Interpreter(RaisingTransformation):
                 if type(rvalue) is str and type(lvalue) is str:
                     # find all ranges where left matches right
                     for m in re.finditer(lvalue, rvalue):
-                        self.ranges.append(Range.from_object(rvalue, m.start(), m.end()))
+                        self.mark(rvalue, m.start(), m.end())
                     return lvalue in rvalue
                 
                 return lvalue in rvalue
             else:
                 raise NotImplementedError(f"Unknown binary operator: {op}")
+
+    def mark(self, obj: object, start: int|None = None, end: int|None = None):
+        """
+        Marks a relevant range or subobject in the input object as relevant 
+        for the currently evaluated expression (e.g. a string match or 
+        an entire object like a specific tool call).
+
+        Args:
+            obj: The object that the range refers to.
+            start: The start index of the range (pass 'None' if you want to indicate an object-level range, i.e. an entire object in the input is considered relevant for the currently evaluated expression).
+            end: The end index of the range (pass 'None' if you want to indicate an object-level range, i.e. an entire object in the input is considered relevant for the currently evaluated expression).
+        """
+        self.ranges.append(Range.from_object(obj, start, end))
 
     def visit_Is(self, node: BinaryExpr, left, right):
         if type(node.right) is UnaryExpr and node.right.op == "not" and type(node.right.expr) is NoneLiteral:
