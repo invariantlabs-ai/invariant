@@ -9,9 +9,10 @@ class TestFlow(unittest.TestCase):
     def test_simple(self):
         policy = Policy.from_string(
         """
-        raise PolicyViolation("you must not call something_else after something") if:
-            (call: ToolCall)
-            call is tool:something
+        raise PolicyViolation("you must not call something_else after something", call=call, call2=call2) if:
+            (call: ToolCall) -> (call2: ToolCall)
+            call is tool:something({x: 2})
+            call2 is tool:something_else({x: 10})
         """
         )
 

@@ -33,7 +33,7 @@ class TestDerivedVariables(unittest.TestCase):
     def test_twolevel_subselect(self):
         policy = Policy.from_string(
         """
-        raise "error" if:
+        raise PolicyViolation(line=line, word=word) if:
             (msg: Message)
             (line: str) in msg.content.splitlines()
             (word: str) in line.split(" ")
@@ -58,7 +58,7 @@ class TestDerivedVariables(unittest.TestCase):
     def test_exclude_submodels(self):
         policy = Policy.from_string(
         """
-        raise "error" if:
+        raise PolicyViolation(line=line, word=word) if:
             (msg: Message)
             msg.data["a"] > 2 # cond 1
             lines := msg.content.splitlines()
