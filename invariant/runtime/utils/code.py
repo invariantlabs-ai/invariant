@@ -43,6 +43,7 @@ class PythonDetectorResult:
     builtins: list[str] = Field(default_factory=list, description="List of built-in functions used.")
     # whether code has syntax errors
     syntax_error: bool = Field(default=False, description="Flag which is true if code has syntax errors.")
+    syntax_error_exception: str|None = Field(default=None, description="Exception message if syntax error occurred.")
     # function call identifier names
     function_calls: set[str] = Field(default_factory=set, description="Set of function call targets as returned by 'ast.unparse(node.func).strip()'")
 
@@ -108,16 +109,27 @@ class PythonCodeDetector(BaseDetector):
     - Built-in functions used
     """
 
-    def __init__(self):
+    def __init__(self, ipython_mode=False):
         super().__init__()
 
-    def detect(self, text: str) -> PythonDetectorResult:
-        ast_visitor = ASTDetectionVisitor(text)
+    def ipython_preprocess(self, text: str) -> str:
+        """
+        Preprocesses the text like in IPython cell parsing (e.g. handles indentation differences,
+        cell magic commands, etc.).
+        """
+        from IPython.core.inputtransformer2 import TransformerManager
+        transformer_manager = TransformerManager()
+        return transformer_manager.transform_cell(text)
+
+    def detect(self, text: str, ipython_mode=False) -> PythonDetectorResult:
         try:
+            if ipython_mode:
+                text = self.ipython_preprocess(text)
+            ast_visitor = ASTDetectionVisitor(text)
             tree = ast.parse(text)
             ast_visitor.visit(tree)
         except Exception as e:
-            return PythonDetectorResult(syntax_error=True)
+            return PythonDetectorResult(syntax_error=True, syntax_error_exception=str(e))
         return ast_visitor.res
 
 
