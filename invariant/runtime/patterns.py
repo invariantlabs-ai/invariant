@@ -10,6 +10,7 @@ from invariant.language.ast import ArrayLiteral, Node, NumberLiteral, ObjectLite
 from abc import ABC, abstractmethod
 from invariant.runtime.utils.pii import PII_Analyzer
 from invariant.runtime.utils.moderation import ModerationAnalyzer
+from invariant.stdlib.invariant.nodes import Message, ToolCall, ToolOutput
 
 class SemanticPatternMatcher(ABC):
     """Matches a variable that is the result of a function call, where the function name matches the given pattern."""
@@ -137,34 +138,12 @@ class ToolCallMatcher(SemanticPatternMatcher):
     tool_pattern: str
     args: Optional[List[Any]]
 
-    def is_tool_call(self, value) -> bool:
-        """Returns True if the value is a tool call."""
-        if not type(value) is dict:
-            return False
-        try:
-            return "type" in value and value["type"] == "function" and "function" in value
-        except KeyError:
-            return False
-
-    def is_linked_tool_output(self, value) -> bool:
-        """Returns True if the value is a linked tool output (i.e. a tool output that can be linked to 
-        a known tool call)."""
-        if not type(value) is dict:
-            return False
-        try:
-            return value["role"] == "tool" and "_tool_call" in value
-        except KeyError:
-            return False
-
     def match(self, value) -> bool:
-        if self.is_linked_tool_output(value):
-            value = value["_tool_call"]
-
-        if not self.is_tool_call(value):
-            return False
-        
-        function_name = value["function"]["name"]
-        if not re.match(self.tool_pattern + "$", function_name):
+        if type(value) is ToolOutput and value._tool_call is not None:
+            value = value._tool_call
+        if not type(value) is ToolCall:
+            return
+        if not re.match(self.tool_pattern + "$", value.function.name):
             return False
         
         # for now, we only support keyword-based arguments (first positional argument is object of key-value pairs)
@@ -173,7 +152,7 @@ class ToolCallMatcher(SemanticPatternMatcher):
         elif not len(self.args) == 1:
             return False
 
-        return self.args[0].match(value["function"]["arguments"])
+        return self.args[0].match(value.function.arguments)
 
     def __repr__(self):
         return f"ToolCallMatcher({self.tool_pattern}, {self.args})"

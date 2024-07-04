@@ -10,17 +10,14 @@ class TestDerivedVariables(unittest.TestCase):
         """
         raise "error" if:
             (msg: Message)
-            (line: str) in msg.content
+            (line: str) in msg.content.splitlines()
             "a" in line
         """)
 
         # no match
         input = [{
             "role": "assistant",
-            "content": [
-                "Hello, X",
-                "Hello, Y"
-            ]
+            "content": "Hello, X\nHello, Y"
         }]
         errors = policy.analyze(input).errors
         assert len(errors) == 0
@@ -28,11 +25,7 @@ class TestDerivedVariables(unittest.TestCase):
         # one match
         input = [{
             "role": "assistant",
-            "content": [
-                "Hello, X",
-                "Hello, Y",
-                "Hello, a"
-            ]
+            "content": "Hello, X\nHello, Y\nHello, a"
         }]
         errors = policy.analyze(input).errors
         assert len(errors) == 1
@@ -42,43 +35,22 @@ class TestDerivedVariables(unittest.TestCase):
         """
         raise "error" if:
             (msg: Message)
-            (line: list) in msg.content
-            (word: str) in line
+            (line: str) in msg.content.splitlines()
+            (word: str) in line.split(" ")
             "a" == word
         """)
-
         # no match
         input = [{
             "role": "assistant",
-            "content": [
-                ["Hello", "X"],
-                ["Hello", "Y"]
-            ]
+            "content": "Hello, X\nHello, Y"
         }]
         errors = policy.analyze(input).errors
         assert len(errors) == 0
 
-        # one match
-        input = [{
-            "role": "assistant",
-            "content": [
-                ["Hello", "X"],
-                ["Hello", "Y"],
-                ["Hello", "a"]
-            ]
-        }]
-        errors = policy.analyze(input).errors
-        assert len(errors) == 1
-
         # two matches
         input = [{
             "role": "assistant",
-            "content": [
-                ["Hello", "X"],
-                ["Hello", "Y"],
-                ["Hello", "a"],
-                ["Hello", "a"]
-            ]
+            "content": "Hello, X\nHello, Y\nHello, a\nHello, a"
         }]
         errors = policy.analyze(input).errors
         assert len(errors) == 2
@@ -86,13 +58,14 @@ class TestDerivedVariables(unittest.TestCase):
     def test_exclude_submodels(self):
         policy = Policy.from_string(
         """
-        raise PolicyViolation(line=line, word=word) if:
+        raise "error" if:
             (msg: Message)
-            msg.a > 2 # cond 1
-            (line: list) in msg.content
-            (word: str) in line
+            msg.data["a"] > 2 # cond 1
+            lines := msg.content.splitlines()
+            (line: str) in lines
+            (word: str) in line.split(",")
             # cond 2
-            len(line) < 4 
+            len(lines) < 4
             # cond 3
             "a" == word
         """)
@@ -101,30 +74,24 @@ class TestDerivedVariables(unittest.TestCase):
         input = [
             {
                 "role": "assistant",
-                "content": [
-                    ["msg 1", "X"],
-                    ["msg 1", "Y"]
-                ],
-                "a": 1 # excluded by the first condition
+                "content": "msg 1,X\nmsg 1,Y",
+                "data": {
+                    "a": 1,
+                }
             },
             {
                 "role": "assistant",
-                "content": [
-                    ["msg 2", "X"],
-                    ["msg 2", "Y"],
-                    ["msg 2", "a"]
-                ],
-                "a": 3 # included by the first condition
+                "content": "msg 2,X\nmsg 2,Y\nmsg 2,a",
+                "data": {
+                    "a": 3,
+                }
             },
             {
                 "role": "assistant",
-                "content": [
-                    ["msg 3", "X"],
-                    ["msg 3", "Y"],
-                    ["msg 3", "a"],
-                    ["msg 3", "a"] # excluded by the second condition
-                ],
-                "a": 3 # included by the first condition
+                "content": "msg 3,X\nmsg 3,Y\nmsg 3,a\nmsg 3,a",
+                "data": {
+                    "a": 3,
+                }
             }
         ]
         errors = policy.analyze(input).errors

@@ -1,4 +1,5 @@
 from pydantic.dataclasses import dataclass
+from pydantic import BaseModel
 from typing import Optional
 
 @dataclass
@@ -6,31 +7,30 @@ class LLM:
     vendor: str
     model: str
 
-@dataclass
-class ToolCall:
-    id: str
-    type: str
-    function: list
-
-@dataclass
-class Message:
-    content: str
-    role: str
-    tool_calls: Optional[list[ToolCall]] = None
-
-@dataclass
-class Function:
+class Function(BaseModel):
     name: str
     arguments: dict
 
-@dataclass
-class ToolOutput:
+class ToolCall(BaseModel):
+    id: str
+    type: str
+    function: Function
+    data: Optional[dict] = None
+
+class Message(BaseModel):
+    content: Optional[str]
+    role: str
+    tool_calls: Optional[list[ToolCall]] = None
+    data: Optional[dict] = None
+
+class ToolOutput(BaseModel):
     role: str
     content: str
-    tool_call_id: str
+    tool_call_id: Optional[str]
+    data: Optional[dict] = None
 
-TraceEvent = Message | ToolCall | ToolOutput
+    _tool_call: Optional[ToolCall]
 
-@dataclass
-class Trace:
-    elements: list[TraceEvent]
+Event = Message | ToolCall | ToolOutput
+
+

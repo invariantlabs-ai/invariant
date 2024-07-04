@@ -76,8 +76,8 @@ class TestMonitor(unittest.TestCase):
         """)
 
         events = [
-            {"role": "user", "content": "Hello, world!"},
-            {"role": "assistant", "content": "Hello, world!"}
+            Message(role="user", content="Hello, world!"),
+            Message(role="assistant", content="Hello, world!")
         ]
         input = []
         input += [events[0]]

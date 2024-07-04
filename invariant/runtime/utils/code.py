@@ -60,6 +60,9 @@ class PythonDetectorResult:
             raise ValueError("Expected PythonDetectorResult object")
         self.imports.extend(other.imports)
         self.builtins.extend(other.builtins)
+        self.function_calls.update(other.function_calls)
+        if other.syntax_error:
+            self.syntax_error = True
 
 
 class ASTDetectionVisitor(ast.NodeVisitor):

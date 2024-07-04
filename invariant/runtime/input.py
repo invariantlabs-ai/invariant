@@ -9,16 +9,9 @@ import textwrap
 import termcolor
 from copy import deepcopy
 from typing import Optional
-from invariant.stdlib.invariant.nodes import *
+from invariant.stdlib.invariant.nodes import Message, ToolCall, ToolOutput, Event
 
 import invariant.language.types as types
-
-def merge(lists):
-    if not lists:
-        return []
-    if len(lists) == 1:
-        return lists[0]
-    return [item for sublist in lists for item in sublist]
 
 
 class InputProcessor:
@@ -48,6 +41,7 @@ class InputProcessor:
         processor.process(input_dict)
         return processor
 
+
 class Dataflow(InputProcessor):
     """Stores the dataflow within a given input. 
 
@@ -66,19 +60,16 @@ class Dataflow(InputProcessor):
         so_far = set()
         # iterate over messages in chat
         for i in value_list:
-            msg_type = derive_type(i)
-            if msg_type is None:
-                continue
-
             # if type(i) is not dict: continue
             # flow from all messages to subsequent messages
             self.edges.setdefault(id(i), set()).update(so_far)
             so_far.add(id(i))
 
             # same for tool calls
-            for tc in i.get("tool_calls", []):
-                self.edges.setdefault(id(tc), set()).update(so_far)
-                so_far.add(id(tc))
+            if type(i) is Message and i.tool_calls is not None:
+                for tc in i.tool_calls:
+                    self.edges.setdefault(id(tc), set()).update(so_far)
+                    so_far.add(id(tc))
 
     def has_flow(self, a, b):
         """Returns whether there is a flow from a to b in the dataflow graph.
@@ -90,95 +81,10 @@ class Dataflow(InputProcessor):
         Returns:
             True if there is a flow from a to b, False otherwise.
         """
-        if not isinstance(a, dict) or not isinstance(b, dict):
-            print("Cannot check flow between non-dict objects", type(a), type(b))
-            return False
         if id(a) not in self.edges or id(b) not in self.edges:
             raise KeyError(f"Object with given id not in dataflow graph!")
         return id(a) in self.edges.get(id(b), set())
 
-def is_message(msg_type, obj):
-    if not type(obj) is dict:
-        return False
-    if msg_type == "ToolCall":
-        return obj.get("role") == "assistant" and obj.get("tool_calls") is not None and len(obj.get("tool_calls")) > 0
-    elif msg_type == "Message":
-        return obj.get("role") == "assistant" and obj.get("tool_calls") is None
-    elif msg_type == "ToolOutput":
-        return obj.get("role") == "tool"
-    else:
-        return False
-
-class DerivedData(InputProcessor):
-    """Creates additional derived data based on some input object.
-    
-    For instance, this creates links between a ToolOutput and the corresponding 
-    preceding ToolCall (either by id or by direct sucessive flow when no id is present).
-    
-    To access derived properties, use the `get` method.
-    """
-    def __init__(self):
-        self.derived_attributes = {}
-
-    def visit_top_level(self, value_list, name=None):
-        tool_calls = {}
-        
-        for msg in value_list:
-            if is_message("ToolCall", msg):
-                for tc in msg.get("tool_calls"):
-                    tool_calls[tc.get("id", -1)] = tc
-                    tool_calls[-1] = msg
-            elif is_message("ToolOutput", msg):
-                id = msg.get("tool_call_id", -1)
-                tool_call = tool_calls.get(id, tool_calls.get(-1, None))
-                msg["_tool_call"] = tool_call
-
-    def get(self, obj, key=None):
-        all = self.derived_attributes.get(id(obj), {})
-        if key is None:
-            return all
-        return all.get(key)
-
-class InputSchemaValidator(InputProcessor):
-    def __init__(self):
-        self.valid = False
-        self.n_messages = 0
-        self.invalid_msg_objects = []
-
-    def visit_top_level(self, value_list, name=None):
-        any_valid = False
-
-        for msg in value_list:
-            t = derive_type(msg)
-            if t is not None:
-                self.n_messages += 1
-                if t == "Message":
-                    # check tool calls
-                    tool_calls = msg.get("tool_calls")
-                    if tool_calls is not None:
-                        for tc in tool_calls:
-                            tct = derive_type(tc)
-                            if tct == "ToolCall":
-                                any_valid = True
-                                break
-                            else:
-                                self.invalid_msg_objects.append(tc)
-                any_valid = True
-            else:
-                self.invalid_msg_objects.append(msg)
-        
-        self.valid = any_valid or self.valid
-
-    def is_valid(self):
-        if self.n_messages == 0:
-            return True
-        return self.valid and len(self.invalid_msg_objects) == 0
-    
-    def print_warnings(self):
-        if len(self.invalid_msg_objects) > 0:
-            warnings.warn("warning: the analysis input contains several objects that could not be recognized by the analyzer as a Message, ToolCall, ToolOutput, etc. Please make sure your input data conforms to the Invariant trace format.", UserWarning)
-            for msg in self.invalid_msg_objects:
-                warnings.warn(f"warning: unrecognized object: {msg}", UserWarning)
 
 class Selectable:
     def __init__(self, data):
@@ -191,6 +97,13 @@ class Selectable:
             return True
         return False
 
+    def merge(self, lists):
+        if not lists:
+            return []
+        if len(lists) == 1:
+            return lists[0]
+        return [item for sublist in lists for item in sublist]
+
     def select(self, selector, data="<root>", index: Optional[int] = None):
         if self.should_ignore(data):
             return []
@@ -198,47 +111,38 @@ class Selectable:
         if data == "<root>":
             data = self.data
 
-        if type(data) is list:
-            if type_name == "list":
-                return [(data, index)]
-            return merge([self.select(type_name, item, item_index) for item_index, item in enumerate(data)])
-        elif type(data) is dict or hasattr(data, "__objectidict__"):
-            result = []
-            if "type" in data and data["type"] == type_name:
-                result.append((data, index))
-            elif derive_type(data) == type_name:
-                result.append((data, index))
-            elif type_name == "dict":
-                result.append((data, index))
-            for key, value in data.items():
-                if key.startswith("_"): continue
-                result += self.select(type_name, value, index)
-            return result
-        elif hasattr(data, "to_dict"):
-            result = []
-            if derive_type(data) == type_name:
-                result.append((data, index))
-            for key,value in data.to_dict().items():
-                result += self.select(type_name, value, index)
-            return result
-        elif type(data) is str or type(data) is int or data is None or type(data) is bool: 
-            if str(type(data).__name__) == type_name:
-                return [(data, index)]
-            return []
-        elif hasattr(data, "__dict__"):
-            result = []
-            if data.__class__.__name__ == type_name:
-                result.append((data, index))
-            for key, value in data.__dict__.items():
-                result += self.select(type_name, value, index)
-            return result
+        if type(data).__name__ == type_name:
+            return [(data, index)]
+
+        if type(data) is Message:
+            return self.merge([
+                self.select(type_name, data.content, index),
+                self.select(type_name, data.role, index),
+                self.select(type_name, data.tool_calls, index),
+                self.select(type_name, data.data, index)
+            ])
+        elif type(data) is ToolCall:
+            return self.merge([
+                self.select(type_name, data.id, index),
+                self.select(type_name, data.type, index),
+                self.select(type_name, data.function, index),
+                self.select(type_name, data.data, index)
+            ])
+        elif type(data) is ToolOutput:
+            return self.merge([
+                self.select(type_name, data.role, index),
+                self.select(type_name, data.content, index),
+                self.select(type_name, data.tool_call_id, index),
+                self.select(type_name, data.data, index)
+            ])
+        elif type(data) is list:
+            return self.merge([self.select(type_name, item, item_index) for item_index, item in enumerate(data)])
+        elif type(data) is dict:
+            return self.merge([self.select(type_name, value, index) for value in data.values()])
         elif type(data) is tuple:
-            result = []
-            for item_index, item in enumerate(data):
-                result += self.select(type_name, item, item_index)
-            return result
+            return self.merge([self.select(type_name, item, item_index) for item_index, item in enumerate(data)])
         else:
-            print("cannot sub-select type", type(data))
+            # print("cannot sub-select type", type(data))
             return []
         
     def type_name(self, selector):
@@ -246,21 +150,9 @@ class Selectable:
             return selector.name
         else:
             return selector
-        
-def derive_type(dict_value):
-    if not hasattr(dict_value, "keys"):
-        return None
-
-    if "role" in dict_value.keys() and "content" in dict_value.keys():
-        if "tool_call_id" in dict_value.keys():
-            return "ToolOutput"
-        return "Message"
-    elif "type" in dict_value.keys() and "function" in dict_value.keys():
-        return "ToolCall"
-    else:
-        return None
 
 class InputInspector(InputProcessor):
+    """Input processor that prints a human-readable representation of the input data."""
     def __init__(self):
         self.value_lists = []
 
@@ -268,11 +160,12 @@ class InputInspector(InputProcessor):
         result = []
 
         for msg in value_list:
-            msg_type = derive_type(msg) or "<unknown>"
+            msg_type = type(msg).__name__ or "<unknown>"
             msg_repr = "- " + msg_type + ": " + str(msg)
             if msg_type == "Message":
-                for tc in msg.get("tool_calls", []):
-                    tct = derive_type(tc) or "<unknown>"
+                tool_calls = msg.tool_calls or []
+                for tc in tool_calls:
+                    tct = type(tc).__name__ or "<unknown>"
                     msg_repr += "\n  - " + tct + ": " + str(tc)
             result += [msg_repr]
 
@@ -290,22 +183,60 @@ class InputInspector(InputProcessor):
         
         return result
 
-
 class Input(Selectable):
     """
-    An Input object represents the input to an analyzer call.
+    An Input object that can be analyzed by the Invariant Analyzer.
+
+    Attributes:
+        data: List of events observed in the input where each event is one of Message, ToolCall or ToolOutput.
+        dataflow: Dataflow graph of the events in the input.
     """
-    def __init__(self, input_dict, copy=True):
-        self.data = deepcopy(input_dict) if copy else input_dict
-        # creates derived data from the input (e.g. extra links between different objects)
-        self.derived_data = DerivedData.from_input(self.data)
-        # check for valid schema
-        self.schema_validator = InputSchemaValidator.from_input(self.data)
-        self.schema_validator.print_warnings()
-        if not self.schema_validator.is_valid(): 
-            raise ValueError("the provided input does not conform to the Invariant trace format (see warnings above). Use Input.inspect(obj) to understand how the analyzer interprets your input.")
+    data: list[Event]
+    dataflow: Dataflow
+
+    def __init__(self, input: list[dict]):
+        self.data = self.parse_input(input)
         # creates a dataflow graph from the input
         self.dataflow = Dataflow.from_input(self.data)
+
+    def parse_input(self, input: list[dict]) -> list[Event]:
+        """Parses input data given as list of dictionaries and transforms it into list of Event objects (Message, ToolCall or ToolOutput).
+
+        Args:
+            input: List of dictionaries representing the raw input data (for example, as received from the user).
+        """
+        input = deepcopy(input)
+        parsed_data = []
+        tool_calls = {}
+        last_call_id = None
+
+        for event in input:
+            if not isinstance(event, dict):
+                parsed_data.append(event)
+                continue
+            if "role" in event:
+                if event["role"] != "tool":
+                    msg = Message(**event)
+                    parsed_data.append(msg)
+                    if msg.tool_calls is not None:
+                        for call in msg.tool_calls:
+                            last_call_id = call.id
+                            tool_calls[call.id] = call
+                else:
+                    if "tool_call_id" not in event:
+                        event["tool_call_id"] = last_call_id
+                    out = ToolOutput(**event)
+                    if out.tool_call_id in tool_calls:
+                        out._tool_call = tool_calls[out.tool_call_id]
+                    parsed_data.append(out)
+            elif "type" in event:
+                call = ToolCall(**event)
+                last_call_id = call.id
+                tool_calls[call.id] = call
+                parsed_data.append(call)
+            else:
+                raise ValueError("Could not parse event in the trace as any of the event types (Message, ToolCall, ToolOutput): " + str(event))
+        return parsed_data
     
     @staticmethod
     def inspect(obj):

@@ -22,10 +22,10 @@ def secrets(data: str | list | dict, **config: dict) -> list[str]:
     for message in chat:
         if message is None:
             continue
-        if message["content"] is None:
+        if message.content is None:
             continue
         
-        res = SECRETS_ANALYZER.detect_all(message["content"], **config)
+        res = SECRETS_ANALYZER.detect_all(message.content, **config)
         all_secrets.extend(SECRETS_ANALYZER.get_entities(res))
     return all_secrets
 

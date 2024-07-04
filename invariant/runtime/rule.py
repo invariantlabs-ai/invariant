@@ -1,15 +1,13 @@
 import os
 import invariant.language.ast as ast
-from invariant.runtime.evaluation import Interpreter, EvaluationContext, VariableDomain, Unknown
-from invariant.language.linking import link
-import invariant.language.types as types
-from invariant.language.parser import parse_file
-import invariant.language.ast as ast
-from dataclasses import dataclass
-from itertools import product
 import textwrap
 import termcolor
+import invariant.language.ast as ast
+from itertools import product
+from invariant.language.linking import link
 from invariant.runtime.input import Selectable, Input
+from invariant.runtime.evaluation import Interpreter, EvaluationContext, VariableDomain, Unknown
+from inspect import ismethod
 
 class PolicyAction:
     def __call__(self, input_dict):
@@ -198,7 +196,7 @@ class FunctionCache:
     
     def call(self, function, args, **kwargs):
         # check if function is marked as @nocache (see ./functions.py module)
-        if hasattr(function, "__invariant_nocache__"):
+        if True: # hasattr(function, "__invariant_nocache__"):
             return function(*args, **kwargs)
         if not self.contains(function, args, kwargs):
             self.cache[self.call_key(function, args, kwargs)] = function(*args, **kwargs)
@@ -259,7 +257,7 @@ class RuleSet:
         model_str = textwrap.wrap(repr(model), width=120, subsequent_indent="         ")
         print("  Model:", "\n".join(model_str))
 
-    def apply(self, input_data, policy_parameters):
+    def apply(self, input_data: Input, policy_parameters):
         exceptions = []
         
         self.input = input_data

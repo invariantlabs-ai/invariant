@@ -78,6 +78,9 @@ class Policy:
 
     Use `analyze` to apply the policy to an application state and to obtain a list of violations.
     """
+    policy_root: PolicyRoot
+    rule_set: RuleSet
+    cached: bool
 
     def __init__(self, policy_root: PolicyRoot, cached=False):
         """Creates a new policy with the given policy source.
@@ -113,10 +116,8 @@ class Policy:
         """Implements how errors are added to an analysis result (e.g. as handled or non-handled errors)."""
         analysis_result.errors.append(error)
 
-    def analyze(self, input: Input | dict, raise_unhandled=False, **policy_parameters):
-        # prepare input
-        if type(input) is dict or type(input) is list:
-            input = Input(input, copy=not self.cached)
+    def analyze(self, input: list[dict], raise_unhandled=False, **policy_parameters):
+        input = Input(input)
         
         # prepare policy parameters
         if "data" in policy_parameters:

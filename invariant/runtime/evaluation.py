@@ -317,13 +317,13 @@ class Interpreter(RaisingTransformation):
 
         if hasattr(obj, node.member):
             return getattr(obj, node.member)
-        elif type(obj) is dict:
-            try:
-                return obj[node.member]
-            except KeyError:
-                raise KeyError(f"Object {obj} has no key {node.member}")
-        else:
-            raise KeyError(f"Object {obj} has no member {node.member}")
+
+        try:
+            if type(obj) is str:
+                obj = json.loads(obj)
+            return obj[node.member]
+        except Exception:
+            raise KeyError(f"Object {obj} has no key {node.member}")
 
     def visit_KeyAccess(self, node: KeyAccess):
         obj = self.visit(node.expr)
