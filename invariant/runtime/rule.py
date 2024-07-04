@@ -213,6 +213,8 @@ class InputEvaluationContext(EvaluationContext):
         self.policy_parameters = policy_parameters
 
     def call_function(self, function, args, **kwargs):
+        if self.policy_parameters.get("pass_input", False):
+            kwargs["input"] = self.input
         return self.rule_set.call_function(function, args, **kwargs)
     
     def has_flow(self, a, b):
