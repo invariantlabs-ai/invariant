@@ -143,7 +143,6 @@ class Rule:
                     model = Model(input_dict, input_data, ranges)
                     # add all objects form input_dict as object ranges
                     for k,v in input_dict.items():
-                        print("from object", v)
                         ranges.append(Range.from_object(v))
                     models.append(model)
                     continue

@@ -279,12 +279,25 @@ class InputInspector(InputProcessor):
         
         return result
 
+def inputcopy(opj):
+    # recursively copy, dict, list and tuple, and delegate to deepcopy for leaf objects
+    if type(opj) is dict:
+        result = {k: inputcopy(v) for k, v in opj.items()}
+        result["__origin__"] = opj
+        return result
+    elif type(opj) is list:
+        return [inputcopy(v) for v in opj]
+    elif type(opj) is tuple:
+        return tuple([inputcopy(v) for v in opj])
+    else:
+        return deepcopy(opj)
+    
 class Input(Selectable):
     """
     An Input object represents the input to an analyzer call.
     """
     def __init__(self, input_dict, copy=True):
-        self.data = deepcopy(input_dict) if copy else input_dict
+        self.data = inputcopy(input_dict) if copy else input_dict
         # creates derived data from the input (e.g. extra links between different objects)
         self.derived_data = DerivedData.from_input(self.data)
         # check for valid schema

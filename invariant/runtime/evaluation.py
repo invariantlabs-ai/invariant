@@ -67,6 +67,8 @@ class Range:
 
     @classmethod
     def from_object(cls, obj, start=None, end=None):
+        if type(obj) is dict and "__origin__" in obj:
+            obj = obj["__origin__"]
         return cls(str(id(obj)), start, end)
     
     def match(self, obj):
