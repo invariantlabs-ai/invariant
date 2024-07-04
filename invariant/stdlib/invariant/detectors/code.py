@@ -3,7 +3,7 @@ from invariant.runtime.utils.code import *
 PYTHON_ANALYZER = None
 CODE_SHIELD_DETECTOR = None
 
-def python_code(data: str | list | dict, **config: dict) -> PythonDetectorResult:
+def python_code(data: str | list | dict, ipython_mode=False, **config: dict) -> PythonDetectorResult:
     """Predicate used to extract entities from Python code."""
 
     global PYTHON_ANALYZER
@@ -18,10 +18,13 @@ def python_code(data: str | list | dict, **config: dict) -> PythonDetectorResult
             continue
         if message["content"] is None:
             continue
-        new_res = PYTHON_ANALYZER.detect(message["content"], **config)
+        new_res = PYTHON_ANALYZER.detect(message["content"], ipython_mode=ipython_mode, **config)
         res = new_res if res is None else res.extend(new_res)
     return res
 
+def ipython_code(data: str | list | dict, **config: dict) -> PythonDetectorResult:
+    """Predicate used to extract entities from IPython cell code."""
+    return python_code(data, ipython_mode=True, **config)
 
 def code_shield(data: str | list | dict, **config: dict) -> list[CodeIssue]:
     """Predicate used to extract entities from Python code."""
