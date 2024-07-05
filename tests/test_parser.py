@@ -365,6 +365,27 @@ class TestParser(unittest.TestCase):
         self.assertIsInstance(policy.statements[0].body[1].right.expr, ast.Identifier)
         self.assertEqual(policy.statements[0].body[1].right.member, "content")
 
+    def test_with_member_access_call_in_addition(self):
+        policy = parse("""
+        raise "found result" if:
+            (to: ToolOutput)
+            "File " + tc.function.arguments.arg.strip() + " not found" in to.content
+        """)
+
+        self.assertIsInstance(policy.statements[0].body[1], ast.BinaryExpr)
+        self.assertIsInstance(policy.statements[0].body[1].left, ast.BinaryExpr)
+        self.assertIsInstance(policy.statements[0].body[1].left.left, ast.BinaryExpr)
+        
+        self.assertIsInstance(policy.statements[0].body[1].left.left.left, ast.StringLiteral)
+        self.assertIsInstance(policy.statements[0].body[1].left.left.right, ast.FunctionCall)
+
+        self.assertIsInstance(policy.statements[0].body[1].left.left.right.name, ast.MemberAccess)
+        self.assertIsInstance(policy.statements[0].body[1].left.left.right.name.expr, ast.MemberAccess)
+        self.assertEqual(policy.statements[0].body[1].left.left.right.name.member, "strip")
+        self.assertEqual(policy.statements[0].body[1].left.left.right.name.expr.member, "arg")
+        self.assertEqual(policy.statements[0].body[1].left.left.right.name.expr.expr.member, "arguments")
+        self.assertEqual(policy.statements[0].body[1].left.left.right.name.expr.expr.expr.member, "function")
+        self.assertIsInstance(policy.statements[0].body[1].left.left.right.name.expr.expr.expr.expr, ast.Identifier)
 
 if __name__ == "__main__":
     unittest.main()

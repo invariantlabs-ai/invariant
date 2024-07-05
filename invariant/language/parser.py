@@ -36,7 +36,7 @@ parser = lark.Lark(r"""
     term: factor TERM_OPERATOR factor | factor
     factor: power FACTOR_OPERATOR power | power
     power: atom POWER_OPERATOR atom | atom
-    atom: unary_expr | NUMBER | multiline_string | STRING | ID | "(" expr ")" | member_access | key_access | func_call | typed_identifier | tool_ref | object_literal | list_literal | STAR | value_ref | expr
+    atom: unary_expr | NUMBER | multiline_string | STRING | ID | "(" expr ")" | member_access | key_access | expr | func_call | typed_identifier | tool_ref | object_literal | list_literal | STAR | value_ref
                    
     unary_expr: UNARY_OPERATOR expr
     func_call: expr  "(" ( (expr ("," expr)*)? ("," kwarg ("," kwarg)*)? ) ")" | \
