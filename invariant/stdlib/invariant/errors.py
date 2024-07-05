@@ -10,7 +10,7 @@ class PolicyViolation(Exception):
         self.ranges = kwargs.get("ranges", [])
 
     def __str__(self):
-        kvs = ", ".join([f"{k}={v}" for k, v in self.kwargs.items()])
+        kvs = ", ".join([f"{k}={v}" if k != 'ranges' else f'ranges=[<{len(v)} ranges>]' for k, v in self.kwargs.items()])
         if len(kvs) > 0: kvs = ", " + kvs
         return f"{type(self).__name__}({' '.join([str(a) for a in self.args])}{kvs})"
     

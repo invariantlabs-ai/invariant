@@ -82,7 +82,7 @@ class ConstantMatcher(SemanticPatternMatcher):
     def match_regex(self, value) -> bool:
         if type(self.value) is not str:
             return False
-        return re.match(self.value + "$", value) is not None
+        return re.match(self.value + "$", value, re.DOTALL) is not None
 
     def match(self, value) -> bool:
         if not issubclass(type(value), type(self.value)):

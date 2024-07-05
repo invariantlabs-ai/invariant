@@ -393,9 +393,9 @@ class Interpreter(RaisingTransformation):
             try:
                 return obj[node.member]
             except KeyError:
-                raise KeyError(f"Object {obj} has no key {node.member}")
+                raise KeyError(f"Could not find key '{node.member}' in {obj}")
         else:
-            raise KeyError(f"Object {obj} has no member {node.member}")
+            raise KeyError(f"Cound not find member '{node.member}' in {obj}")
 
     def visit_KeyAccess(self, node: KeyAccess):
         obj = self.visit(node.expr)
