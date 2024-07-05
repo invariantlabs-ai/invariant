@@ -256,6 +256,27 @@ class FunctionDefinition(Node):
     def __repr__(self):
         return str(self)
 
+class Quantifier(Node):
+    """
+    Quantifiers like 'forall:\n    <expr>' or 'count(min=5):\n    <expr>'.
+    """
+    def __init__(self, quantifier_call, body):
+        self.quantifier_call = quantifier_call
+        self.body = body
+
+    def __str__(self):
+        return (
+            f"Quantifier(\n"
+            + textwrap.indent(
+                f"quantifier_call: {self.quantifier_call}\nbody:\n"
+                + "\n".join("  " + str(stmt) for stmt in self.body),
+                "  ",
+            )
+            + "\n)"
+        )
+    
+    def __repr__(self):
+        return str(self)
 
 class Expression(Node):
     def dependencies(self):
@@ -657,6 +678,9 @@ class Transformation:
 
     def visit_RaisePolicy(self, node: RaisePolicy):
         return self.generic_visit(node)
+    
+    def visit_Quantifier(self, node: Quantifier):
+        return self.generic_visit(node)
 
     def visit_BinaryExpr(self, node: BinaryExpr):
         return self.generic_visit(node)
@@ -786,3 +810,27 @@ class FreeVarAnalysis(Visitor):
         visitor = FreeVarAnalysis()
         visitor.visit(node)
         return visitor.free_vars
+
+class CapturedVariableCollector(Visitor):
+    """
+    Collects all variables that are captured in a provided block or expression. More specifically, it collects all variables that are used but not declared in the provided block or expression, i.e. they are captured from the surrounding scope.
+
+    Use .captured_variables() to get the set of captured variables.
+    """
+    def __init__(self):
+        self.used_variables = set()
+        self.declared_variables = set()
+
+    def collect(self, expr):
+        self.used_variables = set()
+        self.declared_variables = set()
+        self.visit(expr)
+        return self.used_variables - self.declared_variables
+
+    def visit_TypedIdentifier(self, node: TypedIdentifier):
+        self.declared_variables.add(node.id)
+        super().visit_TypedIdentifier(node)
+
+    def visit_Identifier(self, node: Identifier):
+        self.used_variables.add(node.id)
+        super().visit_Identifier(node)

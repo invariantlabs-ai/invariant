@@ -27,8 +27,9 @@ parser = lark.Lark(r"""
     def_stmt: "def" func_signature INDENT NEWLINE? statement* DEDENT
     decl_stmt: ( ID | func_signature ) ":=" expr | ( ID | func_signature ) INDENT NEWLINE? expr (NEWLINE expr)* DEDENT
 
-    expr: ID | binary_expr | "(" expr ("," expr)* ")" | block_expr | import_stmt
-                   
+    expr: binary_expr | "(" expr ("," expr)* ")" | block_expr | import_stmt
+    
+    quantifier_expr: ( "not" )? ( func_call | ID ) INDENT NEWLINE? expr (NEWLINE expr)* DEDENT
     block_expr: INDENT expr (NEWLINE expr)* DEDENT
     
     binary_expr: cmp_expr LOGICAL_OPERATOR cmp_expr | cmp_expr
@@ -36,7 +37,7 @@ parser = lark.Lark(r"""
     term: factor TERM_OPERATOR factor | factor
     factor: power FACTOR_OPERATOR power | power
     power: atom POWER_OPERATOR atom | atom
-    atom: unary_expr | NUMBER | multiline_string | STRING | ID | "(" expr ")" | member_access | key_access | expr | func_call | typed_identifier | tool_ref | object_literal | list_literal | STAR | value_ref
+    atom: unary_expr | NUMBER | multiline_string | STRING | ID | "(" expr ")" | member_access | key_access | expr | func_call | quantifier_expr | typed_identifier | tool_ref | object_literal | list_literal | STAR | value_ref
                    
     unary_expr: UNARY_OPERATOR expr
     func_call: expr  "(" ( (expr ("," expr)*)? ("," kwarg ("," kwarg)*)? ) ")" | \
@@ -205,6 +206,14 @@ class IPLTransformer(lark.Transformer):
             body = [body]
 
         return RaisePolicy(items[0], body).with_location(self.loc(items))
+
+    def quantifier_expr(self, items):
+        quantifier_call = items[0]
+        body = self.filter(items[1:])
+        # unpack body if it's a indented block
+        while type(body) is list and len(body) == 1: 
+            body = body[0]
+        return Quantifier(quantifier_call, body).with_location(self.loc(items))
 
     def def_stmt(self, items):
         return FunctionDefinition(
