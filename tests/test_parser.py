@@ -306,5 +306,65 @@ class TestParser(unittest.TestCase):
         self.assertIsInstance(policy.statements[1].body[1], ast.UnaryExpr)
         self.assertIsInstance(policy.statements[1].body[1].expr, ast.FunctionCall)
 
+    def test_multi_binary(self):
+        policy = parse("""
+        raise "found result" if:
+            (output: ToolOutput)
+            a := "Cheerio" + "1" + "test"
+            print(a)
+        """)
+        self.assertIsInstance(policy.statements[0].body[1], ast.BinaryExpr)
+        # left is id
+        self.assertIsInstance(policy.statements[0].body[1].left, ast.Identifier)
+        # right is binary
+        self.assertIsInstance(policy.statements[0].body[1].right, ast.BinaryExpr)
+        rhs = policy.statements[0].body[1].right
+        # left or rhs is binary
+        self.assertIsInstance(rhs.left, ast.BinaryExpr)
+        self.assertIsInstance(rhs.right, ast.StringLiteral)
+        # left is id
+        self.assertIsInstance(rhs.left.left, ast.StringLiteral)
+        # right is id
+        self.assertIsInstance(rhs.left.right, ast.StringLiteral)
+
+    def test_in_with_member(self):
+        policy = parse("""
+        raise "found result" if:
+            (output: ToolOutput)
+            "abc" + "efg" in output.content
+        """)
+
+        self.assertIsInstance(policy.statements[0].body[1], ast.BinaryExpr)
+        self.assertIsInstance(policy.statements[0].body[1].left, ast.BinaryExpr)
+        
+        self.assertIsInstance(policy.statements[0].body[1].left.left, ast.StringLiteral)
+        self.assertIsInstance(policy.statements[0].body[1].left.right, ast.StringLiteral)
+
+        self.assertIsInstance(policy.statements[0].body[1].right, ast.MemberAccess)
+        self.assertIsInstance(policy.statements[0].body[1].right.expr, ast.Identifier)
+        self.assertEqual(policy.statements[0].body[1].right.member, "content")
+        self.assertEqual(policy.statements[0].body[1].op, "in")
+
+    def test_in_with_member_three_components(self):
+        policy = parse("""
+        raise "found result" if:
+            (output: ToolOutput)
+            "abc" + "efg" + "hij" in output.content
+        """)
+
+        self.assertIsInstance(policy.statements[0].body[1], ast.BinaryExpr)
+        self.assertIsInstance(policy.statements[0].body[1].left, ast.BinaryExpr)
+
+        self.assertIsInstance(policy.statements[0].body[1].left.left, ast.BinaryExpr)
+        self.assertIsInstance(policy.statements[0].body[1].left.right, ast.StringLiteral)
+
+        self.assertIsInstance(policy.statements[0].body[1].left.left.left, ast.StringLiteral)
+        self.assertIsInstance(policy.statements[0].body[1].left.left.right, ast.StringLiteral)
+
+        self.assertIsInstance(policy.statements[0].body[1].right, ast.MemberAccess)
+        self.assertIsInstance(policy.statements[0].body[1].right.expr, ast.Identifier)
+        self.assertEqual(policy.statements[0].body[1].right.member, "content")
+
+
 if __name__ == "__main__":
     unittest.main()
