@@ -33,13 +33,13 @@ def format_invariant_chat_messages(run_id: str, agent_input, intermediate_steps:
     for msg in agent_input.get("chat_history", []):
         messages.append({
             "role": msg["role"],
-            "content": msg["content"],
+            "content": str(msg["content"]),
         })
 
     if "input" in agent_input:
         messages.append({
             "role": "user",
-            "content": agent_input["input"],
+            "content": str(agent_input["input"]),
         })
 
     msg_id = 0
@@ -55,7 +55,7 @@ def format_invariant_chat_messages(run_id: str, agent_input, intermediate_steps:
             if isinstance(action, AgentActionMessageLog):
                 messages.append({
                     "role": "assistant",
-                    "content": action.message_log[0].content if len(action.message_log) > 0 else None,
+                    "content": str(action.message_log[0].content) if len(action.message_log) > 0 else None,
                     "tool_calls": [
                         {
                             "id": "1",
@@ -71,7 +71,7 @@ def format_invariant_chat_messages(run_id: str, agent_input, intermediate_steps:
                 })
                 messages.append({
                     "role": "tool",
-                    "content": observation,
+                    "content": str(observation),
                     "tool_call_id": "1",
                     "agent_output": step,
                     "key": "observation_" + str(next_id())
@@ -127,7 +127,7 @@ def format_invariant_chat_messages(run_id: str, agent_input, intermediate_steps:
             })
             messages.append({
                 "role": "tool",
-                "content": tool_output,
+                "content": str(tool_output),
                 **({"tool_call_id": tool_call.tool_call_id} if hasattr(tool_call, "tool_call_id") else {}),
                 "agent_output": ns,
                 "key": "observation_" + str(next_id())

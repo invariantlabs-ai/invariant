@@ -93,7 +93,10 @@ def openai_agent():
                 "something_else": something_else,
             }  # only one function in this example, but you can have multiple
             
-            messages.append(response_message.to_dict())
+            parsed_response = response_message.to_dict()
+            for tc in parsed_response["tool_calls"]:
+                tc["function"]["arguments"] = json.loads(tc["function"]["arguments"])
+            messages.append(response_message)
 
             # monitor for security violations
             monitor.check(messages)
