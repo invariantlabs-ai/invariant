@@ -1,8 +1,10 @@
 from invariant.runtime.utils.prompt_injections import PromptInjectionAnalyzer, UnicodeDetector
+from invariant.runtime.functions import cache
 
 PROMPT_INJECTION_ANALYZER = None
 UNICODE_ANALYZER = None
 
+@cache
 def prompt_injection(data: str | list | dict, **config: dict) -> bool:
     """Predicate used for detecting prompt injections in the given data.
 
@@ -27,7 +29,7 @@ def prompt_injection(data: str | list | dict, **config: dict) -> bool:
             return True
     return False
 
-
+@cache
 def unicode(data: str | list | dict, **config: dict) -> bool:
     """Predicate used for detecting disallowed types of unicode characters in the given data."""
     assert data is not None, "cannot call unicode(...) on None"

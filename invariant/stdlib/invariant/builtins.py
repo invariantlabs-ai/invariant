@@ -2,7 +2,6 @@ from invariant.stdlib.invariant.nodes import *
 from invariant.stdlib.invariant.errors import *
 from invariant.stdlib.invariant.message import *
 from invariant.runtime.utils.base import DetectorResult
-from invariant.runtime.functions import nocache
 import builtins as py_builtins
 
 # Utilities
@@ -36,7 +35,6 @@ def sum(*args, **kwargs):
 
 # Utilities
 
-@nocache
 def print(*args, **kwargs):
     """
     Prints the given arguments just like with Python's built-in print function.

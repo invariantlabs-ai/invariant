@@ -1,9 +1,11 @@
 from invariant.runtime.utils.code import *
+from invariant.runtime.functions import cache
 
 PYTHON_ANALYZER = None
 CODE_SHIELD_DETECTOR = None
 SEMGREP_DETECTOR = None
 
+@cache
 def python_code(data: str | list | dict, **config: dict) -> PythonDetectorResult:
     """Predicate used to extract entities from Python code."""
 
@@ -23,7 +25,7 @@ def python_code(data: str | list | dict, **config: dict) -> PythonDetectorResult
         res.extend(PYTHON_ANALYZER.detect(message.content, **config))
     return res
 
-
+@cache
 def code_shield(data: str | list | dict, **config: dict) -> list[CodeIssue]:
     """Predicate used to run CodeShield on code."""
 
@@ -43,7 +45,7 @@ def code_shield(data: str | list | dict, **config: dict) -> list[CodeIssue]:
         res.extend(CODE_SHIELD_DETECTOR.detect_all(message.content, **config))
     return res
 
-
+@cache
 def semgrep(data: str | list | dict, **config: dict) -> list[CodeIssue]:
     """Predicate used to run Semgrep on code."""
 

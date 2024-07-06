@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from invariant.stdlib.invariant.nodes import LLM
+from invariant.runtime.functions import cache
 
 PII_ANALYZER = None
 
@@ -7,6 +8,7 @@ PII_ANALYZER = None
 class PIIException(Exception):
     llm_call: LLM
 
+@cache
 def pii(data: str | list, **config):
     """Predicate which detects PII in the given data.
     

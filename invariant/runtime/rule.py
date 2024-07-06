@@ -195,8 +195,8 @@ class FunctionCache:
         return self.call_key(function, args, kwargs) in self.cache
     
     def call(self, function, args, **kwargs):
-        # check if function is marked as @nocache (see ./functions.py module)
-        if True: # hasattr(function, "__invariant_nocache__"):
+        # if function is not marked with @cache we just call it directly (see ./functions.py module)
+        if not hasattr(function, "__invariant_cache__"):
             return function(*args, **kwargs)
         if not self.contains(function, args, kwargs):
             self.cache[self.call_key(function, args, kwargs)] = function(*args, **kwargs)

@@ -4,7 +4,7 @@ with special runtime attributes, relevant in the context of the
 invariant agent analyzer.
 """
 
-def nocache(func):
+def cache(func):
     """
     Decorator to mark a function as non-cacheable. 
 
@@ -14,5 +14,5 @@ def nocache(func):
     during the evaluation of a policy rule, even for partial variable
     assignemnts that are not part of the final result.
     """
-    setattr(func, "__invariant_nocache__", True)
+    setattr(func, "__invariant_cache__", True)
     return func

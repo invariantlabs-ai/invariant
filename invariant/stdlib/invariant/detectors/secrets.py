@@ -1,7 +1,9 @@
 from invariant.runtime.utils.secrets import SecretsAnalyzer
+from invariant.runtime.functions import cache
 
 SECRETS_ANALYZER = None
 
+@cache
 def secrets(data: str | list | dict, **config: dict) -> list[str]:
     """Predicate which evaluates to true if the given data should be moderated.
 

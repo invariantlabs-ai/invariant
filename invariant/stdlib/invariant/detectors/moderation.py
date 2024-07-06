@@ -1,7 +1,9 @@
 from invariant.runtime.utils.moderation import ModerationAnalyzer
+from invariant.runtime.functions import cache
 
 MODERATION_ANALYZER = None
 
+@cache
 def moderated(data: str | list | dict, **config: dict) -> bool:
     """Predicate which evaluates to true if the given data should be moderated.
 
