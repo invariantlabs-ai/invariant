@@ -11,16 +11,16 @@ def python_code(data: str | list | dict, **config: dict) -> PythonDetectorResult
     if PYTHON_ANALYZER is None:
         PYTHON_ANALYZER = PythonCodeDetector()
 
-    chat = data if isinstance(data, list) else ([{"content": data}] if type(data) == str else [data])
-    
-    res = None
-    for message in chat:
-        if message is None:
+    if type(data) is str:
+        return PYTHON_ANALYZER.detect(data, **config)
+    if type(data) is not list:
+        data = [data]
+
+    res = PythonDetectorResult()
+    for message in data:
+        if message.content is None:
             continue
-        if message["content"] is None:
-            continue
-        new_res = PYTHON_ANALYZER.detect(message["content"], **config)
-        res = new_res if res is None else res.extend(new_res)
+        res.extend(PYTHON_ANALYZER.detect(message.content, **config))
     return res
 
 
@@ -31,16 +31,16 @@ def code_shield(data: str | list | dict, **config: dict) -> list[CodeIssue]:
     if CODE_SHIELD_DETECTOR is None:
         CODE_SHIELD_DETECTOR = CodeShieldDetector()
 
-    chat = data if isinstance(data, list) else ([{"content": data}] if type(data) == str else [data])
-    
-    res = None
-    for message in chat:
-        if message is None:
+    if type(data) is str:
+        return CODE_SHIELD_DETECTOR.detect_all(data, **config)
+    if type(data) is not list:
+        data = [data]
+
+    res = []
+    for message in data:
+        if message.content is None:
             continue
-        if message["content"] is None:
-            continue
-        new_res = CODE_SHIELD_DETECTOR.detect_all(message["content"], **config)
-        res = new_res if res is None else res.extend(new_res)
+        res.extend(CODE_SHIELD_DETECTOR.detect_all(message.content, **config))
     return res
 
 
@@ -51,14 +51,14 @@ def semgrep(data: str | list | dict, **config: dict) -> list[CodeIssue]:
     if SEMGREP_DETECTOR is None:
         SEMGREP_DETECTOR = SemgrepDetector()
 
+    if type(data) is str:
+        return SEMGREP_DETECTOR.detect_all(data, **config)
+
     chat = data if isinstance(data, list) else ([{"content": data}] if type(data) == str else [data])
 
-    res = None
+    res = []
     for message in chat:
-        if message is None:
+        if message.content is None:
             continue
-        if message["content"] is None:
-            continue
-        new_res = SEMGREP_DETECTOR.detect_all(message["content"], **config)
-        res = new_res if res is None else res.extend(new_res)
+        res.extend(SEMGREP_DETECTOR.detect_all(message.content, **config))
     return res

@@ -22,4 +22,4 @@ def tool_call(tool_call_id, function_name, arguments):
     }
 
 def tool(tool_call_id, content):
-    return {"role": "tool", "tool_call_id": tool_call_id, "content": content}
+    return {"role": "tool", "tool_call_id": tool_call_id, "content": str(content)}

@@ -1,6 +1,8 @@
+import copy
 import unittest
 import json
 from invariant import Policy, Monitor
+from invariant.stdlib.invariant import *
 
 class TestMonitor(unittest.TestCase):
     def test_simple(self):
@@ -62,6 +64,34 @@ class TestMonitor(unittest.TestCase):
         assert input[0]["content"] == "Hello, world!", "Expected 'Hello, world!' after append, but got: " + input[0]["content"]
         assert input[1]["content"] == "Hello, world!", "Expected 'Hello, world!' after append, but got: " + input[1]["content"]
         assert input[2]["content"] == "Hello, world", "Expected 'Hello, world' after append, but got: " + input[2]["content"]
+
+    def test_objects(self):
+        policy = Monitor.from_string(
+        """
+        from invariant import Message, PolicyViolation
+
+        raise PolicyViolation("Cannot send user message:", msg) if:
+            (msg: Message)
+            msg.role == "user"
+        """)
+
+        events = [
+            Message(role="user", content="Hello, world!"),
+            Message(role="assistant", content="Hello, world!")
+        ]
+        input = []
+        input += [events[0]]
+        res = policy.analyze(input)
+        self.assertTrue(len(res.errors) == 1)
+
+        input += [events[1]]
+        res = policy.analyze(input)
+        self.assertTrue(len(res.errors) == 0)
+
+        import copy
+        res = policy.analyze(copy.deepcopy(input))
+        self.assertTrue(len(res.errors) == 0)
+
 
 if __name__ == "__main__":
     unittest.main()

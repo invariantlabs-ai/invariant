@@ -20,13 +20,14 @@ def pii(data: str | list, **config):
         from invariant.runtime.utils.pii import PII_Analyzer
         PII_ANALYZER = PII_Analyzer()
 
-    chat = data if isinstance(data, list) else ([{"content": data}] if type(data) == str else [data])
+    if type(data) is str:
+        return PII_ANALYZER.detect_all(data)
+    if type(data) is not list:
+        data = [data]
     
     all_pii = []
-    for message in chat:
-        if message is None:
+    for message in data:
+        if message.content is None:
             continue
-        if message["content"] is None:
-            continue
-        all_pii.extend(PII_ANALYZER.detect_all(message["content"]))
+        all_pii.extend(PII_ANALYZER.detect_all(message.content))
     return all_pii

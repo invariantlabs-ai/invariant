@@ -4,6 +4,7 @@ from invariant import Policy, RuleSet, Monitor
 from invariant.runtime.input import Dataflow
 from invariant.extras import extras_available, presidio_extra, transformers_extra
 from invariant.traces import *
+
 class TestFlow(unittest.TestCase):
     def test_simple(self):
         policy = Policy.from_string(

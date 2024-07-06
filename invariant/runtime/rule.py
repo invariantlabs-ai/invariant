@@ -1,15 +1,13 @@
 import os
 import invariant.language.ast as ast
-from invariant.runtime.evaluation import Interpreter, EvaluationContext, VariableDomain, Unknown
-from invariant.language.linking import link
-import invariant.language.types as types
-from invariant.language.parser import parse_file
-import invariant.language.ast as ast
-from dataclasses import dataclass
-from itertools import product
 import textwrap
 import termcolor
+import invariant.language.ast as ast
+from itertools import product
+from invariant.language.linking import link
 from invariant.runtime.input import Selectable, Input
+from invariant.runtime.evaluation import Interpreter, EvaluationContext, VariableDomain, Unknown
+from inspect import ismethod
 
 class PolicyAction:
     def __call__(self, input_dict):
@@ -53,8 +51,8 @@ class RaiseAction(PolicyAction):
 class RuleApplication:
     """
     Represents the output of applying a rule to a set of input data.
-
     """
+    rule: "Rule"
 
     def __init__(self, rule, models):
         self.rule = rule
@@ -65,9 +63,10 @@ class RuleApplication:
 
     def execute(self, evaluation_context):
         errors = []
-        
+
         for model in self.models:
-            exc = self.rule.action(model, evaluation_context)
+            raw_model = {k: v[0] for k, v in model.items()}
+            exc = self.rule.action(raw_model, evaluation_context)
             if exc is not None: errors.append(exc)
         
         return errors
@@ -107,7 +106,7 @@ class Rule:
     def __str__(self):
         return repr(self)
 
-    def apply(self, input_data: Input, evaluation_context=None):
+    def apply(self, input_data: Input, evaluation_context=None) -> RuleApplication:
         models = []
         candidates = [{}]
 
@@ -117,7 +116,9 @@ class Rule:
             # for each domain, compute set of possible values
             candidate = {variable: select(domain, input_data) for variable, domain in candidate_domains.items()}
             # iterate over all cross products of all known variable domains
-            for input_dict in dict_product(candidate):
+            for input_element in dict_product(candidate):
+                input_dict = {k: v[0] for k,v in input_element.items()}
+
                 subdomains = {
                     k: VariableDomain(d.type_ref, values=[input_dict[k]]) for k,d in candidate_domains.items()
                 }
@@ -139,7 +140,8 @@ class Rule:
                     continue
                 # if we find a complete model, we can stop
                 elif result is True and self.action.can_eval(input_dict, evaluation_context):
-                    models.append(input_dict)
+                    model_dict = {k: input_element.get(k, (v, -1)) for k, v in input_dict.items()}
+                    models.append(model_dict)
                     continue
                 elif len(new_variable_domains) > 0:
                     # if more derived variable domains are found, we explore them
@@ -194,7 +196,7 @@ class FunctionCache:
     
     def call(self, function, args, **kwargs):
         # check if function is marked as @nocache (see ./functions.py module)
-        if hasattr(function, "__invariant_nocache__"):
+        if True: # hasattr(function, "__invariant_nocache__"):
             return function(*args, **kwargs)
         if not self.contains(function, args, kwargs):
             self.cache[self.call_key(function, args, kwargs)] = function(*args, **kwargs)
@@ -219,6 +221,8 @@ class InputEvaluationContext(EvaluationContext):
         return name in self.policy_parameters
 
 class RuleSet:
+    rules: list[Rule]
+
     def __init__(self, rules, verbose=False, cached=True):
         self.rules = rules
         self.executed_rules = set()
@@ -236,12 +240,12 @@ class RuleSet:
 
     def instance_key(self, rule, model):
         model_keys = []
-        for k,v in model.items():
+        for k, v in model.items():
             if type(v) is dict and "key" in v:
                 model_keys.append((k.name, v["key"]))
             else:
-                model_keys.append((k.name, id(v)))
-        return (id(rule), *(vkey for k,vkey in sorted(model_keys, key=lambda x: x[0])))
+                model_keys.append((k.name, (str(v[0]), v[1])))
+        return (id(rule), *(vkey for k, vkey in sorted(model_keys, key=lambda x: x[0])))
 
     def log_apply(self, rule, model):
         if not self.verbose:
@@ -253,7 +257,7 @@ class RuleSet:
         model_str = textwrap.wrap(repr(model), width=120, subsequent_indent="         ")
         print("  Model:", "\n".join(model_str))
 
-    def apply(self, input_data, policy_parameters):
+    def apply(self, input_data: Input, policy_parameters):
         exceptions = []
         
         self.input = input_data
@@ -263,11 +267,13 @@ class RuleSet:
         for rule in self.rules:
             evaluation_context = InputEvaluationContext(input_data, self, policy_parameters)
             result = rule.apply(input_data, evaluation_context=evaluation_context)
+
             result.models = [m for m in result.models if self.non_executed(rule, m)]
             for model in result.models:
                 if self.cached:
                     self.executed_rules.add(self.instance_key(rule, model))
                 self.log_apply(rule, model)
+
             exceptions.extend(result.execute(evaluation_context))
         
         self.input = None

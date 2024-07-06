@@ -15,16 +15,16 @@ def prompt_injection(data: str | list | dict, **config: dict) -> bool:
     if PROMPT_INJECTION_ANALYZER is None:
         PROMPT_INJECTION_ANALYZER = PromptInjectionAnalyzer()
 
-    chat = data if isinstance(data, list) else ([{"content": data}] if type(data) == str else [data])
+    if type(data) is str:
+        return PROMPT_INJECTION_ANALYZER.detect_all(data, **config)
+    if type(data) is not list:
+        data = [data]
 
-    for message in chat:
-        if message is None:
+    for message in data:
+        if message.content is None:
             continue
-        if message["content"] is None:
-            continue
-        if PROMPT_INJECTION_ANALYZER.detect(message["content"], **config):
+        if PROMPT_INJECTION_ANALYZER.detect(message.content, **config):
             return True
-
     return False
 
 
@@ -35,16 +35,15 @@ def unicode(data: str | list | dict, **config: dict) -> bool:
     if UNICODE_ANALYZER is None:
         UNICODE_ANALYZER = UnicodeDetector()
 
-    chat = data if isinstance(data, list) else ([{"content": data}] if type(data) == str else [data])
+    if type(data) is str:
+        return UNICODE_ANALYZER.detect_all(data, **config)
+    if type(data) is not list:
+        data = [data]
 
     all_unicode = []
-    for message in chat:
-        if message is None:
+    for message in data:
+        if message.content is None:
             continue
-        if message["content"] is None:
-            continue
-        
-        res = UNICODE_ANALYZER.detect_all(message["content"], **config)
+        res = UNICODE_ANALYZER.detect_all(message.content, **config)
         all_unicode.extend(UNICODE_ANALYZER.get_entities(res))
-    
     return all_unicode

@@ -1,2 +1,4 @@
-def contains_hello(msg: dict) -> bool:
-    return "hello" in msg["content"]
+from invariant.stdlib.invariant.nodes import Message
+
+def contains_hello(msg: Message) -> bool:
+    return "hello" in msg.content

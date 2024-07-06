@@ -1,10 +1,11 @@
 from html.parser import HTMLParser
 from dataclasses import dataclass
 import re
+from invariant.stdlib.invariant.nodes import Message, ToolCall, ToolOutput
 
 @dataclass
 class HiddenHTMLData:
-    alt_texts: str
+    alt_texts: list[str]
     links: list[str]
 
 class HiddenDataParser(HTMLParser):
@@ -58,9 +59,12 @@ def html_code(data: str | list | dict, **config: dict) -> HiddenHTMLData:
     for message in chat:
         if message is None:
             continue
-        if "content" in message and message["content"] is None:
-            continue
-        content = message.get("content", str(message))
+        if type(message) is ToolCall:
+            content = str(message)
+        else:
+            if message.content is None:
+                continue
+            content = message.content
         parser = HiddenDataParser()
         parser.parse(content)
         
@@ -83,8 +87,8 @@ def links(data: str | list | dict, **config: dict) -> list[str]:
     for message in chat:
         if message is None:
             continue
-        if message["content"] is None:
+        if message.content is None:
             continue
-        res.extend(HiddenDataParser.get_links_regex(message["content"]))
+        res.extend(HiddenDataParser.get_links_regex(message.content))
 
     return res

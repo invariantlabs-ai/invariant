@@ -15,16 +15,16 @@ def moderated(data: str | list | dict, **config: dict) -> bool:
     if MODERATION_ANALYZER is None:
         MODERATION_ANALYZER = ModerationAnalyzer()
 
-    chat = data if isinstance(data, list) else ([{"content": data}] if type(data) == str else [data])
-    
-    for message in chat:
-        if message is None:
-            continue
-        if message["content"] is None:
-            continue
-        if MODERATION_ANALYZER.detect(message["content"], **config):
-            return True
+    if type(data) is str:
+        return MODERATION_ANALYZER.detect(data, **config)
+    if type(data) is not list:
+        data = [data]
 
+    for message in data:
+        if message is None or message.content is None:
+            continue
+        if MODERATION_ANALYZER.detect(message.content, **config):
+            return True
     return False
 
 
