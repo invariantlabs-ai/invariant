@@ -269,7 +269,7 @@ class Quantifier(Node):
             f"Quantifier(\n"
             + textwrap.indent(
                 f"quantifier_call: {self.quantifier_call}\nbody:\n"
-                + "\n".join("  " + str(stmt) for stmt in self.body),
+                + "\n".join("  " + str(stmt) for stmt in (self.body if type(self.body) is list else [self.body])),
                 "  ",
             )
             + "\n)"
