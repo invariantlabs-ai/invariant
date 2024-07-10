@@ -103,8 +103,8 @@ class Monitor(Policy):
     def from_string(cls, string: str, path: str | None = None, **policy_parameters):
         return cls(parse(string, path), policy_parameters)
 
-    def check(self, input: Input | dict):
-        analysis_result = self.analyze(input, **self.policy_parameters)
+    def check(self, past_events: list[dict], pending_events: list[dict]):
+        analysis_result = self.analyze_pending(past_events, pending_events, **self.policy_parameters)
         analysis_result.execute_handlers()
         if self.raise_unhandled and len(analysis_result.errors) > 0:
             raise UnhandledError(analysis_result.errors)

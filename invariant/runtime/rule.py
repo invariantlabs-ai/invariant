@@ -7,7 +7,8 @@ from itertools import product
 from invariant.language.linking import link
 from invariant.runtime.input import Selectable, Input
 from invariant.runtime.evaluation import Interpreter, EvaluationContext, VariableDomain, Unknown
-from inspect import ismethod
+from invariant.stdlib.invariant.nodes import Event
+from typing import Any
 
 class PolicyAction:
     def __call__(self, input_dict):
@@ -63,12 +64,10 @@ class RuleApplication:
 
     def execute(self, evaluation_context):
         errors = []
-
         for model in self.models:
-            raw_model = {k: v[0] for k, v in model.items()}
-            exc = self.rule.action(raw_model, evaluation_context)
-            if exc is not None: errors.append(exc)
-        
+            exc = self.rule.action(model, evaluation_context)
+            if exc is not None:
+                errors.append((model, exc))
         return errors
 
 def select(domain: VariableDomain, input_data: Input):
@@ -116,9 +115,7 @@ class Rule:
             # for each domain, compute set of possible values
             candidate = {variable: select(domain, input_data) for variable, domain in candidate_domains.items()}
             # iterate over all cross products of all known variable domains
-            for input_element in dict_product(candidate):
-                input_dict = {k: v[0] for k,v in input_element.items()}
-
+            for input_dict in dict_product(candidate):
                 subdomains = {
                     k: VariableDomain(d.type_ref, values=[input_dict[k]]) for k,d in candidate_domains.items()
                 }
@@ -140,8 +137,7 @@ class Rule:
                     continue
                 # if we find a complete model, we can stop
                 elif result is True and self.action.can_eval(input_dict, evaluation_context):
-                    model_dict = {k: input_element.get(k, (v, -1)) for k, v in input_dict.items()}
-                    models.append(model_dict)
+                    models.append(input_dict)
                     continue
                 elif len(new_variable_domains) > 0:
                     # if more derived variable domains are found, we explore them
@@ -244,7 +240,8 @@ class RuleSet:
             if type(v) is dict and "key" in v:
                 model_keys.append((k.name, v["key"]))
             else:
-                model_keys.append((k.name, (str(v[0]), v[1])))
+                idx = v.metadata["trace_idx"] if isinstance(v, Event) and "trace_idx" in v.metadata else -1
+                model_keys.append((k.name, idx))
         return (id(rule), *(vkey for k, vkey in sorted(model_keys, key=lambda x: x[0])))
 
     def log_apply(self, rule, model):
@@ -273,11 +270,9 @@ class RuleSet:
                 if self.cached:
                     self.executed_rules.add(self.instance_key(rule, model))
                 self.log_apply(rule, model)
-
             exceptions.extend(result.execute(evaluation_context))
         
         self.input = None
-
         return exceptions
 
     def __str__(self):

@@ -16,16 +16,20 @@ class TestConstants(unittest.TestCase):
             INVALID_PATTERN in msg.content
         """)
         input = []
-        monitor.check(input)
+        monitor.check(input, [])
 
-        input.append({"role": "assistant", "content": "Hello, X"})
-        analysis_result = monitor.analyze(input)
-        assert len(analysis_result.errors) == 1, "Expected one error, but got: " + str(analysis_result.errors)
-        assert "Cannot send assistant message" in str(analysis_result.errors[0]), "Expected to find 'Cannot send assistant message' in error message, but got: " + str(e)
+        pending_input = [{"role": "assistant", "content": "Hello, X"}]
+        errors = monitor.check(input, pending_input)
+        input.extend(pending_input)
 
-        input.append({"role": "assistant", "content": "Hello, Y"})
-        analysis_result = monitor.analyze(input)
-        assert len(analysis_result.errors) == 0, "Expected no errors, but got: " + str(analysis_result.errors)
+        assert len(errors) == 1, "Expected one error, but got: " + str(errors)
+        assert "Cannot send assistant message" in str(errors[0]), "Expected to find 'Cannot send assistant message' in error message, but got: " + str(e)
+
+        pending_input = [{"role": "assistant", "content": "Hello, Y"}]
+        errors = monitor.check(input, pending_input)
+        input.extend(pending_input)
+
+        assert len(errors) == 0, "Expected no errors, but got: " + str(errors)
 
     def test_ref(self):
         policy = Policy.from_string(

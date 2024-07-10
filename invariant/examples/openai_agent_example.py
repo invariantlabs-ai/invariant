@@ -75,7 +75,7 @@ def openai_agent():
     # Step 3: loop until the conversation is complete
     while True:
         response = client.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-3.5-turbo",
             messages=messages,
             tools=tools,
             tool_choice="auto",  # auto is default, but we'll be explicit
@@ -93,15 +93,14 @@ def openai_agent():
                 "something_else": something_else,
             }  # only one function in this example, but you can have multiple
             
-            parsed_response = response_message.to_dict()
-            for tc in parsed_response["tool_calls"]:
-                tc["function"]["arguments"] = json.loads(tc["function"]["arguments"])
-            messages.append(response_message)
+            response_message = response_message.to_dict()
 
             # monitor for security violations
-            monitor.check(messages)
-            
+            monitor.check(messages, [response_message])
+            messages.append(response_message)
+
             # Step 4: send the info for each function call and function response to the model
+            pending_outputs = []
             for tool_call in tool_calls:
                 print("Tool:", tool_call.function.name, tool_call.function.arguments)
                 function_name = tool_call.function.name
@@ -111,7 +110,7 @@ def openai_agent():
                 function_response = function_to_call(
                     x=function_args.get("x"),
                 )
-                messages.append(
+                pending_outputs.append(
                     {
                         "tool_call_id": tool_call.id,
                         "role": "tool",
@@ -121,7 +120,8 @@ def openai_agent():
                 )  # extend conversation with function response
             
             # again check for security violations
-            monitor.check(messages)
+            monitor.check(messages, pending_outputs)
+            messages.extend(pending_outputs)
         else:
             break
 

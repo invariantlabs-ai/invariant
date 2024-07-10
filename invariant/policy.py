@@ -2,6 +2,7 @@ from invariant.language.parser import parse, parse_file
 import invariant.language.ast as ast
 from invariant.language.ast import PolicyError, PolicyRoot
 from invariant.runtime.rule import RuleSet, Input
+from invariant.stdlib.invariant.nodes import Event
 import inspect
 import textwrap
 import io
@@ -126,17 +127,46 @@ class Policy:
         policy_parameters["data"] = input
 
         # apply policy rules
-        errors = self.rule_set.apply(input, policy_parameters)
+        exceptions = self.rule_set.apply(input, policy_parameters)
         
         # collect errors into result
         analysis_result = AnalysisResult([], [])
-        for error in errors:
+        for model, error in exceptions:
             self.add_error_to_result(error, analysis_result)
 
         if raise_unhandled and len(analysis_result.errors) > 0:
             raise UnhandledError(analysis_result.errors)
 
         return analysis_result
+
+    def analyze_pending(self, past_events: list[dict], pending_events: list[dict], raise_unhandled=False, **policy_parameters):
+        first_pending_idx = len(past_events)
+        input = Input(past_events + pending_events)
+
+        # prepare policy parameters
+        if "data" in policy_parameters:
+            raise ValueError("cannot use 'data' as policy parameter key, as it is reserved for the main input object")
+        # also make main input object available as policy parameter
+        policy_parameters["data"] = input
+
+        # apply policy rules
+        exceptions = self.rule_set.apply(input, policy_parameters)
+
+        # collect errors into result
+        analysis_result = AnalysisResult([], [])
+        for model, error in exceptions:
+            has_pending = False
+            for val in model.values():
+                if isinstance(val, Event) and val.metadata.get("trace_idx", -1) >= first_pending_idx:
+                    has_pending = True
+            if has_pending:
+                self.add_error_to_result(error, analysis_result)
+
+        if raise_unhandled and len(analysis_result.errors) > 0:
+            raise UnhandledError(analysis_result.errors)
+
+        return analysis_result
+
 
 def analyze_trace(policy_str: str, trace: list):
     policy = Policy.from_string(policy_str)

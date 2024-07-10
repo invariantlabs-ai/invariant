@@ -60,7 +60,7 @@ class TestDerivedVariables(unittest.TestCase):
         """
         raise PolicyViolation(line=line, word=word) if:
             (msg: Message)
-            msg.data["a"] > 2 # cond 1
+            msg.metadata["a"] > 2 # cond 1
             lines := msg.content.splitlines()
             (line: str) in lines
             (word: str) in line.split(",")
@@ -75,21 +75,21 @@ class TestDerivedVariables(unittest.TestCase):
             {
                 "role": "assistant",
                 "content": "msg 1,X\nmsg 1,Y",
-                "data": {
+                "metadata": {
                     "a": 1,
                 }
             },
             {
                 "role": "assistant",
                 "content": "msg 2,X\nmsg 2,Y\nmsg 2,a",
-                "data": {
+                "metadata": {
                     "a": 3,
                 }
             },
             {
                 "role": "assistant",
                 "content": "msg 3,X\nmsg 3,Y\nmsg 3,a\nmsg 3,a",
-                "data": {
+                "metadata": {
                     "a": 3,
                 }
             }
@@ -116,6 +116,24 @@ class TestDerivedVariables(unittest.TestCase):
         self.assertEqual(len(analyze_trace(policy_str_template, trace).errors), 0)
         trace[1]["content"] = "import abc\nimport os\n"
         self.assertEqual(len(analyze_trace(policy_str_template, trace).errors), 1)
+
+    def test_multiple(self):
+        policy = Policy.from_string(
+        """
+        raise PolicyViolation(line=line, word=word) if:
+            (msg: Message)
+            (line: str) in msg.content.splitlines()
+            (word: str) in line.split(" ")
+            "a" == word
+        """)
+        input = [
+            {"role": "user", "content": "Hello, X\nHello, a"},
+            {"role": "assistant", "content": "Bye Y"},
+            {"role": "assistant", "content": "Bye a\nBye b"},
+        ]
+        res = policy.analyze(input)
+        print(res)
+
 
 
 if __name__ == "__main__":

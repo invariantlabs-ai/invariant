@@ -4,12 +4,15 @@ Models input data passed to the Invariant Agent Analyzer.
 Creates dataflow graphs and derived data from the input data.
 """
 import inspect
+import json
 import warnings
 import textwrap
 import termcolor
 from copy import deepcopy
 from typing import Optional
 from invariant.stdlib.invariant.nodes import Message, ToolCall, ToolOutput, Event
+from rich.pretty import pprint as rich_print
+#from rich import print as rich_print
 
 import invariant.language.types as types
 
@@ -104,7 +107,7 @@ class Selectable:
             return lists[0]
         return [item for sublist in lists for item in sublist]
 
-    def select(self, selector, data="<root>", index: Optional[int] = None):
+    def select(self, selector, data="<root>"):
         if self.should_ignore(data):
             return []
         type_name = self.type_name(selector)
@@ -112,35 +115,32 @@ class Selectable:
             data = self.data
 
         if type(data).__name__ == type_name:
-            return [(data, index)]
+            return [data]
 
         if type(data) is Message:
             return self.merge([
-                self.select(type_name, data.content, index),
-                self.select(type_name, data.role, index),
-                self.select(type_name, data.tool_calls, index),
-                self.select(type_name, data.data, index)
+                self.select(type_name, data.content),
+                self.select(type_name, data.role),
+                self.select(type_name, data.tool_calls),
             ])
         elif type(data) is ToolCall:
             return self.merge([
-                self.select(type_name, data.id, index),
-                self.select(type_name, data.type, index),
-                self.select(type_name, data.function, index),
-                self.select(type_name, data.data, index)
+                self.select(type_name, data.id),
+                self.select(type_name, data.type),
+                self.select(type_name, data.function),
             ])
         elif type(data) is ToolOutput:
             return self.merge([
-                self.select(type_name, data.role, index),
-                self.select(type_name, data.content, index),
-                self.select(type_name, data.tool_call_id, index),
-                self.select(type_name, data.data, index)
+                self.select(type_name, data.role),
+                self.select(type_name, data.content),
+                self.select(type_name, data.tool_call_id),
             ])
         elif type(data) is list:
-            return self.merge([self.select(type_name, item, item_index) for item_index, item in enumerate(data)])
+            return self.merge([self.select(type_name, item) for item in data])
         elif type(data) is dict:
-            return self.merge([self.select(type_name, value, index) for value in data.values()])
+            return self.merge([self.select(type_name, value) for value in data.values()])
         elif type(data) is tuple:
-            return self.merge([self.select(type_name, item, item_index) for item_index, item in enumerate(data)])
+            return self.merge([self.select(type_name, item) for item in data])
         else:
             # print("cannot sub-select type", type(data))
             return []
@@ -150,38 +150,6 @@ class Selectable:
             return selector.name
         else:
             return selector
-
-class InputInspector(InputProcessor):
-    """Input processor that prints a human-readable representation of the input data."""
-    def __init__(self):
-        self.value_lists = []
-
-    def visit_top_level(self, value_list, name=None):
-        result = []
-
-        for msg in value_list:
-            msg_type = type(msg).__name__ or "<unknown>"
-            msg_repr = "- " + msg_type + ": " + str(msg)
-            if msg_type == "Message":
-                tool_calls = msg.tool_calls or []
-                for tc in tool_calls:
-                    tct = type(tc).__name__ or "<unknown>"
-                    msg_repr += "\n  - " + tct + ": " + str(tc)
-            result += [msg_repr]
-
-        self.value_lists.append((name, "\n".join(result)))
-    
-    def __str__(self):
-        result = ""
-        for name, l in self.value_lists:
-            if name is None:
-                result += "<root>:\n"
-            else:
-                result += f"{name}:\n"
-            
-            result += textwrap.indent(l, "  ")
-        
-        return result
 
 class Input(Selectable):
     """
@@ -211,44 +179,51 @@ class Input(Selectable):
         last_call_id = None
 
         for event in input:
-            if not isinstance(event, dict):
-                parsed_data.append(event)
-                continue
-            if "role" in event:
-                if event["role"] != "tool":
-                    msg = Message(**event)
-                    parsed_data.append(msg)
-                    if msg.tool_calls is not None:
-                        for call in msg.tool_calls:
-                            last_call_id = call.id
-                            tool_calls[call.id] = call
+            try:
+                if not isinstance(event, dict):
+                    parsed_data.append(event)
+                    continue
+                if "role" in event:
+                    if event["role"] != "tool":
+                        # If arguments are given as string convert them intro dict using json.loads(...)
+                        for call in event.get("tool_calls", []):
+                            if type(call["function"]["arguments"]) == str:
+                                call["function"]["arguments"] = json.loads(call["function"]["arguments"])
+                        msg = Message(**event)
+                        parsed_data.append(msg)
+                        if msg.tool_calls is not None:
+                            for call in msg.tool_calls:
+                                last_call_id = call.id
+                                tool_calls[call.id] = call
+                    else:
+                        if "tool_call_id" not in event:
+                            event["tool_call_id"] = last_call_id
+                        out = ToolOutput(**event)
+                        if out.tool_call_id in tool_calls:
+                            out._tool_call = tool_calls[out.tool_call_id]
+                        parsed_data.append(out)
+                elif "type" in event:
+                    call = ToolCall(**event)
+                    last_call_id = call.id
+                    tool_calls[call.id] = call
+                    parsed_data.append(call)
                 else:
-                    if "tool_call_id" not in event:
-                        event["tool_call_id"] = last_call_id
-                    out = ToolOutput(**event)
-                    if out.tool_call_id in tool_calls:
-                        out._tool_call = tool_calls[out.tool_call_id]
-                    parsed_data.append(out)
-            elif "type" in event:
-                call = ToolCall(**event)
-                last_call_id = call.id
-                tool_calls[call.id] = call
-                parsed_data.append(call)
-            else:
-                raise ValueError("Could not parse event in the trace as any of the event types (Message, ToolCall, ToolOutput): " + str(event))
+                    raise ValueError("Could not parse event in the trace as any of the event types (Message, ToolCall, ToolOutput): " + str(event))
+            except Exception as e:
+                warnings.warn(f"Could not parse event in the trace: {event}!")
+                raise e
+
+        for trace_idx, event in enumerate(parsed_data):
+            event.metadata["trace_idx"] = trace_idx
         return parsed_data
     
-    @staticmethod
-    def inspect(obj):
-        """
-        Prints a string representation of the input object, 
-        as the analyzer would see it.
-        """
-        inspector = InputInspector.from_input(obj)
-        return str(inspector)
-
     def has_flow(self, a, b):
         return self.dataflow.has_flow(a, b)
+
+    def print(self, expand_all=False):
+        rich_print("<Input>")
+        for event in self.data:
+            rich_print(event, expand_all=expand_all)
 
     def __str__(self):
         return f"<Input {self.data}>"

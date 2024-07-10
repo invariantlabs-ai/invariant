@@ -49,7 +49,7 @@ class TestPolicyParameters(unittest.TestCase):
             "role": "assistant",
             "content": "Hello"
         }]
-        errors = monitor.check(input)
+        errors = monitor.check([], input)
 
         self.assertEqual(len(errors), 1)
 

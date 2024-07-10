@@ -83,6 +83,7 @@ class TestMonitor(unittest.TestCase):
         input += [events[0]]
         res = policy.analyze(input)
         self.assertTrue(len(res.errors) == 1)
+        self.assertIsInstance(res.errors[0], Exception)
 
         input += [events[1]]
         res = policy.analyze(input)
@@ -92,6 +93,34 @@ class TestMonitor(unittest.TestCase):
         res = policy.analyze(copy.deepcopy(input))
         self.assertTrue(len(res.errors) == 0)
 
+    def test_analyze_pending(self):
+        policy = Monitor.from_string(
+        """
+        from invariant import Message, PolicyViolation
+
+        raise PolicyViolation("Cannot send user message:", msg) if:
+            (msg: Message)
+            msg.role == "assistant"
+            "A" in msg.content
+        """)
+
+        past_events = [
+            Message(role="user", content="Hello, world!"),
+            Message(role="assistant", content="Hello AB!"),
+            Message(role="assistant", content="Hello AXYZ!"),
+        ]
+        pending_events = [
+            Message(role="assistant", content="Hello A!"),
+            Message(role="assistant", content="Hello BC!"),
+            Message(role="assistant", content="Bye A!"),
+        ]
+
+        res = policy.analyze_pending(past_events, pending_events)
+
+        self.assertEqual(len(res.errors), 2)
+        self.assertIsInstance(res.errors[0], Exception)
+        self.assertTrue("Hello A!" in str(res.errors[0]))
+        self.assertTrue("Bye A!" in str(res.errors[1]))
 
 if __name__ == "__main__":
     unittest.main()
