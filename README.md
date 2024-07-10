@@ -294,6 +294,7 @@ class ToolCall:
     id: str
     type: str
     function: FunctionCall
+
 class FunctionCall:
     name: str
     arguments: Dict[str, Any]
