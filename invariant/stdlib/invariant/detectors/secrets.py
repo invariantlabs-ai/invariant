@@ -17,10 +17,12 @@ def secrets(data: str | list | dict, **config: dict) -> list[str]:
     if SECRETS_ANALYZER is None:
         SECRETS_ANALYZER = SecretsAnalyzer()
 
+    if type(data) is str:
+        return SECRETS_ANALYZER.detect_all(data, **config)
+
     chat = data if isinstance(data, list) else ([{"content": data}] if type(data) == str else [data])
 
     all_secrets = []
-    
     for message in chat:
         if message is None:
             continue
