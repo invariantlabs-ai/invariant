@@ -1,9 +1,9 @@
 <div align="center">
   <h1 align="center">🕵️‍♂️</h1>
-  <h1 align="center">Invariant Analyzer for AI Agent Security</h1>
+  <h1 align="center">Invariant Analyzer for AI Agent Traces</h1>
 
   <p align="center">
-    A security scanner for LLM-based AI agents.
+    A trace scanner for LLM-based AI agents.
   </p>
   <p align="center">
     
@@ -15,18 +15,26 @@
 </div>
 <br/>
 
-The Invariant Security Analyzer is an open source security scanner that enables developers to reduce risk when building AI agents by quickly detecting vulnerabilities, bugs, and security threats. The analyzer scans and analyzes an agent's execution traces to identify threats like data leaks, prompt injections, and unsafe code execution.
+The Invariant Analyzer is an open source scanner that enables developers to find bugs and quirks in AI agents. This enables quickly detecting vulnerabilities, bugs, and security threats, thereby 
+thus reducing risk and increasing reliability when building AI agents. The analyzer scans and analyzes an agent's execution traces to identify both bugs (e.g., looping behavior) and threats (e.g., data leaks, prompt injections, and unsafe code execution).
 
 ![Invariant Security Analyzer](https://github.com/invariantlabs-ai/invariant/assets/17903049/709fa811-566b-4623-8601-4cab15bc688c)
 
 
 ## Use Cases
 
+* **Debugging of AI agents** by scanning logs for failure patterns and quickly finding relevant locations.
+
 * **Scanning of agent traces** for security violations and data leaks, including tool use and data flow.
 
 * **Real-Time Monitoring of AI agents** to prevent security issues and data breaches during runtime.
 
 Concrete examples include [preventing data leaks in AI-based personal assistants](#prevent-data-leaks-in-your-productivity-agent), [ensuring code agent security, e.g. to prevent remote code ecution](#detect-vulnerabilities-in-your-code-generation-agent), or [the implementation of access control policies in RAG systems](#enforce-access-control-in-your-rag-based-chat-agent).
+
+## Why Agent Debugging Matters
+Debugging AI agents so far means manually scrolling long collections of logs to find traces that show the relevant error case and then manually inspecting the relevant parts of the trace. This is time-consuming and error-prone.
+
+To alleviate this the Invariant analyzer can be used to filter for relevant traces and extract their relevant parts, only from high-level semantic descriptions.
 
 ## Why Agent Security Matters
 
@@ -36,13 +44,13 @@ A simple indirect prompt injection can easily leak sensitive and private user da
 
 ![image](https://github.com/invariantlabs-ai/invariant/assets/17903049/f859f64b-5730-488b-9e80-fd319d9a4a9d)
 
-The Invariant security analyzer detects this type of vulnerability by leveraging deep contextual understanding of an agent's context and data flow. For this, it relies on a [purpose-built rule matching engine](#analyzing-agent-traces) based on information flow analysis, and [an expressive policy language](#policy-language) for defining security policies and constraints.
+The Invariant analyzer detects this type of vulnerability by leveraging deep contextual understanding of an agent's context and data flow. For this, it relies on a [purpose-built rule matching engine](#analyzing-agent-traces) based on information flow analysis, and [an expressive policy language](#policy-language) for defining security policies and constraints.
 
 ## Features
 
 * A [library of *built-in checkers*](docs/STDLIB.md) for detecting **[sensitive data](docs/STDLIB.md#sensitive-data-detection-personal-identifiable-information), [prompt injections](docs/STDLIB.md#prompt-injection-detection), [moderation violations](docs/STDLIB.md#moderation-violation-detection), and more.** 
 
-* [An expressive policy language](#policy-language) for defining security policies and constraints.
+* [An expressive policy language](#policy-language) for defining (security) policies and constraints.
 
 * [Data flow analysis for a contextual understanding](#policy-language) of agent behavior, allowing for fine-grained security checks.
 
@@ -99,6 +107,29 @@ Here, we analzye the agent trace of the attack scenario from above, where both _
 To learn more read the [documentation](#documentation) below or continue reading about different [example use cases](#use-cases).
 
 ## Use Cases
+
+### Debugging Coding Agents
+
+<hr/>
+**Problem Statement**: Recently, AI agents are often deployed for software engineering tasks. Typically, an AI agent operates on the command line, creating and editing files in order to achieve a software engineering task. For example, the authors of [SWE Agent](https://arxiv.org/abs/2405.15793) identified several issues through manual work, e.g., agents that get stuck scrolling through long files or failing to edit the same file over and over again.
+<hr/>
+
+The analyzer offers the ability to filter traces to these pattern via a high-level description of the pattern:
+
+```python
+traceset = # load traceset ...
+traceset.filter("""
+                (call1: ToolCall)
+                (call2: ToolCall)
+                (call3: ToolCall)
+                call1 -> call2
+                call2 -> call3
+                call1 is tool:scroll_down
+                call2 is tool:scroll_down
+                call3 is tool:scroll_down
+                """)
+```
+For further examples see the corresponding [example](invariant/examples/agent_bugs/demo.ipynb).
 
 ### Prevent Data Leaks In Your Productivity Agent
 
@@ -200,28 +231,31 @@ This section provides a detailed overview of the analyzer's components, includin
 
 **Table of Contents**
 
-- [Getting Started](#getting-started)
-- [Policy Language](#policy-language)
-    * [Example Rule](#example-rule)
-    * [Trace Format](#trace-format)
-    * [Custom Error Types](#custom-error-types)
-    * [Predicates](#predicates)
-    * [Semantic Tool Call Matching](#semantic-tool-call-matching)
-- [Integration](#integration)
-    * [Analyzing Agent Traces](#analyzing-agent-traces)
-    * [Real-Time Monitoring of an OpenAI Agent](#real-time-monitoring-of-an-openai-agent)
-    * [Real-Time Monitoring of a `langchain` Agent](#real-time-monitoring-of-a-langchain-agent)
-    * [Automatic Issue Resolution (Handlers)](#automatic-issue-resolution-handlers)
-- [Standard Library](docs/STDLIB.md)
-    * [Sensitive Data Detection](docs/STDLIB.md#sensitive-data-detection-personal-identifiable-information)
-    * [Prompt Injection Detection](docs/STDLIB.md#prompt-injection-detection)
-    * [Moderation Violation Detection](docs/STDLIB.md#moderation-violation-detection)
-    * [Code Analysis And Secrets Scanning](docs/STDLIB.md#code-analysis-and-secrets-scanning)
-    * [Secrets Scanning](docs/STDLIB.md#secrets-scanning)
-    * [Custom Checkers](docs/STDLIB.md#custom-checkers)
-- [Development](docs/DEVELOPMENT.md#development)
-    * [Testing](docs/DEVELOPMENT.md#testing)
-    * [Dependency Management and Extras](docs/DEVELOPMENT.md#dependency-management-and-extras)
+- [Use Cases](#use-cases)
+- [Why Agent Debugging Matters](#why-agent-debugging-matters)
+- [Why Agent Security Matters](#why-agent-security-matters)
+- [Features](#features)
+  - [Getting Started](#getting-started)
+- [Use Cases](#use-cases-1)
+  - [Debugging Coding Agents](#debugging-coding-agents)
+  - [Prevent Data Leaks In Your Productivity Agent](#prevent-data-leaks-in-your-productivity-agent)
+  - [Detect Vulnerabilities in Your Code Generation Agent](#detect-vulnerabilities-in-your-code-generation-agent)
+  - [Enforce Access Control In Your RAG-based Chat Agent](#enforce-access-control-in-your-rag-based-chat-agent)
+- [Documentation](#documentation)
+  - [Policy Language](#policy-language)
+    - [Example Rule](#example-rule)
+    - [Trace Format](#trace-format)
+      - [Trace Example](#trace-example)
+      - [Debugging and Printing Inputs](#debugging-and-printing-inputs)
+    - [Custom Error Types](#custom-error-types)
+    - [Predicates](#predicates)
+    - [Semantic Tool Call Matching](#semantic-tool-call-matching)
+  - [Integration](#integration)
+    - [Analyzing Agent Traces](#analyzing-agent-traces)
+    - [Real-Time Monitoring of an OpenAI Agent](#real-time-monitoring-of-an-openai-agent)
+    - [Real-Time Monitoring of a `langchain` Agent](#real-time-monitoring-of-a-langchain-agent)
+    - [Automatic Issue Resolution (Handlers)](#automatic-issue-resolution-handlers)
+  - [Roadmap](#roadmap)
 
 ### Policy Language
 
