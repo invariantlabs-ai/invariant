@@ -15,8 +15,7 @@
 </div>
 <br/>
 
-The Invariant Analyzer is an open-source scanner that enables developers to find bugs and quirks in AI agents. This enables quickly detecting vulnerabilities, bugs, and security threats, thereby 
-thus reducing risk and increasing reliability when building AI agents. The analyzer scans an agent's execution traces to identify bugs (e.g., looping behavior) and threats (e.g., data leaks, prompt injections, and unsafe code execution).
+The Invariant Analyzer is an open-source scanner that enables developers to find bugs and quirks in AI agents. This enables quickly detecting vulnerabilities, bugs, and security threats, thereby reducing security risks and increasing agent reliability. The analyzer scans an agent's execution traces to identify bugs (e.g., looping behavior) and threats (e.g., data leaks, prompt injections, and unsafe code execution).
 
 ![Invariant Security Analyzer](https://github.com/invariantlabs-ai/invariant/assets/17903049/709fa811-566b-4623-8601-4cab15bc688c)
 
