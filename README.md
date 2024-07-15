@@ -1,9 +1,9 @@
 <div align="center">
   <h1 align="center">🕵️‍♂️</h1>
-  <h1 align="center">Invariant Analyzer for AI Agent Security</h1>
+  <h1 align="center">Invariant Analyzer for AI Agent Traces</h1>
 
   <p align="center">
-    A security scanner for LLM-based AI agents.
+    A trace scanner for LLM-based AI agents.
   </p>
   <p align="center">
     
@@ -15,12 +15,15 @@
 </div>
 <br/>
 
-The Invariant Security Analyzer is an open source security scanner that enables developers to reduce risk when building AI agents by quickly detecting vulnerabilities, bugs, and security threats. The analyzer scans and analyzes an agent's execution traces to identify threats like data leaks, prompt injections, and unsafe code execution.
+The Invariant Analyzer is an open-source scanner that enables developers to find bugs and quirks in AI agents. This enables quickly detecting vulnerabilities, bugs, and security threats, thereby 
+thus reducing risk and increasing reliability when building AI agents. The analyzer scans an agent's execution traces to identify bugs (e.g., looping behavior) and threats (e.g., data leaks, prompt injections, and unsafe code execution).
 
 ![Invariant Security Analyzer](https://github.com/invariantlabs-ai/invariant/assets/17903049/709fa811-566b-4623-8601-4cab15bc688c)
 
 
 ## Use Cases
+
+* **Debugging AI agents** by scanning logs for failure patterns and quickly finding relevant locations.
 
 * **Scanning of agent traces** for security violations and data leaks, including tool use and data flow.
 
@@ -28,21 +31,26 @@ The Invariant Security Analyzer is an open source security scanner that enables 
 
 Concrete examples include [preventing data leaks in AI-based personal assistants](#prevent-data-leaks-in-your-productivity-agent), [ensuring code agent security, e.g. to prevent remote code ecution](#detect-vulnerabilities-in-your-code-generation-agent), or [the implementation of access control policies in RAG systems](#enforce-access-control-in-your-rag-based-chat-agent).
 
+## Why Agent Debugging Matters
+Debugging AI agents so far means manually scrolling long collections of logs to find traces that show the relevant error case and then manually inspecting the relevant parts of the trace. This is time-consuming and error-prone.
+
+To alleviate this, the Invariant analyzer can filter for relevant traces and extract their relevant parts only from high-level semantic descriptions.
+
 ## Why Agent Security Matters
 
-As AI agents are becoming a reality, it has already been shown quite clearly that these systems come with [novel types of security risks](https://kai-greshake.de/posts/in-escalating-order-of-stupidity/): Any LLM-based system that performs **critical write operations in the real world**, can suffer from **model failure, prompt injections and data breaches**. This can have severe and destructive consequences. Web-browsing agents like Bing, can be [compromised using indirect prompt injection attacks](https://greshake.github.io), LLM-based applications can be exploited for remote code execution and other issues (e.g. [CVE-2023-29374](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-29374), [CVE-2023-32786](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-32786) and [CVE-2023-36189](https://cve.mitre.org/cgi-bin/cvename.cgi?name=%20CVE-2023-36189)), and Google Bard was easily tricked into [leaking your private data and conversations](https://embracethered.com/blog/posts/2023/google-bard-data-exfiltration/). 
+As AI agents are becoming a reality, it has already been shown quite clearly that these systems come with [novel types of security risks](https://kai-greshake.de/posts/in-escalating-order-of-stupidity/): Any LLM-based system that performs **critical write operations in the real world** can suffer from **model failure, prompt injections and data, breaches**. This can have severe and destructive consequences. Web-browsing agents like Bing can be [compromised using indirect prompt injection attacks](https://greshake.github.io), LLM-based applications can be exploited for remote code execution and other issues (e.g., [CVE-2023-29374](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-29374), [CVE-2023-32786](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-32786), and [CVE-2023-36189](https://cve.mitre.org/cgi-bin/cvename.cgi?name=%20CVE-2023-36189)), and Google Bard was easily tricked into [leaking your private data and conversations](https://embracethered.com/blog/posts/2023/google-bard-data-exfiltration/). 
 
-A simple indirect prompt injection can easily leak sensitive and private user data, making the deployment of AI agents inherently risky. Consider for example the following injection attack on a simple email assistant (e.g. an agent that reads and send emails on your behalf):
+A simple indirect prompt injection can easily leak sensitive and private user data, making the deployment of AI agents inherently risky. Consider, for example, the following injection attack on a simple email assistant (e.g., an agent that reads and send emails on your behalf):
 
 ![image](https://github.com/invariantlabs-ai/invariant/assets/17903049/f859f64b-5730-488b-9e80-fd319d9a4a9d)
 
-The Invariant security analyzer detects this type of vulnerability by leveraging deep contextual understanding of an agent's context and data flow. For this, it relies on a [purpose-built rule matching engine](#analyzing-agent-traces) based on information flow analysis, and [an expressive policy language](#policy-language) for defining security policies and constraints.
+The Invariant analyzer detects this type of vulnerability by leveraging deep contextual understanding of an agent's context and data flow. For this, it relies on a [purpose-built rule matching engine](#analyzing-agent-traces) based on information flow analysis and [an expressive policy language](#policy-language) for defining security policies and constraints.
 
 ## Features
 
 * A [library of *built-in checkers*](docs/STDLIB.md) for detecting **[sensitive data](docs/STDLIB.md#sensitive-data-detection-personal-identifiable-information), [prompt injections](docs/STDLIB.md#prompt-injection-detection), [moderation violations](docs/STDLIB.md#moderation-violation-detection), and more.** 
 
-* [An expressive policy language](#policy-language) for defining security policies and constraints.
+* [An expressive policy language](#policy-language) for defining (security) policies and constraints.
 
 * [Data flow analysis for a contextual understanding](#policy-language) of agent behavior, allowing for fine-grained security checks.
 
@@ -94,11 +102,34 @@ policy.analyze(messages)
 # ])
 ```
 
-Here, we analzye the agent trace of the attack scenario from above, where both _untrusted_ and _sensitive_ data enter the agent's context and eventually lead to a data leak. By [specifying a corresponding policy](#policy-language), we can, based on the information flow of the agent, detect that sensitive data was leaked to an unauthorized recipient. Additionally, not only can the analyzer be used to detect such cases, it can also help you monitor and secure your AI agents during runtime, by [analyzing their data flows in real-time](#real-time-monitoring-of-an-openai-agent).
+Here, we analyze the agent trace of the attack scenario from above, where both _untrusted_ and _sensitive_ data enter the agent's context and eventually lead to a data leak. By [specifying a corresponding policy](#policy-language), we can, based on the information flow of the agent, detect that sensitive data was leaked to an unauthorized recipient. Additionally, not only can the analyzer be used to detect such cases, it can also help you monitor and secure your AI agents during runtime, by [analyzing their data flows in real-time](#real-time-monitoring-of-an-openai-agent).
 
-To learn more read the [documentation](#documentation) below or continue reading about different [example use cases](#use-cases).
+To learn more, read the [documentation](#documentation) below or continue reading about different [example use cases](#use-cases).
 
 ## Use Cases
+
+### Debugging Coding Agents
+
+<hr/>
+**Problem Statement**: Recently, AI agents are often deployed for software engineering tasks. Typically, an AI agent operates on the command line, creating and editing files in order to achieve a software engineering task. For example, the authors of [SWE Agent](https://arxiv.org/abs/2405.15793) identified several issues through manual work, e.g., agents that get stuck scrolling through long files or failing to edit the same file over and over again.
+<hr/>
+
+The analyzer offers the ability to filter traces to these patterns via a high-level description of the pattern:
+
+```python
+traceset = # load traceset ...
+traceset.filter("""
+                (call1: ToolCall)
+                (call2: ToolCall)
+                (call3: ToolCall)
+                call1 -> call2
+                call2 -> call3
+                call1 is tool:scroll_down
+                call2 is tool:scroll_down
+                call3 is tool:scroll_down
+                """)
+```
+For further examples, see [here](invariant/examples/agent_bugs/demo.ipynb).
 
 ### Prevent Data Leaks In Your Productivity Agent
 
@@ -108,7 +139,7 @@ To learn more read the [documentation](#documentation) below or continue reading
 
 <hr/>
 
-In productivity agents (e.g. personal email assistants), sensitive data is forwarded between components such as email, calendar, and other productivity tools. This opens up the possibility of data leaks, where sensitive information is inadvertently shared with unauthorized parties. To prevent this, the analyzer can be used to check and enforce data flow policies.
+In productivity agents (e.g., personal email assistants), sensitive data is forwarded between components such as email, calendar, and other productivity tools. This opens up the possibility of data leaks, where sensitive information is inadvertently shared with unauthorized parties. To prevent this, the analyzer can be used to check and enforce data flow policies.
 
 For instance, the following policy states, that after retrieving a specific email, the agent must not send an email to anyone other than the sender of the retrieved email:
 
@@ -132,11 +163,11 @@ As shown here, the analyzer can be used to detect the flows of interest, select 
 
 <hr/>
 
-**Vulnerability**: An AI agent that generates and executes code may be tricked into executing malicious code, leading to data breaches or unauthorized access to sensitive data. For instance, `langchain`-based code generation agents, were shown to be vulnerable to [remote code execution attacks (CVE-2023-29374)](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-29374).
+**Vulnerability**: An AI agent that generates and executes code may be tricked into executing malicious code, leading to data breaches or unauthorized access to sensitive data. For instance, `langchain`-based code generation agents were shown to be vulnerable to [remote code execution attacks (CVE-2023-29374)](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-29374).
 
 <hr/>
 
-When using AI agents that generate and execute code, a whole new set of security challenges arises. For instance, unsafe code may be generated or the agent may be actively tricked into executing malicious code, which in turn extracts secrets or private data, such as proprietary code, passwords, or other access credentials.
+When using AI agents that generate and execute code, a whole new set of security challenges arises. For instance, unsafe code may be generated, or the agent may be actively tricked into executing malicious code, which in turn extracts secrets or private data, such as proprietary code, passwords, or other access credentials.
 
 For example, this policy rule detects if an agent made a request to an untrusted URL (for instance, to read the project documentation) and then executes code that relies on the `os` module:
 
@@ -161,13 +192,13 @@ This policy prevents an agent from following malicious instructions that may be 
 
 <hr/>
 
-**Vulnerability**: RAG pipelines rely on private data to augment the LLM generation process. It has been shown however, that data exposed to the generating LLM, can be extracted by user queries. This means, a RAG application can also be [exploited](https://arxiv.org/pdf/2402.16893v1) by [attackers](https://kai-greshake.de/posts/in-escalating-order-of-stupidity/) to access otherwise protected information if not properly secured.
+**Vulnerability**: RAG pipelines rely on private data to augment the LLM generation process. It has been shown, however that data exposed to the generating LLM, can be extracted by user queries. This means, a RAG application can also be [exploited](https://arxiv.org/pdf/2402.16893v1) by [attackers](https://kai-greshake.de/posts/in-escalating-order-of-stupidity/) to access otherwise protected information if not properly secured.
 
 <hr/>
 
 Retrieval-Augmented Generation (RAG) is a popular method to enhance AI agents with private knowledge and data. However, during information retrieval, it is important to ensure that the agent does not violate access control policies, e.g. enabling unauthorized access to sensitive data, especially when strict access control policies are to be enforced.
 
-To detect and prevent this, the analyzer supports the definition of, for instance, role-based access control policies over retrieval results and data sources:
+To detect and prevent this the analyzer supports the definition of, for instance, role-based access control policies over retrieval results and data sources:
 
 ```python
 # in Policy.from_string:
@@ -200,32 +231,35 @@ This section provides a detailed overview of the analyzer's components, includin
 
 **Table of Contents**
 
-- [Getting Started](#getting-started)
-- [Policy Language](#policy-language)
-    * [Example Rule](#example-rule)
-    * [Trace Format](#trace-format)
-    * [Custom Error Types](#custom-error-types)
-    * [Predicates](#predicates)
-    * [Semantic Tool Call Matching](#semantic-tool-call-matching)
-- [Integration](#integration)
-    * [Analyzing Agent Traces](#analyzing-agent-traces)
-    * [Real-Time Monitoring of an OpenAI Agent](#real-time-monitoring-of-an-openai-agent)
-    * [Real-Time Monitoring of a `langchain` Agent](#real-time-monitoring-of-a-langchain-agent)
-    * [Automatic Issue Resolution (Handlers)](#automatic-issue-resolution-handlers)
-- [Standard Library](docs/STDLIB.md)
-    * [Sensitive Data Detection](docs/STDLIB.md#sensitive-data-detection-personal-identifiable-information)
-    * [Prompt Injection Detection](docs/STDLIB.md#prompt-injection-detection)
-    * [Moderation Violation Detection](docs/STDLIB.md#moderation-violation-detection)
-    * [Code Analysis And Secrets Scanning](docs/STDLIB.md#code-analysis-and-secrets-scanning)
-    * [Secrets Scanning](docs/STDLIB.md#secrets-scanning)
-    * [Custom Checkers](docs/STDLIB.md#custom-checkers)
-- [Development](docs/DEVELOPMENT.md#development)
-    * [Testing](docs/DEVELOPMENT.md#testing)
-    * [Dependency Management and Extras](docs/DEVELOPMENT.md#dependency-management-and-extras)
+- [Use Cases](#use-cases)
+- [Why Agent Debugging Matters](#why-agent-debugging-matters)
+- [Why Agent Security Matters](#why-agent-security-matters)
+- [Features](#features)
+  - [Getting Started](#getting-started)
+- [Use Cases](#use-cases-1)
+  - [Debugging Coding Agents](#debugging-coding-agents)
+  - [Prevent Data Leaks In Your Productivity Agent](#prevent-data-leaks-in-your-productivity-agent)
+  - [Detect Vulnerabilities in Your Code Generation Agent](#detect-vulnerabilities-in-your-code-generation-agent)
+  - [Enforce Access Control In Your RAG-based Chat Agent](#enforce-access-control-in-your-rag-based-chat-agent)
+- [Documentation](#documentation)
+  - [Policy Language](#policy-language)
+    - [Example Rule](#example-rule)
+    - [Trace Format](#trace-format)
+      - [Trace Example](#trace-example)
+      - [Debugging and Printing Inputs](#debugging-and-printing-inputs)
+    - [Custom Error Types](#custom-error-types)
+    - [Predicates](#predicates)
+    - [Semantic Tool Call Matching](#semantic-tool-call-matching)
+  - [Integration](#integration)
+    - [Analyzing Agent Traces](#analyzing-agent-traces)
+    - [Real-Time Monitoring of an OpenAI Agent](#real-time-monitoring-of-an-openai-agent)
+    - [Real-Time Monitoring of a `langchain` Agent](#real-time-monitoring-of-a-langchain-agent)
+    - [Automatic Issue Resolution (Handlers)](#automatic-issue-resolution-handlers)
+  - [Roadmap](#roadmap)
 
 ### Policy Language
 
-The Invariant Policy language is a domain-specific language (DSL) for defining security policies and constraints of AI agents and other LLM-based systems. It is designed to be expressive, flexible, and easy to use, allowing users to define complex security properties and constraints in a concise and readable way.
+The Invariant Policy language is a domain-specific language (DSL) used to define security policies and constraints of AI agents and other LLM-based systems. It is designed to be expressive, flexible, and easy to use, allowing users to define complex security properties and constraints in a concise and readable way.
 
 **Origins**: The Invariant policy language is inspired by [Open Policy's Rego](https://www.openpolicyagent.org/docs/latest/policy-language/), [Datalog](https://en.wikipedia.org/wiki/Datalog) and Python. It is designed to be easy to learn and use with a syntax that is familiar to ML engineers and security professionals.
 
@@ -246,7 +280,7 @@ raise "can only send an email within the organization after retrieving the inbox
     })
 ```
 
-This rule states that an email can only be sent to a receiver with an `acme.com` email address after retrieving the inbox. For this, the specified conditions, or _rule body_, define several constraints that must be satisfied, for the rule to trigger. The rule body consists of two main conditions:
+This rule states that an email can only be sent to a receiver with an `acme.com` email address after retrieving the inbox. For this, the specified conditions, or _rule body_, define several constraints that must be satisfied for the rule to trigger. The rule body consists of two main conditions:
 
 ```python
 (call: ToolCall) -> (call2: ToolCall)
@@ -268,8 +302,8 @@ If the specified conditions are met, we consider the rule as triggered, and a re
 
 #### Trace Format
 
-The Invariant Policy Language operates on agent traces, which are sequences of events that can be Message, ToolCall or ToolOutput.
-The input to the analyzer has to follow a simple JSON-based format. The format consists of a list of messages, based on the [OpenAI chat format](https://platform.openai.com/docs/guides/text-generation/chat-completions-api).
+The Invariant Policy Language operates on agent traces, which are sequences of events that can be Message, ToolCall, or ToolOutput.
+The input to the analyzer has to follow a simple JSON-based format. The format consists of a list of messages based on the [OpenAI chat format](https://platform.openai.com/docs/guides/text-generation/chat-completions-api).
 
 The policy language supports the following structural types, to quantify over different types of agent events. All events passed to the analyzer must be one of the following types:
 
@@ -285,8 +319,8 @@ class Message(Event):
 { "role": "user", "content": "Hello, how are you?" }
 ```
 
-* **role** (`str`): The role of the message, e.g. "user", "assistant", or "system".
-* **content** (`str`): The content of the message, e.g. a chat message or a tool call.
+* **role** (`str`): The role of the message, e.g., "user", "assistant", or "system".
+* **content** (`str`): The content of the message, e.g., a chat message or a tool call.
 * **tool_calls** (Optional[List[ToolCall]]): A list of tool calls made by the agent in response to the message.
 
 **`ToolCall`**
@@ -304,7 +338,7 @@ class Function(BaseModel):
 ```
 
 * **id** (`str`): A unique identifier for the tool call.
-* **type** (`str`): The type of the tool call, e.g. "function".
+* **type** (`str`): The type of the tool call, e.g., "function".
 * **function** (FunctionCall): The function call made by the agent.
     * **name** (`str`): The name of the function called.
     * **arguments** (`Dict[str, Any]`): The arguments passed to the function.
@@ -322,7 +356,7 @@ class ToolOutput(Event):
 ```
 
 * **tool_call_id** (`str`): The identifier of a previous `ToolCall` that this output corresponds to.
-* **content** (`str | dict`): The content of the tool output, e.g. the result of a function call. This can be a parsed dictionary or a string of the JSON output.
+* **content** (`str | dict`): The content of the tool output, e.g., the result of a function call. This can be a parsed dictionary or a string of the JSON output.
  
 ##### Trace Example
 
@@ -557,7 +591,7 @@ policy.analyze(messages)
 # )
 ```
 
-In this example, we define a policy that checks two things: (1) whether the user's email address is leaked via the `search_web` tool, and (2) whether the search results contain the word "France". We then analyze a message trace to check for these properties. These properties may be desirable to prevent that a web browsing agent leaks personally-identifiable information (PII) about the user or returns inappropriate search results. For PII checks, the analyzer relies on the [`presidio-analyzer`](https://github.com/microsoft/presidio) library, but can also be extended to detect and classify other types of sensitive data. 
+In this example, we define a policy that checks two things: (1) whether the user's email address is leaked via the `search_web` tool, and (2) whether the search results contain the word "France". We then analyze a message trace to check for these properties. These properties may be desirable to prevent a web browsing agent from leaking personally-identifiable information (PII) about the user or returning inappropriate search results. For PII checks, the analyzer relies on the [`presidio-analyzer`](https://github.com/microsoft/presidio) library but can also be extended to detect and classify other types of sensitive data. 
 
 Since both specified security properties are violated by the given message trace, the analyzer returns an `AnalysisResult` with two `PolicyViolation`s.
 
@@ -604,7 +638,7 @@ while True:
 ```
 > For the full snippet, see [invariant/examples/openai_agent_example.py](./invariant/examples/openai_agent_example.py)
 
-To enable real-time monitoring for policy violations you can use a `Monitor` as shown, and integrate it into your agent's execution loop. With a `Monitor`, policy checking is performed eagerly, i.e. before and after every tool use, to ensure that the agent does not violate the policy at any point in time.
+To enable real-time monitoring for policy violations, you can use a `Monitor` as shown, and integrate it into your agent's execution loop. With a `Monitor`, policy checking is performed eagerly, i.e., before and after every tool use, to ensure that the agent does not violate the policy at any point in time.
 
 This way, all tool interactions of the agent are monitored in real-time. As soon as a violation is detected, an exception is raised. This stops the agent from executing a potentially unsafe tool call and allows you to take appropriate action, such as filtering out a call or ending the session.
 
@@ -650,9 +684,9 @@ The `MonitoringAgentExecutor` will automatically check all tool calls, ensuring 
 
 #### Automatic Issue Resolution (Handlers)
 
-The Invariant analyzer also offers an extension that enables to specify automatic issue resolution handlers. These handlers can be used to automatically resolve detected security issues, allowing the agent to continue securely without manual intervention.
+The Invariant analyzer also offers an extension that enables the specification of automatic issue resolution handlers. These handlers can be used to automatically resolve detected security issues, allowing the agent to continue securely without manual intervention.
 
-However, this feature is still _under development_ and not intended to be used in its current form (experimental). For a preview, see [invariant/examples/lc_example.py](./invariant/examples/lc_example.py) as an example of how to use handlers in a monitored `langchain` agent.
+However, this feature is still _under development_ and not intended to be used in its current form (experimental). For a preview, see [invariant/examples/lc_example.py](./invariant/examples/lc_example.py) for an example of how to use handlers in a monitored `langchain` agent.
 
 ### Roadmap
 

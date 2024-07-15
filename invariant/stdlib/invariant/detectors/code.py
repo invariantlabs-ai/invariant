@@ -6,7 +6,7 @@ CODE_SHIELD_DETECTOR = None
 SEMGREP_DETECTOR = None
 
 @cache
-def python_code(data: str | list | dict, **config: dict) -> PythonDetectorResult:
+def python_code(data: str | list | dict, ipython_mode=False, **config: dict) -> PythonDetectorResult:
     """Predicate used to extract entities from Python code."""
 
     global PYTHON_ANALYZER
@@ -24,6 +24,11 @@ def python_code(data: str | list | dict, **config: dict) -> PythonDetectorResult
             continue
         res.extend(PYTHON_ANALYZER.detect(message.content, **config))
     return res
+
+@cache
+def ipython_code(data: str | list | dict, **config: dict) -> PythonDetectorResult:
+    """Predicate used to extract entities from IPython cell code."""
+    return python_code(data, ipython_mode=True, **config)
 
 @cache
 def code_shield(data: str | list | dict, **config: dict) -> list[CodeIssue]:
