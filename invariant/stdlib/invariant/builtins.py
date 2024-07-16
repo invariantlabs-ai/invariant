@@ -12,7 +12,6 @@ def any(iterable):
             return True
     return py_builtins.any(iterable)
 
-
 # String operations
 
 def match(pattern: str, s: str) -> bool:
