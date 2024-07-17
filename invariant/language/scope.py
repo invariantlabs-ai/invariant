@@ -8,7 +8,7 @@ from dataclasses import dataclass
 IPL_BUILTINS = [
     "LLM", "Message", "ToolCall", "Function", "ToolOutput",
     "PolicyViolation", "UpdateMessage", "UpdateMessageHandler",
-    "any",
+    "any", "empty",
     "match", "len",
     "min", "max", "sum",
     "print"
