@@ -262,5 +262,45 @@ class TestCodeShieldDetector(unittest.TestCase):
         self.assertEqual(len(analyze_trace(policy_str, trace).errors), 0)
 
 
+class TestCopyrightDetector(unittest.TestCase):
+
+    def test_software_license(self):
+        code = """
+        /**
+        * GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007
+        */
+        export const someConst = false;
+        """
+        policy_str = """
+        from invariant.detectors import copyright
+
+        raise "found copyrighted code" if:
+            (msg: Message)
+            not empty(copyright(msg.content, threshold=0.75))
+        """
+        trace = [assistant(f"here is your code: {code}")]
+        self.assertGreater(len(analyze_trace(policy_str, trace).errors), 0)
+
+    def test_general_copyright(self):
+        code = """
+        /**
+        * Copyright (C) Unicorn Inc.
+        */
+        export const someConst = false;
+        """
+        policy_str = """
+        from invariant.detectors import copyright
+
+        raise "found copyrighted code" if:
+            (msg: Message)
+            "COPYRIGHT" in copyright(msg.content)
+        """
+        trace = [assistant(f"here is your code: {code}")]
+        res = analyze_trace(policy_str, trace)
+        self.assertEqual(len(res.errors), 1)
+
+
+
+
 if __name__ == "__main__":
     unittest.main()
