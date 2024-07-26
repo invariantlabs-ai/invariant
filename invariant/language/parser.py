@@ -10,6 +10,9 @@ from invariant.language.ast import *
 from invariant.language.typing import typing
 from invariant.runtime.patterns import VALUE_MATCHERS
 
+"""
+Lark EBNF grammar for the Invariant Policy Language.
+"""
 parser = lark.Lark(r"""
     %import common.NUMBER
 
@@ -27,10 +30,11 @@ parser = lark.Lark(r"""
     def_stmt: "def" func_signature INDENT NEWLINE? statement* DEDENT
     decl_stmt: ( ID | func_signature ) ":=" expr | ( ID | func_signature ) INDENT NEWLINE? expr (NEWLINE expr)* DEDENT
 
-    expr: ID | binary_expr | "(" expr ("," expr)* ")" | block_expr
+    expr: ID | assignment_expr | "(" expr ("," expr)* ")" | block_expr
                    
     block_expr: INDENT expr (NEWLINE expr)* DEDENT
     
+    assignment_expr: ( ID ":=" binary_expr ) | binary_expr
     binary_expr: cmp_expr LOGICAL_OPERATOR cmp_expr | cmp_expr
     cmp_expr: ( term CMP_OPERATOR term ) | term
     term: factor TERM_OPERATOR factor | factor
@@ -76,7 +80,7 @@ parser = lark.Lark(r"""
     ID.2: /[a-zA-Z_]([a-zA-Z0-9_])*/
     UNARY_OPERATOR.3: /not[\n\t ]/ | "-" | "+"
     LOGICAL_OPERATOR: /and[\n\t ]/ | /or[\n\t ]/
-    CMP_OPERATOR: ":=" | "==" | "!=" | ">" | "<" | ">=" | "<=" | /is[\n\t ]/ | /contains_only[\n\t ]/ | /in[\n\t ]/ | "->"
+    CMP_OPERATOR: "==" | "!=" | ">" | "<" | ">=" | "<=" | /is[\n\t ]/ | /contains_only[\n\t ]/ | /in[\n\t ]/ | "->"
     VALUE_TYPE: /<[a-zA-Z_:]+>/
     
     TERM_OPERATOR: "+" | "-"
@@ -97,8 +101,8 @@ def indent_level(line, unit=1):
     # count the number of leading spaces
     return (len(line) - len(line.lstrip())) // unit
 
-
 def derive_indentation_units(text):
+    # derive the indentation unit from the first non-empty line
     lines = text.split("\n")
     indents = set()
     for line in lines:
@@ -108,8 +112,29 @@ def derive_indentation_units(text):
         return 1
     return min(indents)
 
-
 def parse_indents(text):
+    """
+    This function parses an intended snippet of IPL code and returns a version of the code
+    where indents are replaced by |INDENT| and |DEDENT| tokens.
+
+    This allows our actual language grammar above to be context-free, as it does not need to
+    handle indentation, but can rely on the |INDENT| and |DEDENT| tokens instead.
+
+    |INDENT| and |DEDENT| tokens fulfill the same role as e.g. `{` and `}` in C-like languages.
+
+    Example:
+    ```
+    def foo:
+        bar
+    ```
+
+    is transformed into:
+
+    ```
+    def foo: |INDENT|
+    bar |DEDENT|
+    ```
+    """
     indent_unit = derive_indentation_units(text)
     lines = text.split("\n")
 
@@ -220,6 +245,11 @@ class IPLTransformer(lark.Transformer):
 
     def expr(self, items):
         return items[0]
+
+    def assignment_expr(self, items):
+        if len(items) == 1:
+            return items[0]
+        return BinaryExpr(items[0], ":=", items[1]).with_location(self.loc(items))
 
     def block_expr(self, items):
         return self.filter(items)
@@ -359,22 +389,10 @@ class IPLTransformer(lark.Transformer):
     def loc(self, items):
         return Location.from_items(items, self.line_mappings, self.source_code)
 
-
-def chain(ind_mappings, ml_mappings):
-    result = {}
-    for k, (line, char) in ind_mappings.items():
-        if line in ml_mappings:
-            result[k] = (ml_mappings[line], char)
-        else:
-            result[k] = (line, char)
-    return result
-
-
 def transform(policy):
     """
-    Basic AST transformations to simplify the AST
+    Basic transformations to simplify the AST
     """
-
     class PostParsingTransformations(Transformation):
         # transforms FunctionCall with a ToolReference target into a SemanticPattern
         def visit_FunctionCall(self, node: FunctionCall):
@@ -392,9 +410,22 @@ def transform(policy):
 
 
 def parse(text, path=None, verbose=True):
+    """
+    Multi-stage parsing process to transform a string of IPL code into an Invariant Policy AST.
+
+    The parsing stages are as follows:
+
+    1. Indentation parsing: The input code is transformed into a version where indents are marked with |INDENT| and |DEDENT| tokens, instead of actual indentation.
+    2. Lark parsing: The indented code is parsed using the Lark parser as defined by the grammar above.
+    3. AST construction: The Lark parse tree is transformed into an AST.
+    4. AST post-processing: The AST is simplified and transformed.
+    5. Type checking: The AST is type-checked.
+    
+    """
+
     # removes common leading indent (e.g. when parsing from an indented multiline string)
     text = textwrap.dedent(text)
-    # creates source code hjandle
+    # creates source code handle
     source_code = SourceCode(text, path=path, verbose=verbose)
     
     # translates an indent-based code into code in which indented 
