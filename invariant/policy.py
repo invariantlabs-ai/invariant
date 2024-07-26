@@ -156,7 +156,7 @@ class Policy:
         analysis_result = AnalysisResult([], [])
         for model, error in exceptions:
             has_pending = False
-            for val in model.values():
+            for val in model.variable_assignments.values():
                 if isinstance(val, Event) and val.metadata.get("trace_idx", -1) >= first_pending_idx:
                     has_pending = True
             if has_pending:

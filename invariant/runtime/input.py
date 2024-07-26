@@ -111,6 +111,10 @@ class Selectable:
         if self.should_ignore(data):
             return []
         type_name = self.type_name(selector)
+        # allow to select the Input object itself
+        if type_name == "Input":
+            return [self]
+        # allow to select the root data object
         if data == "<root>":
             data = self.data
 
@@ -151,6 +155,19 @@ class Selectable:
         else:
             return selector
 
+def inputcopy(opj):
+    # recursively copy, dict, list and tuple, and delegate to deepcopy for leaf objects
+    if type(opj) is dict:
+        result = {k: inputcopy(v) for k, v in opj.items()}
+        result["__origin__"] = opj
+        return result
+    elif type(opj) is list:
+        return [inputcopy(v) for v in opj]
+    elif type(opj) is tuple:
+        return tuple([inputcopy(v) for v in opj])
+    else:
+        return deepcopy(opj)
+    
 class Input(Selectable):
     """
     An Input object that can be analyzed by the Invariant Analyzer.

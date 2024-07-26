@@ -29,7 +29,6 @@ def ipython_code(data: str | list | dict, **config: dict) -> PythonDetectorResul
     """Predicate used to extract entities from IPython cell code."""
     return python_code(data, ipython_mode=True, **config)
 
-
 @cache
 def semgrep(data: str | list | dict, **config: dict) -> list[CodeIssue]:
     """Predicate used to run Semgrep on code."""
