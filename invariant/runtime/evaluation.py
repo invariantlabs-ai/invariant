@@ -27,13 +27,20 @@ Unknown = symbol("<unknown>")
 @dataclass
 class VariableDomain:
     """
-    The domain of a free or derived variable in the body
-    of an IPL rule.
+    The domain of a free or derived variable in the body of an IPL rule.
+
+    Variable domains are sometimes only known after evaluation of the rule body.
     """
     type_ref: str
-    values: list
+    values: list | None
 
 def select(domain: VariableDomain, input_data: Input):
+    """
+    Returns all possible candidate values for a given variable domain.
+
+    If the domain is open, i.e. ranges over the entire input data, all 
+    elements of the specified variable type are returned.
+    """
     if domain.values is None:
         return input_data.select(domain.type_ref)
     else:
