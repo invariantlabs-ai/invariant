@@ -1,6 +1,7 @@
 import unittest
 import tempfile
 from invariant import Policy
+from invariant.extras import extras_available, presidio_extra
 
 class TestStdlibFunctions(unittest.TestCase):
 
@@ -43,7 +44,7 @@ class TestFiles(unittest.TestCase):
             res = policy.analyze([], workspace=temp_dir)
             self.assertEqual(len(res.errors), 1)
 
-
+    @unittest.skipUnless(extras_available(presidio_extra), "presidio-analyzer is not installed")
     def test_sensitive_contents(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             with open(temp_dir + "/file1.txt", "w") as f:
