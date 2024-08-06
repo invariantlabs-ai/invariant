@@ -223,10 +223,6 @@ class IPLTransformer(lark.Transformer):
         body = items[1:]
         # filter hidden body tokens
         body = self.filter(body)
-        # flatten exprs
-        while len(body) == 1: 
-            body = body[0]
-
         return RaisePolicy(items[0], body).with_location(self.loc(items))
 
     def def_stmt(self, items):

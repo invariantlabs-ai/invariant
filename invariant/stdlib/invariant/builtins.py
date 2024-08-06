@@ -7,11 +7,11 @@ import builtins as py_builtins
 # Utilities
 
 def any(iterable):
-    if isinstance(iterable, list) and len(iterable) > 0:
-        if isinstance(iterable[0], DetectorResult):
-            return True
     return py_builtins.any(iterable)
 
+def empty(iterable) -> bool:
+    """Returns True if iterable is empty, False otherwise."""
+    return len(iterable) == 0
 
 # String operations
 
