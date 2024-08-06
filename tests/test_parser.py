@@ -371,7 +371,6 @@ class TestParser(unittest.TestCase):
             (to: ToolOutput)
             "File " + tc.function.arguments.arg.strip() + " not found" in to.content
         """)
-
         self.assertIsInstance(policy.statements[0].body[1], ast.BinaryExpr)
         self.assertIsInstance(policy.statements[0].body[1].left, ast.BinaryExpr)
         self.assertIsInstance(policy.statements[0].body[1].left.left, ast.BinaryExpr)
@@ -386,6 +385,15 @@ class TestParser(unittest.TestCase):
         self.assertEqual(policy.statements[0].body[1].left.left.right.name.expr.expr.member, "arguments")
         self.assertEqual(policy.statements[0].body[1].left.left.right.name.expr.expr.expr.member, "function")
         self.assertIsInstance(policy.statements[0].body[1].left.left.right.name.expr.expr.expr.expr, ast.Identifier)
+
+    def test_assign_in(self):
+        policy = parse("""
+        raise "error" if:
+            (msg: Message)
+            flag := ["a", "b"] in ["a"]
+        """)
+        self.assertEqual(policy.statements[0].body[1].op, ":=")
+
 
 if __name__ == "__main__":
     unittest.main()

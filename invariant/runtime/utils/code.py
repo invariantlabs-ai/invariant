@@ -6,7 +6,6 @@ import tempfile
 from enum import Enum
 from invariant.runtime.utils.base import BaseDetector, DetectorResult
 from pydantic.dataclasses import dataclass, Field
-from invariant.extras import codeshield_extra
 
 
 class CodeSeverity(str, Enum):
@@ -131,24 +130,6 @@ class PythonCodeDetector(BaseDetector):
         except Exception as e:
             return PythonDetectorResult(syntax_error=True, syntax_error_exception=str(e))
         return ast_visitor.res
-
-
-class CodeShieldDetector(BaseDetector):
-    """Detector which uses Llama CodeShield for safety (currently based on regex and semgrep rules)"""
-
-    async def scan_llm_output(self, llm_output_code):
-        self.CodeShield = codeshield_extra.package("codeshield.cs").import_names("CodeShield")
-        result = await self.CodeShield.scan_code(llm_output_code)
-        return result
-
-    def detect_all(self, text: str) -> list[CodeIssue]:
-        res = asyncio.run(self.scan_llm_output(text))
-        if res.issues_found is None:
-            return []
-        return [
-            CodeIssue(description=issue.description, severity=str(issue.severity).lower())
-            for issue in res.issues_found
-        ]
 
 
 class SemgrepDetector(BaseDetector):

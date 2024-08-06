@@ -2,7 +2,6 @@ from invariant.runtime.utils.code import *
 from invariant.runtime.functions import cache
 
 PYTHON_ANALYZER = None
-CODE_SHIELD_DETECTOR = None
 SEMGREP_DETECTOR = None
 
 @cache
@@ -30,25 +29,6 @@ def ipython_code(data: str | list | dict, **config: dict) -> PythonDetectorResul
     """Predicate used to extract entities from IPython cell code."""
     return python_code(data, ipython_mode=True, **config)
 
-@cache
-def code_shield(data: str | list | dict, **config: dict) -> list[CodeIssue]:
-    """Predicate used to run CodeShield on code."""
-
-    global CODE_SHIELD_DETECTOR
-    if CODE_SHIELD_DETECTOR is None:
-        CODE_SHIELD_DETECTOR = CodeShieldDetector()
-
-    if type(data) is str:
-        return CODE_SHIELD_DETECTOR.detect_all(data, **config)
-    if type(data) is not list:
-        data = [data]
-
-    res = []
-    for message in data:
-        if message.content is None:
-            continue
-        res.extend(CODE_SHIELD_DETECTOR.detect_all(message.content, **config))
-    return res
 
 @cache
 def semgrep(data: str | list | dict, **config: dict) -> list[CodeIssue]:

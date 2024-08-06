@@ -158,11 +158,6 @@ presidio_extra = Extra("PII and Secrets Scanning (using Presidio)", "Enables the
     "spacy": ExtrasImport("spacy", "spacy", ">=3.7.5")
 })
 
-"""Extra for features that rely on the Llama `codeshield` library."""
-codeshield_extra = Extra("Code Scanning with Llama CodeShield", "Enables the use of CodeShield", {
-    "codeshield.cs": ExtrasImport("codeshield.cs", "codeshield", ">=1.0.1")
-})
-
 """Extra for features that rely on the `semgrep` library."""
 semgrep_extra = Extra("Code Scanning with Semgrep", "Enables the use of Semgrep for code scanning", {
     "semgrep": ExtrasImport("semgrep", "semgrep", ">=1.78.0")

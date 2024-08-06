@@ -3,7 +3,7 @@ import json
 from invariant import Policy
 from invariant.policy import analyze_trace
 from invariant.traces import *
-from invariant.extras import extras_available, presidio_extra, transformers_extra, codeshield_extra
+from invariant.extras import extras_available, presidio_extra, transformers_extra
 
 class TestPII(unittest.TestCase):
     @unittest.skipUnless(extras_available(presidio_extra), "presidio-analyzer is not installed")
@@ -242,26 +242,6 @@ class TestSemgrep(unittest.TestCase):
         self.assertGreater(len(analyze_trace(policy_str, trace).errors), 0)
 
 
-class TestCodeShieldDetector(unittest.TestCase):
-        
-    @unittest.skipUnless(extras_available(codeshield_extra), "codeshield is not installed")
-    def test_code_shield(self):
-        policy_str = """
-        from invariant.detectors import code_shield, CodeIssue
-
-        raise PolicyViolation("found issues via code shield", out) if:
-            (out: ToolOutput)
-            (issue: CodeIssue) in code_shield(out)
-            issue.severity in ["warning", "error"]
-        """
-        trace = [tool("1", "def hashString(input):\n\treturn hashlib.md5(input)")]
-        self.assertGreater(len(analyze_trace(policy_str, trace).errors), 0)
-        trace = [tool("1", "eval(input)")]
-        self.assertGreater(len(analyze_trace(policy_str, trace).errors), 0)
-        trace = [tool("1", "print('Hello, world!')")]
-        self.assertEqual(len(analyze_trace(policy_str, trace).errors), 0)
-
-
 class TestCopyrightDetector(unittest.TestCase):
 
     def test_software_license(self):
@@ -298,8 +278,6 @@ class TestCopyrightDetector(unittest.TestCase):
         trace = [assistant(f"here is your code: {code}")]
         res = analyze_trace(policy_str, trace)
         self.assertEqual(len(res.errors), 1)
-
-
 
 
 if __name__ == "__main__":

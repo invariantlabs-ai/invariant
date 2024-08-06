@@ -5,12 +5,12 @@ from invariant.language.ast import PolicyError
 class TestParser(unittest.TestCase):
     def test_failed_import(self):
         policy_root = parse("""
-        from invariant.detectors import pii, code_shield
+        from invariant.detectors import pii, semgrep
 
         raise PolicyViolation("found unsafe code") if:
             (call1: ToolCall) -> (call2: ToolCall)
             call1.function.name == "edit"
-            (issue: CodeIssue) in code_shield(call1.function.arguments["code"])
+            (issue: CodeIssue) in semgrep(call1.function.arguments["code"])
             call2.function.name == "python"
         """)
         assert len(policy_root.errors) == 1, "Expected 1 error, got " + str(len(policy_root.errors))
@@ -19,12 +19,12 @@ class TestParser(unittest.TestCase):
         # We should not silently continue when there are policy errors
         with self.assertRaises(PolicyLoadingError):
             Policy.from_string("""
-            from invariant.detectors import pii, code_shield
+            from invariant.detectors import pii, semgrep
 
             raise PolicyViolation("found unsafe code") if:
                 (call1: ToolCall) -> (call2: ToolCall)
                 call1.function.name == "edit"
-                (issue: CodeIssue) in code_shield(call1.function.arguments["code"])
+                (issue: CodeIssue) in semgrep(call1.function.arguments["code"])
                 call2.function.name == "python"
             """)
 
@@ -32,7 +32,7 @@ class TestParser(unittest.TestCase):
         try:
             p = Policy.from_string(
             """
-            from invariant.detectors import pii, code_shield
+            from invariant.detectors import pii, semgrep
 
             abc :=
                 12 + CodeIssue
@@ -40,7 +40,7 @@ class TestParser(unittest.TestCase):
             raise CodeIssue("found unsafe code") if:
                     (call1: ToolCall) -> (call2: ToolCall)
                     call1.function.name == "edit" + CodeIssue
-                    (issue: CodeIssue) in code_shield(call1.function.arguments["code"])
+                    (issue: CodeIssue) in semgrep(call1.function.arguments["code"])
                     call2.function.name == "python"
             """
             )
@@ -62,7 +62,7 @@ class TestParser(unittest.TestCase):
         try:
             p = Policy.from_string(
             """
-            from invariant.detectors import pii, code_shield
+            from invariant.detectors import pii, semgrep
 
             abc :=
                 12 + CodeIssue
@@ -70,7 +70,7 @@ class TestParser(unittest.TestCase):
             raise CodeIssue("found unsafe code") if:
                     (call1: ToolCall) -> (call2: ToolCall)
                     call1.function.name == "edit" + CodeIssue
-                    (issue: CodeIssue) in code_shield(call1.function.arguments["code"])
+                    (issue: CodeIssue) in semgrep(call1.function.arguments["code"])
                     call2.function.name == "python"
             """
             )
@@ -94,7 +94,7 @@ class TestParser(unittest.TestCase):
         try:
             p = Policy.from_string(
             """
-            from invariant.detectors import pii, code_shield
+            from invariant.detectors import pii, semgrep
 
             abc :=
                 12 + CodeIssue
@@ -102,7 +102,7 @@ class TestParser(unittest.TestCase):
             raise CodeIssue("found unsafe code") if:
                     (call1: ToolCall) -> (call2: ToolCall)
                     call1.function.name == "edit" + CodeIssue
-                    (issue: CodeIssue) in code_shield(call1.function.arguments["code"])
+                    (issue: CodeIssue) in semgrep(call1.function.arguments["code"])
                     call2.function.name == "python"
             """
             )
@@ -119,7 +119,7 @@ class TestParser(unittest.TestCase):
         try:
             p = Policy.from_string(
             """
-            from invariant.detectors import pii, code_shield
+            from invariant.detectors import pii, semgrep
 
             abc :=
                 12 + CodeIssue
@@ -127,7 +127,7 @@ class TestParser(unittest.TestCase):
             raise CodeIssue("found unsafe code") if:
                 (call1: ToolCall) -> (call2: ToolCall)
                 call1.function.name == "edit" + CodeIssue
-                  (issue: CodeIssue) in code_shield(call1.function.arguments["code"])
+                  (issue: CodeIssue) in semgrep(call1.function.arguments["code"])
                 call2.function.name == "python"
             """
             )
@@ -147,7 +147,7 @@ class TestParser(unittest.TestCase):
 
         # same but for the 3rd rule body line
         assert contains_successive_block([
-            '  (issue: CodeIssue) in code_shield',
+            '  (issue: CodeIssue) in semgrep',
             "   ^"
         ], msg), "Did not find the correct error localization at 'call2.function.name == \"|python\"' in " + msg
 
