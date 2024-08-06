@@ -10,6 +10,8 @@
 [Use Cases](#use-cases) |
 [Documentation](#documentation) |
 [Development](docs/DEVELOPMENT.md#development)
+
+ <a href="https://discord.gg/dZuZfhKnJ4"><img src="https://img.shields.io/discord/1162052367357857883?style=plastic&logo=discord&color=blueviolet&logoColor=white" height=18/></a>
   
   </p>
 </div>
