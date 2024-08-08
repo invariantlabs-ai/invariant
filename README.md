@@ -1,5 +1,5 @@
 <div align="center">
-  <h1 align="center">🕵️‍♂️</h1>
+  <h1 align="center"><img src="https://invariantlabs.ai/theme/images/logo.svg"/></h1>
   <h1 align="center">Invariant Analyzer for AI Agent Traces</h1>
 
   <p align="center">
