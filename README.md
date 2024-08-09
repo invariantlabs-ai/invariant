@@ -30,7 +30,7 @@ The Invariant Analyzer is an open-source scanner that enables developers to find
 
 * **Real-Time Monitoring of AI agents** to prevent security issues and data breaches during runtime.
 
-Concrete examples include [preventing data leaks in AI-based personal assistants](#prevent-data-leaks-in-your-productivity-agent), [ensuring code agent security, e.g. to prevent remote code ecution](#detect-vulnerabilities-in-your-code-generation-agent), or [the implementation of access control policies in RAG systems](#enforce-access-control-in-your-rag-based-chat-agent).
+Concrete examples include [preventing data leaks in AI-based personal assistants](#prevent-data-leaks-in-your-productivity-agent), [ensuring code agent security, e.g. to prevent remote code execution](#detect-vulnerabilities-in-your-code-generation-agent), or [the implementation of access control policies in RAG systems](#enforce-access-control-in-your-rag-based-chat-agent).
 
 ## Why Agent Debugging Matters
 Debugging AI agents so far means manually scrolling long collections of logs to find traces that show the relevant error case and then manually inspecting the relevant parts of the trace. This is time-consuming and error-prone.
