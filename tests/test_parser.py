@@ -394,6 +394,55 @@ class TestParser(unittest.TestCase):
         """)
         self.assertEqual(policy.statements[0].body[1].op, ":=")
 
+    def test_quantifier_with_args(self):
+        policy = parse("""
+from invariant import count
+
+raise "found result" if:
+    count(min=2, max=4):
+        (tc: ToolCall)
+        tc is tool:get_inbox
+    """)
+        self.assertIsInstance(policy.statements[1].body[0], ast.Quantifier)
+        self.assertIsInstance(policy.statements[1].body[0].body[0], ast.TypedIdentifier)
+
+    def test_quantifier_without_args(self):
+        policy = parse("""
+from invariant import forall
+        
+raise "found result" if:
+    forall:
+        (call: ToolCall)
+        call is tool:send_mail
+    """)
+        self.assertIsInstance(policy.statements[1].body[0], ast.Quantifier)
+        self.assertIsInstance(policy.statements[1].body[0].body[0], ast.TypedIdentifier)
+
+    def test_negated_without_args(self):
+        policy = parse("""
+from invariant import forall
+
+raise "found result" if:
+    not forall:
+        (call: ToolCall)
+        call is tool:send_mail
+    """)
+        self.assertIsInstance(policy.statements[1].body[0], ast.UnaryExpr)
+        self.assertIsInstance(policy.statements[1].body[0].expr, ast.Quantifier)
+        self.assertIsInstance(policy.statements[1].body[0].expr.body[0], ast.TypedIdentifier)
+
+    def test_negated_with_args(self):
+        policy = parse("""
+from invariant import count
+                       
+raise "found result" if:
+    not count(min=2, max=4):
+        (tc: ToolCall)
+        tc is tool:get_inbox
+    """)
+        self.assertIsInstance(policy.statements[1].body[0], ast.UnaryExpr)
+        self.assertIsInstance(policy.statements[1].body[0].expr, ast.Quantifier)
+        self.assertIsInstance(policy.statements[1].body[0].expr.body[0], ast.TypedIdentifier)
 
 if __name__ == "__main__":
     unittest.main()

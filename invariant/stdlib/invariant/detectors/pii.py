@@ -1,3 +1,4 @@
+import json
 from dataclasses import dataclass
 from invariant.stdlib.invariant.nodes import LLM
 from invariant.runtime.functions import cache

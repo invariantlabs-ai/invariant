@@ -6,7 +6,7 @@ import inspect
 from dataclasses import dataclass
 
 IPL_BUILTINS = [
-    "LLM", "Message", "ToolCall", "Function", "ToolOutput",
+    "LLM", "Message", "ToolCall", "Function", "ToolOutput", "Input",
     "PolicyViolation", "UpdateMessage", "UpdateMessageHandler",
     "any", "empty",
     "match", "len",

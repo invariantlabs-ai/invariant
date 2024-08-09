@@ -1,8 +1,15 @@
-from invariant.language.ast import *
-from invariant.runtime.patterns import SemanticPatternMatcher
-from invariant.language.scope import InputData
 from dataclasses import dataclass
 import json
+import re
+import contextvars
+from itertools import product
+from typing import Generator
+
+from invariant.language.ast import *
+from invariant.runtime.patterns import SemanticPatternMatcher
+from invariant.runtime.input import Input, Selectable
+from invariant.language.scope import InputData
+from invariant.runtime.evaluation_context import EvaluationContext, PolicyParameters
 
 class symbol:
     def __init__(self, name):
@@ -17,46 +24,71 @@ NOP = symbol("<nop>")
 # symbol to represent unknown values (e.g. if based on an unknown variable)
 Unknown = symbol("<unknown>")
 
-class EvaluationContext:
-    """
-    An evaluation context enables a caller to handle the
-    evaluation of external functions explicitly (e.g. for caching)
-    and provide their own flow semantics (e.g. lookup in a graph).
-    """
-    def call_function(self, function, args, **kwargs):
-        return function(*args, **kwargs)
-    
-    def has_flow(self, left, right):
-        return False
-    
-    def get_policy_parameter(self, name):
-        return None
-
-    def has_policy_parameter(self, name):
-        return False
-    
-class PolicyParameters:
-    """
-    Returned when accessing `input` in the IPL, which provides access
-    to policy parameters passed to the `.analyze(..., **kwargs)` function.
-    """
-    def __init__(self, context):
-        self.context: EvaluationContext = context
-
-    def get(self, key):
-        return self.context.get_policy_parameter(key)
-    
-    def has_policy_parameter(self, key):
-        return self.context.has_policy_parameter(key)
-
 @dataclass
 class VariableDomain:
     """
-    The domain of a free or derived variable in the body
-    of an IPL rule.
+    The domain of a free or derived variable in the body of an IPL rule.
+
+    Variable domains are sometimes only known after evaluation of the rule body.
     """
     type_ref: str
-    values: list
+    values: list | None
+
+def select(domain: VariableDomain, input_data: Input):
+    """
+    Returns all possible candidate values for a given variable domain.
+
+    If the domain is open, i.e. ranges over the entire input data, all 
+    elements of the specified variable type are returned.
+    """
+    if domain.values is None:
+        return input_data.select(domain.type_ref)
+    else:
+        return Selectable(domain.values).select(domain.type_ref)
+
+def dict_product(dict_of_candidates):
+    """Given a dictionary of variable names to lists of possible values, 
+    return a generator of all possible combination dictionaries."""
+    keys = list(dict_of_candidates.keys())
+    candidates = list(dict_of_candidates[key] for key in keys)
+    for candidate in product(*candidates):
+        yield {keys[i]: candidate[i] for i in range(len(keys))}
+
+@dataclass
+class EvaluationResult:
+    """
+    Represents a valid assignment of variables based on some input value
+    such that a rule body evaluates to True.
+    """
+    result: bool
+    variable_assignments: dict
+    input_value: any
+    ranges: list
+
+@dataclass
+class Range:
+    """
+    Represents a range in the input object that is relevant for 
+    the currently evaluated expression.
+
+    A range can be an entire object (start and end are None) or a
+    substring (start and end are integers, and object_id refers to
+    the object that the range is part of).
+    """
+    object_id: str
+    start: int|None
+    end: int|None
+
+    @classmethod
+    def from_object(cls, obj, start=None, end=None):
+        if type(obj) is dict and "__origin__" in obj:
+            obj = obj["__origin__"]
+        return cls(str(id(obj)), start, end)
+    
+    def match(self, obj):
+        return str(id(obj)) == self.object_id
+
+INTERPRETER_STACK = contextvars.ContextVar("interpreter_stack", default=[])
 
 class Interpreter(RaisingTransformation):
     """
@@ -71,7 +103,14 @@ class Interpreter(RaisingTransformation):
     """
 
     @staticmethod
-    def eval(expr_or_list, variable_store, globals, evaluation_context=None, return_variable_domains=False, partial=True, assume_bool=False):
+    def current():
+        stack = INTERPRETER_STACK.get()
+        if len(stack) == 0:
+            raise ValueError("Cannot access Interpreter.current() outside of an interpretation context (call stack below Interpreter.eval).")
+        return stack[-1]
+
+    @staticmethod
+    def eval(expr_or_list, variable_store, globals, evaluation_context=None, return_variable_domains=False, partial=True, assume_bool=False, return_ranges=False):
         """Evaluates the given expression(s).
 
         Args:
@@ -89,34 +128,65 @@ class Interpreter(RaisingTransformation):
             The result of the evaluation. If multiple expressions are given, a list of results is returned. For 
             boolean evaluation, always evaluates all(expr_or_list) and returns True, False or Unknown.
         """
-        interpreter = Interpreter(variable_store, globals, evaluation_context, partial=partial)
-        
-        # make sure 'expr' is a list
-        is_list_expr = isinstance(expr_or_list, list)
-        if not is_list_expr: expr = [expr_or_list]
-        else: expr = expr_or_list
-        
-        if assume_bool:
-            # use short-circuit evaluation for boolean conjunctions
-            # note: this is not just an optimization, but also prevents type errors, if only
-            # a later condition fails (e.g. `type(a) is int and a + b > 2`), where checking the 
-            # second condition fail with a type error if `a` is not an integer.
-            results = interpreter.visit_ShortCircuitedConjunction(expr)
-        else:
-            # otherwise evaluate all expressions
-            results = [interpreter.visit(e) for e in expr]
+        with Interpreter(variable_store, globals, evaluation_context, partial=partial) as interpreter:    
+            # make sure 'expr' is a list
+            is_list_expr = isinstance(expr_or_list, list)
+            if not is_list_expr: expr = [expr_or_list]
+            else: expr = expr_or_list
+            
+            if assume_bool:
+                # use short-circuit evaluation for boolean conjunctions
+                # note: this is not just an optimization, but also prevents type errors, if only
+                # a later condition fails (e.g. `type(a) is int and a + b > 2`), where checking the 
+                # second condition fail with a type error if `a` is not an integer.
+                results = interpreter.visit_ShortCircuitedConjunction(expr)
+            else:
+                # otherwise evaluate all expressions
+                results = [interpreter.visit(e) for e in expr]
+            
+            # evaluate all component expressions
+            result = Interpreter.eval_all(results)
+            
+            # for non-list expressions with list results, select the first result
+            if type(result) is list: result = result[0] if not is_list_expr else result
+            
+            # construct return object
+            return_obj = (result,)
+
+            # if requested, also return new mappings
+            if return_variable_domains:
+                return_obj = (result, interpreter.variable_domains)
+            
+            # if requested, also return ranges
+            if return_ranges:
+                return_obj = return_obj + (interpreter.ranges,)
+            
+            if len(return_obj) == 1:
+                return return_obj[0]
+            else:
+                return return_obj
+
+    @staticmethod
+    def eval_all(list_of_results):
+        """
+        Like all(...) over a list of evaluation results, but also accounts for Unknown and NOP values.
+
+        Args:
+            list_of_results: The list of results to evaluate (as returned by .visit_* methods).
+        """
         # remove nops
-        results = [r for r in results if r is not NOP]
-        
+        results = [r for r in list_of_results if r is not NOP]
+        # check if all results are boolean
         is_bool_result = all(type(r) is bool or r is Unknown for r in results)
 
         # simply return non-boolean results
         if not is_bool_result:
-            result = results[0] if not is_list_expr else results
+            return results
         else:
             # special handling for true|false|unknown value evaluation
             any_unknown_part = any(r is Unknown for r in results)
             any_false_part = any(r is False for r in results)
+            
             if any_false_part: 
                 # definitive false
                 result = False 
@@ -126,11 +196,85 @@ class Interpreter(RaisingTransformation):
             else:
                 # definitive true
                 result = True 
+            
+            return result
 
-        # if requested, also return new mappings
-        if return_variable_domains:
-            return result, interpreter.variable_domains
-        return result
+    @staticmethod
+    def assignments(expr_or_list, input_data: Input, globals: dict, verbose=False, 
+                    extra_check: callable = None, evaluation_context: EvaluationContext|None = None) -> Generator[EvaluationResult, None, None]:
+        """
+        Iterator function over all possible variable assignments that either definitively satisfy or violate the given expression.
+
+        The returned generator yields EvaluationResult objects, which contain the boolean evaluation result as 'result'.
+
+        To obtain only models (assignments that satisfy the expression), use `[m for m in Interpreter.assignments(...) if m.result is True]`.
+
+        Args:
+            expr_or_list: The expression or list of expressions to evaluate.
+            input_data: The input data to use for evaluation.
+            globals: The global variables available during evaluation.
+            verbose: If True, prints additional information about the evaluation process.
+            
+            extra_check: An optional function that is called for each candidate assignment. If the function returns False, 
+                         the model is further expanded (more mappings are determined) until a subsequent extra_check(...) 
+                         call returns True. 
+
+                         This is relevant, when a partial assignment can already be determined to evaluate to True (based on logical
+                         implications), but the client requires further variables to be picked to make the model complete.
+            
+            evaluation_context: The evaluation context to use for evaluation.
+        """
+        candidates = [{}]
+
+        while len(candidates) > 0:
+            # for each variable, select a domain
+            candidate_domains = candidates.pop()
+            # for each domain, compute set of possible values
+            candidate = {variable: select(domain, input_data) for variable, domain in candidate_domains.items()}
+            # iterate over all cross products of all known variable domains
+            for input_dict in dict_product(candidate):
+                subdomains = {
+                    k: VariableDomain(d.type_ref, values=[input_dict[k]]) for k,d in candidate_domains.items()
+                }
+
+                if verbose:
+                    termcolor.cprint("=== Considering Model ===", "blue")
+                    for k,v in input_dict.items():
+                        print("  -", k, ":=", id(v), str(v)[:120] + ("" if len(str(v)) < 120 else "..."))
+                    if len(input_dict) == 0: print("  - <empty>")
+                    print()
+                    
+                result, new_variable_domains, ranges = Interpreter.eval(expr_or_list, input_dict, globals, evaluation_context=evaluation_context, return_variable_domains=True, assume_bool=True, return_ranges=True)
+                
+                if verbose:
+                    print("\n    result:", termcolor.colored(result, "green" if result else "red"))
+                    print()
+
+                if result is False:
+                    model = EvaluationResult(result, input_dict, input_data, ranges)
+                    # add all objects form input_dict as object ranges
+                    for k,v in input_dict.items():
+                        ranges.append(Range.from_object(v))
+                    yield model
+                    continue
+                # if we find a complete model, we can stop
+                elif result is True and (extra_check is None or extra_check(input_dict, evaluation_context)):
+                    model = EvaluationResult(result, input_dict, input_data, ranges)
+                    # add all objects form input_dict as object ranges
+                    for k,v in input_dict.items():
+                        ranges.append(Range.from_object(v))
+                    yield model
+                    continue
+                elif len(new_variable_domains) > 0:
+                    # if more derived variable domains are found, we explore them
+                    updated_domains = {**subdomains, **new_variable_domains}
+                    candidates.append(updated_domains)
+
+                    if verbose:
+                        termcolor.cprint("discovered new variable domains", "green")
+                        for k,v in updated_domains.items():
+                            termcolor.cprint("  -" + str(k) + " in " + str(v), color="green")
+                        print()
 
     def __init__(self, variable_store, globals, evaluation_context=None, partial=True):
         super().__init__(reraise=True)
@@ -140,10 +284,19 @@ class Interpreter(RaisingTransformation):
         self.evaluation_context = evaluation_context or EvaluationContext()
         self.partial = partial
 
+        self.ranges = []
+
         # variable ranges describe the domain of all encountered
         # free variables. A domain of 'None' means the variable
         # quantifies over the global input domain (cf. Input objects).
         self.variable_domains = {}
+
+    def __enter__(self):
+        INTERPRETER_STACK.get().append(self)
+        return self
+    
+    def __exit__(self, exc_type, exc_value, traceback):
+        INTERPRETER_STACK.get().pop()
 
     def visit_ShortCircuitedConjunction(self, exprs: list):
         results = []
@@ -167,6 +320,25 @@ class Interpreter(RaisingTransformation):
 
     def visit_RaisePolicy(self, node: RaisePolicy):
         raise NotImplementedError("RaisePolicy nodes cannot be evaluated directly.")
+
+    def visit_Quantifier(self, node: Quantifier):
+        """
+        Quantifiers are evaluated by their implemented quantifier functions.
+
+        For this, they are provided with the body expression and the surrounding evaluation state (variable store, globals, input data).
+
+        The actual quantifier semantics are implemented in the respective quantifier classes (stdlib).
+        """
+        quantifier = self.visit(node.quantifier_call)
+        if type(quantifier) is type:
+            quantifier = quantifier()
+        
+        captured_variables = CapturedVariableCollector().collect(node.body)
+        free_captured_variables = [v for v in captured_variables if v not in self.variable_store and v not in self.globals]
+        if len(free_captured_variables) > 0:
+            return Unknown
+
+        return quantifier.eval(input_data=self.evaluation_context.get_input(), body=node.body, globals={**self.globals, **self.variable_store}, evaluation_context=self.evaluation_context)
 
     def visit_BinaryExpr(self, node: BinaryExpr):
         op = node.op
@@ -274,9 +446,29 @@ class Interpreter(RaisingTransformation):
 
                 if isinstance(lvalue, list):
                     return [x in rvalue for x in lvalue]
+                
+                if type(rvalue) is str and type(lvalue) is str:
+                    # find all ranges where left matches right
+                    for m in re.finditer(lvalue, rvalue):
+                        self.mark(rvalue, m.start(), m.end())
+                    return lvalue in rvalue
+                
                 return lvalue in rvalue
             else:
                 raise NotImplementedError(f"Unknown binary operator: {op}")
+
+    def mark(self, obj: object, start: int|None = None, end: int|None = None):
+        """
+        Marks a relevant range or subobject in the input object as relevant 
+        for the currently evaluated expression (e.g. a string match or 
+        an entire object like a specific tool call).
+
+        Args:
+            obj: The object that the range refers to.
+            start: The start index of the range (pass 'None' if you want to indicate an object-level range, i.e. an entire object in the input is considered relevant for the currently evaluated expression).
+            end: The end index of the range (pass 'None' if you want to indicate an object-level range, i.e. an entire object in the input is considered relevant for the currently evaluated expression).
+        """
+        self.ranges.append(Range.from_object(obj, start, end))
 
     def visit_Is(self, node: BinaryExpr, left, right):
         if type(node.right) is UnaryExpr and node.right.op == "not" and type(node.right.expr) is NoneLiteral:
@@ -324,6 +516,7 @@ class Interpreter(RaisingTransformation):
             return obj[node.member]
         except Exception:
             raise KeyError(f"Object {obj} has no key {node.member}")
+
 
     def visit_KeyAccess(self, node: KeyAccess):
         obj = self.visit(node.expr)

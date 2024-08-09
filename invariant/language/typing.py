@@ -17,7 +17,6 @@ from invariant.language.scope import GlobalScope, VariableDeclaration, ExternalR
 from invariant.language.types import *
 import inspect
 from dataclasses import dataclass
-from invariant.runtime.patterns import VALUE_MATCHERS
 
 
 class CollectVariableDeclarations(RaisingTransformation):
@@ -201,6 +200,8 @@ class TypingTransformation(RaisingTransformation):
         return node
 
     def visit_ValueReference(self, node: ValueReference):
+        from invariant.runtime.patterns import VALUE_MATCHERS
+        
         if not self.has_context(lambda c: isinstance(c, SemanticPattern)):
             raise PolicyError("You cannot use value references outside of semantic patterns (e.g. tool:abc(<VALUE>, 12))")
         if node.value_type not in VALUE_MATCHERS:

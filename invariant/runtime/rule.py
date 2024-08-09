@@ -1,5 +1,12 @@
 import os
 import invariant.language.ast as ast
+from invariant.runtime.evaluation import Interpreter, EvaluationContext, VariableDomain, Unknown, Range, EvaluationResult
+from invariant.language.linking import link
+import invariant.language.types as types
+from invariant.language.parser import parse_file
+import invariant.language.ast as ast
+from dataclasses import dataclass
+from itertools import product
 import textwrap
 import termcolor
 import invariant.language.ast as ast
@@ -14,18 +21,6 @@ class PolicyAction:
     def __call__(self, input_dict):
         raise NotImplementedError()
 
-class CodeExecutionAction(PolicyAction):
-    def __init__(self, code: str, globals: dict):
-        self.code = code
-        self.globals = globals
-
-    def __call__(self, input_dict):
-        try:
-            exec(self.code, {**input_dict, **self.globals})
-        except Exception as e:
-            e.args = (f"Error when executing code: '{self.code}': {e}",)
-            raise e
-
 class RaiseAction(PolicyAction):
     def __init__(self, exception_or_constructor, globals):
         self.exception_or_constructor = exception_or_constructor
@@ -35,20 +30,24 @@ class RaiseAction(PolicyAction):
         res = Interpreter.eval(self.exception_or_constructor, input_dict, self.globals, partial=True, evaluation_context=evaluation_context)
         return res is not Unknown
 
-    def __call__(self, input_dict, evaluation_context=None):
+    def __call__(self, model: EvaluationResult, evaluation_context=None):
         from invariant.stdlib.invariant.errors import PolicyViolation
 
         if type(self.exception_or_constructor) is ast.StringLiteral:
-            return PolicyViolation(self.exception_or_constructor.value)
+            return PolicyViolation(self.exception_or_constructor.value, ranges=model.ranges)
         elif isinstance(self.exception_or_constructor, ast.Expression):
-            exception = Interpreter.eval(self.exception_or_constructor, input_dict, self.globals, partial=False, evaluation_context=evaluation_context)
+            exception = Interpreter.eval(self.exception_or_constructor, model.variable_assignments, self.globals, partial=False, evaluation_context=evaluation_context)
+            
             if not isinstance(exception, BaseException):
-                exception = PolicyViolation(str(exception))
+                exception = PolicyViolation(str(exception), ranges=model.ranges)
+            elif isinstance(exception, PolicyViolation):
+                exception.ranges = model.ranges
+            
             return exception
         else:
             print("raising", self.exception_or_constructor, "not implemented")
             return None
-
+        
 class RuleApplication:
     """
     Represents the output of applying a rule to a set of input data.
@@ -57,7 +56,7 @@ class RuleApplication:
 
     def __init__(self, rule, models):
         self.rule = rule
-        self.models = models
+        self.models: list[EvaluationResult] = models
 
     def applies(self):
         return len(self.models) > 0
@@ -69,21 +68,6 @@ class RuleApplication:
             if exc is not None:
                 errors.append((model, exc))
         return errors
-
-def select(domain: VariableDomain, input_data: Input):
-    if domain.values is None:
-        return input_data.select(domain.type_ref)
-    else:
-        return Selectable(domain.values).select(domain.type_ref)
-
-def dict_product(dict_of_candidates):
-    """Given a dictionary of variable names to lists of possible values, 
-    return a generator of all possible combination dictionaries."""
-    keys = list(dict_of_candidates.keys())
-    candidates = list(dict_of_candidates[key] for key in keys)
-    for candidate in product(*candidates):
-        yield {keys[i]: candidate[i] for i in range(len(keys))}
-
 class Rule:
     def __init__(
         self,
@@ -105,50 +89,17 @@ class Rule:
     def __str__(self):
         return repr(self)
 
+    def action_can_eval(self, input_dict: dict, ctx: EvaluationContext):
+        """Returns true iff self.action can be evaluated with the given input_dict and context (all relevant variables have already been assigned)."""
+        return self.action.can_eval(input_dict, ctx)
+
     def apply(self, input_data: Input, evaluation_context=None) -> RuleApplication:
-        models = []
-        candidates = [{}]
-
-        while len(candidates) > 0:
-            # for each variable, select a domain
-            candidate_domains = candidates.pop()
-            # for each domain, compute set of possible values
-            candidate = {variable: select(domain, input_data) for variable, domain in candidate_domains.items()}
-            # iterate over all cross products of all known variable domains
-            for input_dict in dict_product(candidate):
-                subdomains = {
-                    k: VariableDomain(d.type_ref, values=[input_dict[k]]) for k,d in candidate_domains.items()
-                }
-
-                if self.verbose:
-                    termcolor.cprint("=== Considering Model ===", "blue")
-                    for k,v in input_dict.items():
-                        print("  -", k, ":=", id(v), str(v)[:120] + ("" if len(str(v)) < 120 else "..."))
-                    if len(input_dict) == 0: print("  - <empty>")
-                    print()
-                
-                result, new_variable_domains = Interpreter.eval(self.condition, input_dict, self.globals, evaluation_context=evaluation_context, return_variable_domains=True, assume_bool=True)
-                
-                if self.verbose:
-                    print("\n    result:", termcolor.colored(result, "green" if result else "red"))
-                    print()
-
-                if result is False: 
-                    continue
-                # if we find a complete model, we can stop
-                elif result is True and self.action.can_eval(input_dict, evaluation_context):
-                    models.append(input_dict)
-                    continue
-                elif len(new_variable_domains) > 0:
-                    # if more derived variable domains are found, we explore them
-                    updated_domains = {**subdomains, **new_variable_domains}
-                    candidates.append(updated_domains)
-
-                    if self.verbose:
-                        termcolor.cprint("discovered new variable domains", "green")
-                        for k,v in updated_domains.items():
-                            termcolor.cprint("  -" + str(k) + " in " + str(v), color="green")
-                        print()
+        models = [m for m in Interpreter.assignments(self.condition, 
+                                                     input_data, 
+                                                     globals=self.globals, 
+                                                     verbose=self.verbose, 
+                                                     extra_check=self.action_can_eval, 
+                                                     evaluation_context=evaluation_context) if m.result is True]
 
         return RuleApplication(self, models)
     
@@ -215,6 +166,9 @@ class InputEvaluationContext(EvaluationContext):
     
     def has_policy_parameter(self, name):
         return name in self.policy_parameters
+    
+    def get_input(self) -> Input:
+        return self.input
 
 class RuleSet:
     rules: list[Rule]
@@ -236,7 +190,8 @@ class RuleSet:
 
     def instance_key(self, rule, model):
         model_keys = []
-        for k, v in model.items():
+        
+        for k,v in model.variable_assignments.items():
             if type(v) is dict and "key" in v:
                 model_keys.append((k.name, v["key"]))
             else:
@@ -263,8 +218,8 @@ class RuleSet:
 
         for rule in self.rules:
             evaluation_context = InputEvaluationContext(input_data, self, policy_parameters)
-            result = rule.apply(input_data, evaluation_context=evaluation_context)
-
+            
+            result: RuleApplication = rule.apply(input_data, evaluation_context=evaluation_context)
             result.models = [m for m in result.models if self.non_executed(rule, m)]
             for model in result.models:
                 if self.cached:
