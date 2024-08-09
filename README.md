@@ -1,5 +1,5 @@
 <div align="center">
-  <h1 align="center">🕵️‍♂️</h1>
+  <h1 align="center"><img src="https://invariantlabs.ai/theme/images/logo.svg"/></h1>
   <h1 align="center">Invariant Analyzer for AI Agent Traces</h1>
 
   <p align="center">
@@ -10,6 +10,8 @@
 [Use Cases](#use-cases) |
 [Documentation](#documentation) |
 [Development](docs/DEVELOPMENT.md#development)
+
+ <a href="https://discord.gg/dZuZfhKnJ4"><img src="https://img.shields.io/discord/1265409784409231483?style=plastic&logo=discord&color=blueviolet&logoColor=white" height=18/></a>
   
   </p>
 </div>

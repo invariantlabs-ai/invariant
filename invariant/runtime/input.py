@@ -6,13 +6,11 @@ Creates dataflow graphs and derived data from the input data.
 import inspect
 import json
 import warnings
-import textwrap
-import termcolor
+from collections.abc import KeysView, ValuesView, ItemsView
 from copy import deepcopy
 from typing import Optional
 from invariant.stdlib.invariant.nodes import Message, ToolCall, ToolOutput, Event
 from rich.pretty import pprint as rich_print
-#from rich import print as rich_print
 
 import invariant.language.types as types
 
@@ -117,6 +115,11 @@ class Selectable:
         # allow to select the root data object
         if data == "<root>":
             data = self.data
+        if self.should_ignore(data):
+            return []
+        if isinstance(data, (KeysView, ValuesView, ItemsView)):
+            return self.select(selector, list(data))
+        type_name = self.type_name(selector)
 
         if type(data).__name__ == type_name:
             return [data]

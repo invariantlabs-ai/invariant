@@ -10,7 +10,7 @@ class PIIException(Exception):
     llm_call: LLM
 
 @cache
-def pii(data: str | list, **config):
+def pii(data: str | list, **config) -> list[str]:
     """Predicate which detects PII in the given data.
     
     Returns the list of PII detected in the data.
