@@ -121,7 +121,7 @@ class Interpreter(RaisingTransformation):
             return_variable_domains: If True, also returns any new variable domains derived during evaluation.
             partial: If True, returns Unknown if any part of the expression is unknown. If False, raises an exception when
                      an unknown variable is encountered.
-            assume_bool: Specifies whether it is safe to assume the the list of expressions is a boolean expression. If True,
+            assume_bool: Specifies whether it is safe to assume the list of expressions is a boolean expression. If True,
                          the evaluation will be short-circuited in order of the provided expressions.
 
         Returns:
