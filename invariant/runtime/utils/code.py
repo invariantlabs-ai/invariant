@@ -166,9 +166,10 @@ class SemgrepDetector(BaseDetector):
         cmd = ["rye", "run", "semgrep", "scan", "--json", "--config", config, "--metrics", "off", "--quiet", temp_file]
         try:
             out = subprocess.run(cmd, capture_output=True)
+            semgrep_res = json.loads(out.stdout.decode("utf-8"))
         except Exception:
             out = subprocess.run(cmd[2:], capture_output=True)
-        semgrep_res = json.loads(out.stdout.decode("utf-8"))
+            semgrep_res = json.loads(out.stdout.decode("utf-8"))
         issues = []
         for res in semgrep_res["results"]:
             severity = self.get_severity(res["extra"]["severity"])
