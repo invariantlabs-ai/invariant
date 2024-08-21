@@ -596,6 +596,25 @@ In this example, we define a policy that checks two things: (1) whether the user
 
 Since both specified security properties are violated by the given message trace, the analyzer returns an `AnalysisResult` with two `PolicyViolation`s.
 
+##### Error Localization
+
+The analyzer also supports error localization. This allows you to pinpoint the exact location in the trace that triggered a policy violation, down to the specific sub-object or range of content.
+
+For this, the returned `PolicyViolation` errors contain a list of `.ranges`, which specify the exact locations in the trace that triggered the violation. The `json_path` corresponds to the path in the message trace where the indices after the `:` indicate the offset range:
+
+```python
+error = policy.analyze(messages).errors[1]
+# PolicyViolation(A web result contains 'France', call=...)
+error.ranges
+# [
+#   Range(object_id='4323252960', start=None, end=None, json_path='3'), 
+#   Range(object_id='4299976464', start=24, end=30, json_path='3.content:24-30')
+# ]
+# -> the error is caused by 3rd message (tool call), and the relevant range is in the content at offset 24-30
+```
+
+Here, both the top-level `ToolCall` object as well as the more specific content range are highlighted as the source of the policy violation.
+
 #### Real-Time Monitoring of an OpenAI Agent
 
 The analyzer can also be used to monitor AI agents in real-time. This allows you to prevent security issues and data breaches before they happen, and to take the appropriate steps to secure your deployed agents. The interface is `monitor.check(past_events, pending_events)` where `past_events` represented sequence of actions that already happened, while `pending_events` represent actions that agent is trying to do (e.g. executing code).
@@ -682,19 +701,3 @@ agent_executor = MonitoringAgentExecutor(agent=agent, tools=[something, somethin
 > For the full snippet, see [invariant/examples/lc_flow_example.py](./invariant/examples/lc_flow_example.py)
 
 The `MonitoringAgentExecutor` will automatically check all tool calls, ensuring that the agent never violates the policy. If a violation is detected, the executor will raise an exception.
-
-#### Automatic Issue Resolution (Handlers)
-
-The Invariant analyzer also offers an extension that enables the specification of automatic issue resolution handlers. These handlers can be used to automatically resolve detected security issues, allowing the agent to continue securely without manual intervention.
-
-However, this feature is still _under development_ and not intended to be used in its current form (experimental). For a preview, see [invariant/examples/lc_example.py](./invariant/examples/lc_example.py) for an example of how to use handlers in a monitored `langchain` agent.
-
-### Roadmap
-
-_More Information Coming Soon_
-
-<!-- * [Sensitive Data Detection](#sensitive-data-detection)
-    * [Prompt Injection Detection](#prompt-injection-detection)
-    * [Moderation Violation Detection](#moderation-violation-detection)
-    * [Code Analysis And Secrets Scanning](#code-analysis-and-secrets-scanning)
-    * [Custom Checkers](#custom-checkers) -->
