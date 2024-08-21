@@ -84,7 +84,7 @@ Examples:
     print("Installing the following packages:")
     print("\n".join(["- " + pd for pd in to_install]))
     
-    if prompt("Do you want to continue?") or noask:
+    if noask or prompt("Do you want to continue?"):
         # make sure 'pip' is installed
         result = subprocess.run([sys.executable, "-m", "pip", "--version"], capture_output=True)
         if result.returncode != 0:
