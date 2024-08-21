@@ -7,7 +7,7 @@ from typing import Generator
 
 from invariant.language.ast import *
 from invariant.runtime.patterns import SemanticPatternMatcher
-from invariant.runtime.input import Input, Selectable
+from invariant.runtime.input import Input, Selectable, Range
 from invariant.language.scope import InputData
 from invariant.runtime.evaluation_context import EvaluationContext, PolicyParameters
 
@@ -64,29 +64,6 @@ class EvaluationResult:
     variable_assignments: dict
     input_value: any
     ranges: list
-
-@dataclass
-class Range:
-    """
-    Represents a range in the input object that is relevant for 
-    the currently evaluated expression.
-
-    A range can be an entire object (start and end are None) or a
-    substring (start and end are integers, and object_id refers to
-    the object that the range is part of).
-    """
-    object_id: str
-    start: int|None
-    end: int|None
-
-    @classmethod
-    def from_object(cls, obj, start=None, end=None):
-        if type(obj) is dict and "__origin__" in obj:
-            obj = obj["__origin__"]
-        return cls(str(id(obj)), start, end)
-    
-    def match(self, obj):
-        return str(id(obj)) == self.object_id
 
 INTERPRETER_STACK = contextvars.ContextVar("interpreter_stack", default=[])
 
@@ -219,7 +196,7 @@ class Interpreter(RaisingTransformation):
                          the model is further expanded (more mappings are determined) until a subsequent extra_check(...) 
                          call returns True. 
 
-                         This is relevant, when a partial assignment can already be determined to evaluate to True (based on logical
+                         This is relevant when a partial assignment can already be determined to evaluate to True (based on logical
                          implications), but the client requires further variables to be picked to make the model complete.
             
             evaluation_context: The evaluation context to use for evaluation.

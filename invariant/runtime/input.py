@@ -11,6 +11,9 @@ from copy import deepcopy
 from typing import Optional
 from invariant.stdlib.invariant.nodes import Message, ToolCall, ToolOutput, Event
 from rich.pretty import pprint as rich_print
+from dataclasses import dataclass
+
+from pydantic import BaseModel
 
 import invariant.language.types as types
 
@@ -170,7 +173,91 @@ def inputcopy(opj):
         return tuple([inputcopy(v) for v in opj])
     else:
         return deepcopy(opj)
+
+@dataclass
+class Range:
+    """
+    Represents a range in the input object that is relevant for 
+    the currently evaluated expression.
+
+    A range can be an entire object (start and end are None) or a
+    substring (start and end are integers, and object_id refers to
+    the object that the range is part of).
+    """
+    object_id: str
+    start: int|None
+    end: int|None
     
+    # json path to this range in the input object (not always directly available)
+    # Use Input.locate to generate the JSON paths
+    json_path: str|None = None
+
+    @classmethod
+    def from_object(cls, obj, start=None, end=None):
+        if type(obj) is dict and "__origin__" in obj:
+            obj = obj["__origin__"]
+        return cls(str(id(obj)), start, end)
+    
+    def match(self, obj):
+        return str(id(obj)) == self.object_id
+
+class InputVisitor:
+    def __init__(self, data):
+        self.data = data
+        self.visited = set()
+
+    def visit(self, object = None, path = None):
+        # root call defaults
+        if object is None:
+            object = self.data
+        if path is None:
+            path = []
+
+        # prevent infinite recursion
+        if id(object) in self.visited:
+            return
+        self.visited.add(id(object))
+
+        if type(object) is dict:
+            for k in object:
+                self.visit(object[k], path + [k])
+        elif type(object) is list:
+            for i, v in enumerate(object):
+                self.visit(v, path + [i])
+        elif isinstance(object, BaseModel):
+            # get pydantic model fields
+            fields = object.model_fields
+            for field in fields:
+                self.visit(getattr(object, field), path + [field])
+        else:
+            return # nop
+        
+class RangeLocator(InputVisitor):
+    def __init__(self, ranges, data):
+        super().__init__(data)
+        
+        self.ranges_by_object_id = {}
+        for r in ranges:
+            self.ranges_by_object_id.setdefault(r.object_id, []).append(r)
+
+        self.results = []
+
+    def visit(self, object=None, path=None):
+        if object is None:
+            object = self.data
+        if path is None:
+            path = []
+        
+        # print(".".join(map(str, path)), type(object), object, id(object))
+        if str(id(object)) in self.ranges_by_object_id:
+            for r in self.ranges_by_object_id[str(id(object))]:
+                rpath = ".".join(map(str, path))
+                if r.start is not None and r.end is not None:
+                    rpath += ":" + str(r.start) + "-" + str(r.end)
+                self.results.append((r,rpath))
+        
+        super().visit(object, path)
+
 class Input(Selectable):
     """
     An Input object that can be analyzed by the Invariant Analyzer.
@@ -187,6 +274,13 @@ class Input(Selectable):
         # creates a dataflow graph from the input
         self.dataflow = Dataflow.from_input(self.data)
 
+    def locate(self, ranges: list[Range], object = None, path = None, results=None):
+        locator = RangeLocator(ranges, self.data)
+        locator.visit(object, path)
+        # return new ranges, where the json path is set
+        ranges_with_paths = locator.results
+        return [Range(r.object_id, r.start, r.end, path) for r, path in ranges_with_paths]
+
     def parse_input(self, input: list[dict]) -> list[Event]:
         """Parses input data given as list of dictionaries and transforms it into list of Event objects (Message, ToolCall or ToolOutput).
 
@@ -198,14 +292,14 @@ class Input(Selectable):
         tool_calls = {}
         last_call_id = None
 
-        for event in input:
+        for message_idx, event in enumerate(input):
             try:
                 if not isinstance(event, dict):
                     parsed_data.append(event)
                     continue
                 if "role" in event:
                     if event["role"] != "tool":
-                        # If arguments are given as string convert them intro dict using json.loads(...)
+                        # If arguments are given as string convert them into dict using json.loads(...)
                         for call in event.get("tool_calls", []):
                             if type(call["function"]["arguments"]) == str:
                                 call["function"]["arguments"] = json.loads(call["function"]["arguments"])

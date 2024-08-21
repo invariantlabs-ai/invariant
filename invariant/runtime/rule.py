@@ -101,6 +101,10 @@ class Rule:
                                                      extra_check=self.action_can_eval, 
                                                      evaluation_context=evaluation_context) if m.result is True]
 
+        # locate ranges in input
+        for m in models:
+            m.ranges = input_data.locate(m.ranges)
+
         return RuleApplication(self, models)
     
     @classmethod
