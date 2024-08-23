@@ -115,7 +115,7 @@ To learn more, read the [documentation](#documentation) below or continue readin
 **Problem Statement**: Recently, AI agents are often deployed for software engineering tasks. Typically, an AI agent operates on the command line, creating and editing files in order to achieve a software engineering task. For example, the authors of [SWE Agent](https://arxiv.org/abs/2405.15793) identified several issues through manual work, e.g., agents that get stuck scrolling through long files or failing to edit the same file over and over again.
 <hr/>
 
-The analyzer offers the ability to filter traces to these patterns via a high-level description of the pattern:
+The analyzer offers the ability to filter traces to these patterns via a high-level description of the pattern ([Open example in Playground](https://playground.invariantlabs.ai/#14)):
 
 ```python
 traceset = # load traceset ...
