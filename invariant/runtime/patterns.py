@@ -200,7 +200,10 @@ class PIIMatcher(SemanticPatternMatcher):
             PIIMatcher.pii_analyzer = PII_Analyzer()
         pii_analyzer = PIIMatcher.pii_analyzer
 
-        return self.entity in pii_analyzer.detect_all(value)
+        res = pii_analyzer.detect_all(value)
+        res = [r.entity_type for r in res]
+
+        return self.entity in res
 
 PIIMatcher.pii_analyzer = None
 

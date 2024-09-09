@@ -81,7 +81,7 @@ class UnicodeDetector(BaseDetector):
     [Zs]	Separator, Space
     """
     
-    def detect_all(self, text: str) -> list[DetectorResult]:
+    def detect_all(self, text: str, categories: list[str] | None = None) -> list[DetectorResult]:
         """Detects all unicode groups that should not be allowed in the text.
 
         Attributes:
@@ -97,5 +97,6 @@ class UnicodeDetector(BaseDetector):
         res = []
         for index, chr in enumerate(text):
             cat = unicodedata.category(chr)
-            res.append(DetectorResult(cat, index, index+1))
+            if categories is None or cat in categories:
+                res.append(DetectorResult(cat, index, index+1))
         return res

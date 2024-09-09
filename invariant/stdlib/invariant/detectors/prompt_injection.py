@@ -1,4 +1,5 @@
 from invariant.runtime.utils.prompt_injections import PromptInjectionAnalyzer, UnicodeDetector
+from invariant.runtime.utils.base import DetectorResult
 from invariant.runtime.functions import cache
 
 PROMPT_INJECTION_ANALYZER = None
@@ -29,23 +30,35 @@ def prompt_injection(data: str | list | dict, **config: dict) -> bool:
             return True
     return False
 
+
+def parse_unicode(obj, results: list[DetectorResult], interpreter) -> list[str]:
+    for r in results:
+        interpreter.mark(obj, r.start, r.end)
+    results = [r.entity for r in results]
+    return list(set(results))
+
+
 @cache
-def unicode(data: str | list | dict, **config: dict) -> bool:
+def unicode(data: str | list | dict, categories: list[str] | None = None) -> bool:
     """Predicate used for detecting disallowed types of unicode characters in the given data."""
     assert data is not None, "cannot call unicode(...) on None"
     global UNICODE_ANALYZER
     if UNICODE_ANALYZER is None:
         UNICODE_ANALYZER = UnicodeDetector()
 
+    from invariant.runtime.evaluation import Interpreter
+    interpreter = Interpreter.current()
+
     if type(data) is str:
-        return UNICODE_ANALYZER.detect_all(data, **config)
+        return parse_unicode(data, UNICODE_ANALYZER.detect_all(data, categories), interpreter)
     if type(data) is not list:
         data = [data]
 
     all_unicode = []
     for message in data:
-        if message.content is None:
+        txt = message.content
+        if txt is None:
             continue
-        res = UNICODE_ANALYZER.detect_all(message.content, **config)
-        all_unicode.extend(UNICODE_ANALYZER.get_entities(res))
+        res = parse_unicode(txt, UNICODE_ANALYZER.detect_all(txt, categories), interpreter)
+        all_unicode.extend(res)
     return all_unicode

@@ -2,6 +2,7 @@ import json
 from dataclasses import dataclass
 from invariant.stdlib.invariant.nodes import LLM
 from invariant.runtime.functions import cache
+from presidio_analyzer.recognizer_result import RecognizerResult
 
 PII_ANALYZER = None
 
@@ -9,8 +10,19 @@ PII_ANALYZER = None
 class PIIException(Exception):
     llm_call: LLM
 
+
+def add_ranges(obj, results: list[RecognizerResult], interpreter):
+    for res in results:
+        interpreter.mark(obj, res.start, res.end)
+    return [res.entity_type for res in results]
+
+
+def get_entities(results: list[RecognizerResult]):
+    return [res.entity_type for res in results]
+
+
 @cache
-def pii(data: str | list, **config) -> list[str]:
+def pii(data: str | list, entities: list[str] | None = None) -> list[str]:
     """Predicate which detects PII in the given data.
     
     Returns the list of PII detected in the data.
@@ -23,8 +35,14 @@ def pii(data: str | list, **config) -> list[str]:
         from invariant.runtime.utils.pii import PII_Analyzer
         PII_ANALYZER = PII_Analyzer()
 
+    from invariant.runtime.evaluation import Interpreter
+    interpreter = Interpreter.current()
+
     if type(data) is str:
-        return PII_ANALYZER.detect_all(data)
+        results = PII_ANALYZER.detect_all(data, entities)
+        add_ranges(data, results, interpreter)
+        return get_entities(results)
+
     if type(data) is not list:
         data = [data]
     
@@ -32,5 +50,7 @@ def pii(data: str | list, **config) -> list[str]:
     for message in data:
         if message.content is None:
             continue
-        all_pii.extend(PII_ANALYZER.detect_all(message.content))
+        results = PII_ANALYZER.detect_all(message.content, entities)
+        add_ranges(message, results, interpreter)
+        all_pii.extend(get_entities(results))
     return all_pii

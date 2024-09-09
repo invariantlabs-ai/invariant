@@ -9,7 +9,7 @@ IPL_BUILTINS = [
     "LLM", "Message", "ToolCall", "Function", "ToolOutput", "Input",
     "PolicyViolation", "UpdateMessage", "UpdateMessageHandler",
     "any", "empty",
-    "match", "len",
+    "match", "len", "find",
     "min", "max", "sum",
     "print"
 ]

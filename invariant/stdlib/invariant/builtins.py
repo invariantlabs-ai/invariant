@@ -1,9 +1,10 @@
+import builtins as py_builtins
+import re
 from invariant.stdlib.invariant.nodes import *
 from invariant.runtime.input import Input
 from invariant.stdlib.invariant.errors import *
 from invariant.stdlib.invariant.message import *
 from invariant.runtime.utils.base import DetectorResult
-import builtins as py_builtins
 
 # Utilities
 
@@ -17,8 +18,17 @@ def empty(iterable) -> bool:
 # String operations
 
 def match(pattern: str, s: str) -> bool:
-    import re
     return re.match(pattern, s) is not None
+
+def find(pattern: str, s: str) -> list[str]:
+    from invariant.runtime.evaluation import Interpreter
+    interpreter = Interpreter.current()
+
+    res = []
+    for match in re.finditer(pattern, s):
+        interpreter.mark(s, match.start(), match.end())
+        res.append(match.group())
+    return res
 
 def len(s: str) -> int:
     return py_builtins.len(s)
