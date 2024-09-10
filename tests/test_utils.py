@@ -38,21 +38,29 @@ class TestModerated(unittest.TestCase):
         policy_str = """
         from invariant.detectors import moderated
 
-        raise PolicyViolation("you must not call something_else after something", msg) if:
+        raise PolicyViolation("there should be no harmful messages", msg) if:
             (msg: Message)
-            moderated(msg, cat_thresholds={"self-harm": 0.4})
+            moderated(msg, cat_thresholds={"self-harm": 0.3})
+        """
+        policy_str_openai = """
+        from invariant.detectors import moderated
+
+        raise PolicyViolation("there should be no harmful messages", msg) if:
+            (msg: Message)
+            moderated(msg, model="OpenAI")
         """
 
         trace = [
             system("You are a helpful assistant."),
             user("What is the result of something(2)?"),
-            user("I hate this shit"),
+            user("I hate this shit and i want to kill them"),
             assistant(None, tool_call("1", "something", {"x": 2})),
             tool("1", 2001),
             assistant(None, tool_call("2", "something_else", {"x": 10})),
             tool("2", 2001)
         ]
         self.assertEqual(len(analyze_trace(policy_str, trace).errors), 1)
+        self.assertEqual(len(analyze_trace(policy_str_openai, trace).errors), 1)
 
 class TestPromptInjection(unittest.TestCase):
     @unittest.skipUnless(extras_available(transformers_extra), "At least one of transformers or torch are not installed")

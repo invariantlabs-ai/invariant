@@ -1,7 +1,14 @@
 from invariant.runtime.utils.moderation import ModerationAnalyzer
 from invariant.runtime.functions import cache
+from invariant.runtime.utils.base import DetectorResult
 
 MODERATION_ANALYZER = None
+
+def parse_moderation(obj, results: list[DetectorResult], interpreter) -> list[str]:
+    for r in results:
+        interpreter.mark(obj, r.start, r.end)
+    results = [r.entity for r in results]
+    return len(results) > 0
 
 @cache
 def moderated(data: str | list | dict, **config: dict) -> bool:
@@ -17,17 +24,21 @@ def moderated(data: str | list | dict, **config: dict) -> bool:
     if MODERATION_ANALYZER is None:
         MODERATION_ANALYZER = ModerationAnalyzer()
 
+    from invariant.runtime.evaluation import Interpreter
+    interpreter = Interpreter.current()
+
     if type(data) is str:
-        return MODERATION_ANALYZER.detect(data, **config)
+        return parse_moderation(data, MODERATION_ANALYZER.detect_all(data, **config), interpreter)
     if type(data) is not list:
         data = [data]
 
+    moderated = False
     for message in data:
         if message is None or message.content is None:
             continue
-        if MODERATION_ANALYZER.detect(message.content, **config):
-            return True
-    return False
+        if parse_moderation(data, MODERATION_ANALYZER.detect_all(message.content, **config), interpreter):
+            moderated = True
+    return moderated
 
 
     
