@@ -19,6 +19,8 @@ jobs:
     - name: Install dependencies
       run: rye sync
     - name: Run tests
+      env:
+        OPENAI_API_KEY: ${{ secrets.CI_OPENAI_API_KEY }}
       run: rye test
   test-examples:
     name: Test invariant.examples

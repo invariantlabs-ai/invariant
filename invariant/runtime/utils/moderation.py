@@ -1,4 +1,3 @@
-import openai
 from invariant.runtime.utils.base import BaseDetector, DetectorResult
 from typing import Optional
 from typing_extensions import override
@@ -89,7 +88,9 @@ class ModerationAnalyzer(BaseDetector):
 
         res = []
         pos = 0
-        client = openai.Client()
+        if model == "OpenAI":
+            import openai
+            client = openai.Client()
         for chunk in text_chunks:
             if model == "OpenAI":
                 scores = self.moderate_openai(client, chunk)

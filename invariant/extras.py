@@ -152,6 +152,11 @@ transformers_extra = Extra("Transformers", "Enables the use of 🤗 `transformer
     "torch": ExtrasImport("torch", "torch", ">=2.3.0"),
 })
 
+"""Extra for features that rely on the `openai` library."""
+openai_extra = Extra("OpenAI", "Enables the use of OpenAI's GPT-3 API for text analysis", {
+    "openai": ExtrasImport("openai", "openai", ">=1.33.0")
+})
+
 """Extra for features that rely on the `presidio_analyzer` library."""
 presidio_extra = Extra("PII and Secrets Scanning (using Presidio)", "Enables the detection of personally identifiable information (PII) and secret scanning in text", {
     "presidio_analyzer": ExtrasImport("presidio_analyzer", "presidio-analyzer", ">=2.2.354"),

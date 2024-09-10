@@ -3,7 +3,7 @@ import json
 from invariant import Policy
 from invariant.policy import analyze_trace
 from invariant.traces import *
-from invariant.extras import extras_available, presidio_extra, transformers_extra
+from invariant.extras import extras_available, presidio_extra, transformers_extra, openai_extra
 
 class TestPII(unittest.TestCase):
     @unittest.skipUnless(extras_available(presidio_extra), "presidio-analyzer is not installed")
@@ -33,7 +33,7 @@ class TestPII(unittest.TestCase):
 
 
 class TestModerated(unittest.TestCase):
-    @unittest.skipUnless(extras_available(transformers_extra), "At least one of transformers or torch are not installed")
+    @unittest.skipUnless(extras_available(transformers_extra, openai_extra), "At least one of transformers or torch are not installed")
     def test_moderated(self):
         policy_str = """
         from invariant.detectors import moderated
