@@ -1,6 +1,5 @@
 from invariant.runtime.utils.base import BaseDetector
 from invariant.extras import presidio_extra
-from presidio_analyzer.recognizer_result import RecognizerResult
 
 
 class PII_Analyzer(BaseDetector):
@@ -10,7 +9,7 @@ class PII_Analyzer(BaseDetector):
         self.analyzer = AnalyzerEngine()
         self.threshold = threshold
 
-    def detect_all(self, text: str, entities: list[str] | None = None) -> list[RecognizerResult]:
+    def detect_all(self, text: str, entities: list[str] | None = None):
         results = self.analyzer.analyze(text, language='en', entities=entities)
         res_matches = set()
         for res in results:
