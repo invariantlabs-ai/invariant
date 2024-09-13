@@ -1,8 +1,6 @@
-import json
 from dataclasses import dataclass
 from invariant.stdlib.invariant.nodes import LLM
 from invariant.runtime.functions import cache
-from presidio_analyzer.recognizer_result import RecognizerResult
 
 PII_ANALYZER = None
 
@@ -11,13 +9,13 @@ class PIIException(Exception):
     llm_call: LLM
 
 
-def add_ranges(obj, results: list[RecognizerResult], interpreter):
+def add_ranges(obj, results: list, interpreter):
     for res in results:
         interpreter.mark(obj, res.start, res.end)
     return [res.entity_type for res in results]
 
 
-def get_entities(results: list[RecognizerResult]):
+def get_entities(results: list):
     return [res.entity_type for res in results]
 
 

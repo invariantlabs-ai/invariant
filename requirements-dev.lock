@@ -30,7 +30,7 @@ boltons==21.0.0
     # via face
     # via glom
     # via semgrep
-bracex==2.4
+bracex==2.5
     # via wcmatch
 catalogue==2.0.10
     # via spacy
@@ -61,9 +61,12 @@ cymem==2.0.8
     # via thinc
 defusedxml==0.7.1
     # via semgrep
+deprecated==1.2.14
+    # via opentelemetry-api
+    # via opentelemetry-exporter-otlp-proto-http
 distro==1.9.0
     # via openai
-exceptiongroup==1.2.1
+exceptiongroup==1.2.2
     # via semgrep
 face==22.0.0
     # via glom
@@ -80,6 +83,8 @@ fsspec==2024.6.0
     # via torch
 glom==22.1.0
     # via semgrep
+googleapis-common-protos==1.65.0
+    # via opentelemetry-exporter-otlp-proto-http
 h11==0.14.0
     # via httpcore
 httpcore==1.0.5
@@ -95,6 +100,8 @@ idna==3.7
     # via requests
     # via tldextract
     # via yarl
+importlib-metadata==7.1.0
+    # via opentelemetry-api
 iniconfig==2.0.0
     # via pytest
 jinja2==3.1.4
@@ -104,7 +111,7 @@ jsonpatch==1.33
     # via langchain-core
 jsonpointer==3.0.0
     # via jsonpatch
-jsonschema==4.22.0
+jsonschema==4.23.0
     # via semgrep
 jsonschema-specifications==2023.12.1
     # via jsonschema
@@ -153,6 +160,32 @@ numpy==1.26.4
     # via transformers
 openai==1.33.0
     # via langchain-openai
+opentelemetry-api==1.25.0
+    # via opentelemetry-exporter-otlp-proto-http
+    # via opentelemetry-instrumentation
+    # via opentelemetry-instrumentation-requests
+    # via opentelemetry-sdk
+    # via opentelemetry-semantic-conventions
+    # via semgrep
+opentelemetry-exporter-otlp-proto-common==1.25.0
+    # via opentelemetry-exporter-otlp-proto-http
+opentelemetry-exporter-otlp-proto-http==1.25.0
+    # via semgrep
+opentelemetry-instrumentation==0.46b0
+    # via opentelemetry-instrumentation-requests
+opentelemetry-instrumentation-requests==0.46b0
+    # via semgrep
+opentelemetry-proto==1.25.0
+    # via opentelemetry-exporter-otlp-proto-common
+    # via opentelemetry-exporter-otlp-proto-http
+opentelemetry-sdk==1.25.0
+    # via opentelemetry-exporter-otlp-proto-http
+    # via semgrep
+opentelemetry-semantic-conventions==0.46b0
+    # via opentelemetry-instrumentation-requests
+    # via opentelemetry-sdk
+opentelemetry-util-http==0.46b0
+    # via opentelemetry-instrumentation-requests
 orjson==3.10.4
     # via langsmith
 packaging==23.2
@@ -164,11 +197,11 @@ packaging==23.2
     # via thinc
     # via transformers
     # via weasel
-peewee==3.17.5
+peewee==3.17.6
     # via semgrep
 phonenumbers==8.13.38
     # via presidio-analyzer
-pip==24.0
+pip==24.2
     # via invariant
 pluggy==1.5.0
     # via pytest
@@ -176,6 +209,9 @@ preshed==3.0.9
     # via spacy
     # via thinc
 presidio-analyzer==2.2.354
+protobuf==4.25.4
+    # via googleapis-common-protos
+    # via opentelemetry-proto
 pydantic==2.7.3
     # via confection
     # via invariant
@@ -210,6 +246,7 @@ requests==2.32.3
     # via langchain
     # via langchainhub
     # via langsmith
+    # via opentelemetry-exporter-otlp-proto-http
     # via requests-file
     # via semgrep
     # via spacy
@@ -222,7 +259,7 @@ requests-file==2.1.0
 rich==13.7.1
     # via semgrep
     # via typer
-rpds-py==0.18.1
+rpds-py==0.20.0
     # via jsonschema
     # via referencing
 ruamel-yaml==0.17.40
@@ -231,10 +268,11 @@ ruamel-yaml-clib==0.2.8
     # via ruamel-yaml
 safetensors==0.4.3
     # via transformers
-semgrep==1.78.0
+semgrep==1.85.0
     # via invariant
 setuptools==70.0.0
     # via marisa-trie
+    # via opentelemetry-instrumentation
     # via spacy
     # via thinc
 shellingham==1.5.4
@@ -290,6 +328,7 @@ types-requests==2.32.0.20240602
 typing-extensions==4.12.2
     # via huggingface-hub
     # via openai
+    # via opentelemetry-sdk
     # via pydantic
     # via pydantic-core
     # via semgrep
@@ -309,6 +348,10 @@ wcmatch==8.5.2
 weasel==0.4.1
     # via spacy
 wrapt==1.16.0
+    # via deprecated
+    # via opentelemetry-instrumentation
     # via smart-open
 yarl==1.9.4
     # via aiohttp
+zipp==3.20.1
+    # via importlib-metadata

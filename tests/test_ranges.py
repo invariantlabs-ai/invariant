@@ -2,6 +2,7 @@ from invariant import Policy
 import unittest
 import json
 from invariant import Policy, RuleSet, Monitor
+from invariant.extras import extras_available, presidio_extra
 from invariant.traces import *
 
 def get_all_json_ranges(result):
@@ -48,6 +49,7 @@ class TestBasicRanges(unittest.TestCase):
         assert "0.content:11-16" in all_json_ranges
         assert "0.content:37-42" in all_json_ranges
 
+    @unittest.skipUnless(extras_available(presidio_extra), "presidio-analyzer is not installed")
     def test_pii(self):
         policy = Policy.from_string(
         """
