@@ -75,18 +75,22 @@ class ModerationAnalyzer(BaseDetector):
         if not self._has_model(model):
             self._load_model(model)
 
-        # split by line and then into chunks of 2000 characters
-        # TODO: Language doesn't support split=\n, so let's always split for now
+        # split by a delimiter
+        # TODO: Invariant Language doesn't support split=\n, so let's always split for now
         if split is not None:
-            text = text.split(split)
+            text_splits = [split + chunk if i > 0 else chunk for i, chunk in enumerate(text.split(split))]
         else:
-            text = [text]
+            text_splits = [text]
+
+        # split into chunks of 2000 characters (suggested by OpenAI)
         text_chunks = []
-        for chunk in text:
+        for chunk in text_splits:
             if len(chunk) > 2000:
                 text_chunks.extend([chunk[i:i+2000] for i in range(0, len(chunk), 2000)])
             else:
                 text_chunks.append(chunk)
+
+        assert len(text) == sum([len(chunk) for chunk in text_chunks])
 
         res = []
         pos = 0

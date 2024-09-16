@@ -269,21 +269,22 @@ def mask_json_paths(input: list[dict], json_paths: list[str], mask_fn: Callable)
         rpath = ".".join(map(str, path))
         next_paths = find_next(rpath)
         if len(next_paths) == 0:
-            return object
+            return copy.deepcopy(object)
 
-        for next_path in next_paths:
-            match = re.match(r'^(\d+)-(\d+)$', next_path)
-            if match and type(object) is str:
-                start, end = map(int, match.groups())
-                object = object[:start] + mask_fn(object[start:end]) + object[end:]
-
-        if type(object) is dict:
-            for k in object:
-                object[k] = visit(object[k], path + [k])
+        if type(object) is str:
+            new_object = copy.deepcopy(object)
+            for next_path in next_paths:
+                match = re.match(r'^(\d+)-(\d+)$', next_path)
+                if match:
+                    start, end = map(int, match.groups())
+                    new_object = new_object[:start] + mask_fn(new_object[start:end]) + new_object[end:]
+            return new_object
+        elif type(object) is dict:
+            return {k: visit(object[k], path + [k]) for k in object}
         elif type(object) is list:
-            for i, v in enumerate(object):
-                object[i] = visit(v, path + [i])
-        return object
+            return [visit(v, path + [i]) for i, v in enumerate(object)]
+        else:
+            raise ValueError(f"Cannot mask object of type {type(object)}")
     return visit(input, [])
 
 
