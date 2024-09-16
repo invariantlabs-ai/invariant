@@ -3,12 +3,14 @@ Models input data passed to the Invariant Agent Analyzer.
 
 Creates dataflow graphs and derived data from the input data.
 """
+import copy
 import inspect
 import json
+import re
 import warnings
 from collections.abc import KeysView, ValuesView, ItemsView
 from copy import deepcopy
-from typing import Optional
+from typing import Callable, Optional
 from invariant.stdlib.invariant.nodes import Message, ToolCall, ToolOutput, Event
 from rich.pretty import pprint as rich_print
 from dataclasses import dataclass
@@ -239,7 +241,6 @@ class RangeLocator(InputVisitor):
         self.ranges_by_object_id = {}
         for r in ranges:
             self.ranges_by_object_id.setdefault(r.object_id, []).append(r)
-
         self.results = []
 
     def visit(self, object=None, path=None):
@@ -248,7 +249,6 @@ class RangeLocator(InputVisitor):
         if path is None:
             path = []
         
-        # print(".".join(map(str, path)), type(object), object, id(object))
         if str(id(object)) in self.ranges_by_object_id:
             for r in self.ranges_by_object_id[str(id(object))]:
                 rpath = ".".join(map(str, path))
@@ -257,6 +257,35 @@ class RangeLocator(InputVisitor):
                 self.results.append((r,rpath))
         
         super().visit(object, path)
+
+def mask_json_paths(input: list[dict], json_paths: list[str], mask_fn: Callable):
+    def find_next(rpath: str) -> list[str]:
+        return [json_path[len(rpath)+1:] for json_path in json_paths if json_path.startswith(rpath)]
+
+    def visit(object=None, path=None):
+        if path is None:
+            path = []
+
+        rpath = ".".join(map(str, path))
+        next_paths = find_next(rpath)
+        if len(next_paths) == 0:
+            return object
+
+        for next_path in next_paths:
+            match = re.match(r'^(\d+)-(\d+)$', next_path)
+            if match and type(object) is str:
+                start, end = map(int, match.groups())
+                object = object[:start] + mask_fn(object[start:end]) + object[end:]
+
+        if type(object) is dict:
+            for k in object:
+                object[k] = visit(object[k], path + [k])
+        elif type(object) is list:
+            for i, v in enumerate(object):
+                object[i] = visit(v, path + [i])
+        return object
+    return visit(input, [])
+
 
 class Input(Selectable):
     """
@@ -280,6 +309,9 @@ class Input(Selectable):
         # return new ranges, where the json path is set
         ranges_with_paths = locator.results
         return [Range(r.object_id, r.start, r.end, path) for r, path in ranges_with_paths]
+
+    def to_json(self):
+        return json.dumps([event.model_dump_json() for event in self.data])
 
     def parse_input(self, input: list[dict]) -> list[Event]:
         """Parses input data given as list of dictionaries and transforms it into list of Event objects (Message, ToolCall or ToolOutput).

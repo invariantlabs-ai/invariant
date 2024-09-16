@@ -4,7 +4,7 @@ from invariant.runtime.utils.base import DetectorResult
 
 MODERATION_ANALYZER = None
 
-def parse_moderation(obj, results: list[DetectorResult], interpreter) -> list[str]:
+def parse_moderation(obj, results: list[DetectorResult], interpreter) -> bool:
     for r in results:
         interpreter.mark(obj, r.start, r.end)
     results = [r.entity for r in results]
@@ -36,7 +36,7 @@ def moderated(data: str | list | dict, **config: dict) -> bool:
     for message in data:
         if message is None or message.content is None:
             continue
-        if parse_moderation(data, MODERATION_ANALYZER.detect_all(message.content, **config), interpreter):
+        if parse_moderation(message.content, MODERATION_ANALYZER.detect_all(message.content, **config), interpreter):
             moderated = True
     return moderated
 
