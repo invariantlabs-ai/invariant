@@ -83,7 +83,7 @@ class TestMonitor(unittest.TestCase):
         input += [events[0]]
         res = policy.analyze(input)
         self.assertTrue(len(res.errors) == 1)
-        self.assertIsInstance(res.errors[0], Exception)
+        self.assertIsInstance(res.errors[0], ErrorInformation)
 
         input += [events[1]]
         res = policy.analyze(input)
@@ -118,7 +118,7 @@ class TestMonitor(unittest.TestCase):
         res = policy.analyze_pending(past_events, pending_events)
 
         self.assertEqual(len(res.errors), 2)
-        self.assertIsInstance(res.errors[0], Exception)
+        self.assertIsInstance(res.errors[0], ErrorInformation)
         self.assertTrue("Hello A!" in str(res.errors[0]))
         self.assertTrue("Bye A!" in str(res.errors[1]))
 

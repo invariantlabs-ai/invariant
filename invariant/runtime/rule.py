@@ -14,6 +14,7 @@ from itertools import product
 from invariant.language.linking import link
 from invariant.runtime.input import Selectable, Input
 from invariant.runtime.evaluation import Interpreter, EvaluationContext, VariableDomain, Unknown
+from invariant.stdlib.invariant.errors import ErrorInformation
 from invariant.stdlib.invariant.nodes import Event
 from typing import Any
 
@@ -38,10 +39,10 @@ class RaiseAction(PolicyAction):
         elif isinstance(self.exception_or_constructor, ast.Expression):
             exception = Interpreter.eval(self.exception_or_constructor, model.variable_assignments, self.globals, partial=False, evaluation_context=evaluation_context)
             
-            if not isinstance(exception, BaseException):
-                exception = PolicyViolation(str(exception), ranges=model.ranges)
-            elif isinstance(exception, PolicyViolation):
+            if isinstance(exception, ErrorInformation):
                 exception.ranges = model.ranges
+            elif not isinstance(exception, BaseException):
+                exception = PolicyViolation(str(exception), ranges=model.ranges)
             
             return exception
         else:

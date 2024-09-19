@@ -13,7 +13,6 @@ from copy import deepcopy
 from typing import Callable, Optional
 from invariant.stdlib.invariant.nodes import Message, ToolCall, ToolOutput, Event
 from rich.pretty import pprint as rich_print
-from dataclasses import dataclass
 
 from pydantic import BaseModel
 
@@ -176,8 +175,8 @@ def inputcopy(opj):
     else:
         return deepcopy(opj)
 
-@dataclass
-class Range:
+
+class Range(BaseModel):
     """
     Represents a range in the input object that is relevant for 
     the currently evaluated expression.
@@ -187,18 +186,18 @@ class Range:
     the object that the range is part of).
     """
     object_id: str
-    start: int|None
-    end: int|None
+    start: Optional[int]
+    end: Optional[int]
     
     # json path to this range in the input object (not always directly available)
     # Use Input.locate to generate the JSON paths
-    json_path: str|None = None
+    json_path: Optional[str] = None
 
     @classmethod
     def from_object(cls, obj, start=None, end=None):
         if type(obj) is dict and "__origin__" in obj:
             obj = obj["__origin__"]
-        return cls(str(id(obj)), start, end)
+        return cls(object_id=str(id(obj)), start=start, end=end)
     
     def match(self, obj):
         return str(id(obj)) == self.object_id
@@ -309,7 +308,7 @@ class Input(Selectable):
         locator.visit(object, path)
         # return new ranges, where the json path is set
         ranges_with_paths = locator.results
-        return [Range(r.object_id, r.start, r.end, path) for r, path in ranges_with_paths]
+        return [Range(object_id=r.object_id, start=r.start, end=r.end, json_path=path) for r, path in ranges_with_paths]
 
     def to_json(self):
         return json.dumps([event.model_dump_json() for event in self.data])
