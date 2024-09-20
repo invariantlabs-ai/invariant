@@ -7,12 +7,14 @@
   </p>
   <p align="center">
     
+
+ <a href="https://playground.invariantlabs.ai"> <img src="https://img.shields.io/badge/Open-Playground-blue?style=plastic" height=18/> </a>
+ <a href="https://discord.gg/dZuZfhKnJ4"><img src="https://img.shields.io/discord/1265409784409231483?style=plastic&logo=discord&color=blueviolet&logoColor=white" height=18/></a>
+
 [Use Cases](#use-cases) |
 [Documentation](#documentation) |
 [Development](docs/DEVELOPMENT.md#development)
 
- <a href="https://discord.gg/dZuZfhKnJ4"><img src="https://img.shields.io/discord/1265409784409231483?style=plastic&logo=discord&color=blueviolet&logoColor=white" height=18/></a>
-  
   </p>
 </div>
 <br/>
