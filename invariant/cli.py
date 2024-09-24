@@ -83,7 +83,11 @@ Examples:
 
     print("Installing the following packages:")
     print("\n".join(["- " + pd for pd in to_install]))
-    
+
+    if any(pd.startswith("torch") for pd in to_install):
+        subprocess.call([sys.executable, "-m", "pip", "install", "torch", "--index-url", "https://download.pytorch.org/whl/cpu"])
+        pd = [pd for pd in to_install if not pd.startswith("torch")]
+
     if noask or prompt("Do you want to continue?"):
         # make sure 'pip' is installed
         result = subprocess.run([sys.executable, "-m", "pip", "--version"], capture_output=True)
