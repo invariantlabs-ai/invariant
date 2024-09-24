@@ -1,14 +1,13 @@
+import textwrap
 from invariant.language.parser import parse, parse_file
-import invariant.language.ast as ast
 from invariant.language.ast import PolicyError, PolicyRoot
 from invariant.runtime.rule import RuleSet, Input
+from invariant.stdlib.invariant.errors import ErrorInformation
 from invariant.stdlib.invariant.nodes import Event
-import inspect
-import textwrap
-import io
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from functools import partial
+from pydantic import BaseModel
 
 @dataclass
 class UnhandledError(Exception):
@@ -19,7 +18,7 @@ class UnhandledError(Exception):
         errors_list = "\n".join([" - " + type(error).__name__ + ": " + str(error) for error in self.errors])
         return f"A policy analysis resulted in {len(self.errors)} unhandled {errors_noun}:\n{errors_list}.\n"
 
-class AnalysisResult:
+class AnalysisResult(BaseModel):
     """
     Result of applying a policy to an application state.
 
@@ -27,9 +26,9 @@ class AnalysisResult:
     with corresponding handler calls (run them to actually resolve
     them in the application state).
     """
-    def __init__(self, errors, handled_errors):
-        self.errors = errors
-        self.handled_errors = handled_errors
+    errors: list[ErrorInformation]
+    handled_errors: list[ErrorInformation]
+
 
     def execute_handlers(self):
         for handled_error in self.handled_errors:
@@ -48,6 +47,7 @@ class AnalysisResult:
     
     def __repr__(self):
         return self.__str__()
+
 
 @dataclass
 class PolicyLoadingError(Exception):
@@ -130,7 +130,7 @@ class Policy:
         exceptions = self.rule_set.apply(input, policy_parameters)
         
         # collect errors into result
-        analysis_result = AnalysisResult([], [])
+        analysis_result = AnalysisResult(errors=[], handled_errors=[])
         for model, error in exceptions:
             self.add_error_to_result(error, analysis_result)
 
@@ -153,7 +153,7 @@ class Policy:
         exceptions = self.rule_set.apply(input, policy_parameters)
 
         # collect errors into result
-        analysis_result = AnalysisResult([], [])
+        analysis_result = AnalysisResult(errors=[], handled_errors=[])
         for model, error in exceptions:
             has_pending = False
             for val in model.variable_assignments.values():

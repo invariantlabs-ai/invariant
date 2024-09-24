@@ -1,21 +1,34 @@
 from dataclasses import dataclass
+from pydantic import BaseModel
+from typing import Union
+from invariant.stdlib.invariant.nodes import Event
+from invariant.runtime.input import Range
 
 class AccessDenied:
     pass
 
-class PolicyViolation(Exception):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args)
-        self.kwargs = kwargs
-        self.ranges = kwargs.get("ranges", [])
+
+ErrorArgument = Union[str, int, float, bool, Event]
+
+
+class ErrorInformation(BaseModel):
+    args: list[ErrorArgument]
+    kwargs: dict[str, ErrorArgument]
+    ranges: list[Range]
 
     def __str__(self):
-        kvs = ", ".join([f"{k}={v}" if k != 'ranges' else f'ranges=[<{len(v)} ranges>]' for k, v in self.kwargs.items()])
+        kvs = ", ".join([f"{k}={v}" if k != 'ranges' else f'ranges=[<{len(self.ranges)} ranges>]' for k, v in self.kwargs.items()])
         if len(kvs) > 0: kvs = ", " + kvs
         return f"{type(self).__name__}({' '.join([str(a) for a in self.args])}{kvs})"
     
     def __repr__(self):
         return str(self)
+
+def PolicyViolation(*args, **kwargs):
+    args = list(args)
+    ranges = kwargs.get("ranges", [])
+    kwargs = {k: v for k, v in kwargs.items() if k != 'ranges'}
+    return ErrorInformation(args=args, kwargs=kwargs, ranges=ranges)
 
 @dataclass
 class UpdateMessage(Exception):
