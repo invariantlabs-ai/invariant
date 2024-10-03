@@ -64,7 +64,7 @@ class TestReadmeExamples(unittest.TestCase):
         # define a policy
         policy = Policy.from_string(
         """
-        from invariant.access_control import should_allow_rbac, AccessControlViolation
+        from invariant.access_control import should_allow_rbac
         import json
 
         user_roles := {"alice": ["user"], "bob": ["admin", "user"]}

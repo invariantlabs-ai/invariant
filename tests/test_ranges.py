@@ -1,8 +1,9 @@
-from invariant import Policy
 import unittest
-import json
-from invariant import Policy, RuleSet, Monitor
+from invariant import Policy
+from invariant.extras import extras_available, presidio_extra
+from invariant.runtime.input import mask_json_paths
 from invariant.traces import *
+
 
 def get_all_json_ranges(result):
     all_json_ranges = []
@@ -35,6 +36,31 @@ class TestBasicRanges(unittest.TestCase):
         assert "0.content:7-8" in all_json_ranges
         assert "0.content:0-8" not in all_json_ranges
 
+    def test_masking(self):
+        policy = Policy.from_string(
+        """
+        raise "found match with the pattern" if:
+            (msg: Message)
+            "ABC" in msg.content
+
+        raise "found match with the pattern (2)" if:
+            (call: ToolCall)
+            "DEFGH" in call.function.arguments.text
+        """)
+        messages = [
+            {"role": "user", "content": "Test test ABC, here is another ABC, end"},
+            {"role": "assistant", "content": "How are you doing", "tool_calls": [
+                {"type": "function", "id": "1", "function": {"name": "send", "arguments": {
+                    "text": "Check out DEFGH, they are great!"
+                }}}
+            ]},
+        ]
+        result = policy.analyze(messages)
+        all_json_paths = get_all_json_ranges(result)
+        moderated_messages = mask_json_paths(messages, all_json_paths, lambda x: "*" * len(x))
+        self.assertEqual(moderated_messages[0]["content"], "Test test ***, here is another ***, end")
+        self.assertEqual(moderated_messages[1]["tool_calls"][0]["function"]["arguments"]["text"], "Check out *****, they are great!")
+
     def test_match(self):
         policy = Policy.from_string(
         """
@@ -48,6 +74,7 @@ class TestBasicRanges(unittest.TestCase):
         assert "0.content:11-16" in all_json_ranges
         assert "0.content:37-42" in all_json_ranges
 
+    @unittest.skipUnless(extras_available(presidio_extra), "presidio-analyzer is not installed")
     def test_pii(self):
         policy = Policy.from_string(
         """

@@ -16,15 +16,6 @@ requires-python = ">= 3.10"
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[project.optional-dependencies]
-full = [
-    "presidio-analyzer>=2.2.354",
-    "spacy>=3.7.5",
-    "spacy>=3.7.5",
-    "transformers>=4.41.1",
-    "torch>=2.3.0",
-]
-
 [tool.rye]
 managed = true
 dev-dependencies = [

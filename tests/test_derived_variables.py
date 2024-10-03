@@ -132,9 +132,7 @@ class TestDerivedVariables(unittest.TestCase):
             {"role": "assistant", "content": "Bye a\nBye b"},
         ]
         res = policy.analyze(input)
-        print(res)
-
-
+        self.assertEqual(len(res.errors), 2)
 
 if __name__ == "__main__":
     unittest.main()

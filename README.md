@@ -7,12 +7,14 @@
   </p>
   <p align="center">
     
+
+ <a href="https://playground.invariantlabs.ai"> <img src="https://img.shields.io/badge/Open-Playground-blue?style=plastic" height=18/> </a>
+ <a href="https://discord.gg/dZuZfhKnJ4"><img src="https://img.shields.io/discord/1265409784409231483?style=plastic&logo=discord&color=blueviolet&logoColor=white" height=18/></a>
+
 [Use Cases](#use-cases) |
 [Documentation](#documentation) |
 [Development](docs/DEVELOPMENT.md#development)
 
- <a href="https://discord.gg/dZuZfhKnJ4"><img src="https://img.shields.io/discord/1265409784409231483?style=plastic&logo=discord&color=blueviolet&logoColor=white" height=18/></a>
-  
   </p>
 </div>
 <br/>
@@ -67,7 +69,7 @@ To get started, you can install the Invariant Security Analyzer using the follow
 pip install git+https://github.com/invariantlabs-ai/invariant.git
 ```
 
-You can then import and use the analyzer in your Python code:
+You can then import and use the analyzer in your Python code ([Open example in Playground](https://playground.invariantlabs.ai/#1)):
 
 ```python
 from invariant import Policy
@@ -115,7 +117,7 @@ To learn more, read the [documentation](#documentation) below or continue readin
 **Problem Statement**: Recently, AI agents are often deployed for software engineering tasks. Typically, an AI agent operates on the command line, creating and editing files in order to achieve a software engineering task. For example, the authors of [SWE Agent](https://arxiv.org/abs/2405.15793) identified several issues through manual work, e.g., agents that get stuck scrolling through long files or failing to edit the same file over and over again.
 <hr/>
 
-The analyzer offers the ability to filter traces to these patterns via a high-level description of the pattern:
+The analyzer offers the ability to filter traces to these patterns via a high-level description of the pattern ([Open example in Playground](https://playground.invariantlabs.ai/#14)):
 
 ```python
 traceset = # load traceset ...
@@ -142,7 +144,7 @@ For further examples, see [here](invariant/examples/agent_bugs/demo.ipynb).
 
 In productivity agents (e.g., personal email assistants), sensitive data is forwarded between components such as email, calendar, and other productivity tools. This opens up the possibility of data leaks, where sensitive information is inadvertently shared with unauthorized parties. To prevent this, the analyzer can be used to check and enforce data flow policies.
 
-For instance, the following policy states, that after retrieving a specific email, the agent must not send an email to anyone other than the sender of the retrieved email:
+For instance, the following policy states, that after retrieving a specific email, the agent must not send an email to anyone other than the sender of the retrieved email ([Open example in Playground](https://playground.invariantlabs.ai/#7)):
 
 ```python
 # in Policy.from_string:
@@ -170,7 +172,7 @@ As shown here, the analyzer can be used to detect the flows of interest, select 
 
 When using AI agents that generate and execute code, a whole new set of security challenges arises. For instance, unsafe code may be generated, or the agent may be actively tricked into executing malicious code, which in turn extracts secrets or private data, such as proprietary code, passwords, or other access credentials.
 
-For example, this policy rule detects if an agent made a request to an untrusted URL (for instance, to read the project documentation) and then executes code that relies on the `os` module:
+For example, this policy rule detects if an agent made a request to an untrusted URL (for instance, to read the project documentation) and then executes code that relies on the `os` module ([Open example in Playground](https://playground.invariantlabs.ai/#3)):
 
 ```python
 # in Policy.from_string:
@@ -199,7 +201,7 @@ This policy prevents an agent from following malicious instructions that may be 
 
 Retrieval-Augmented Generation (RAG) is a popular method to enhance AI agents with private knowledge and data. However, during information retrieval, it is important to ensure that the agent does not violate access control policies, e.g. enabling unauthorized access to sensitive data, especially when strict access control policies are to be enforced.
 
-To detect and prevent this the analyzer supports the definition of, for instance, role-based access control policies over retrieval results and data sources:
+To detect and prevent this the analyzer supports the definition of, for instance, role-based access control policies over retrieval results and data sources ([Open example in Playground](https://playground.invariantlabs.ai/#2)):
 
 ```python
 # in Policy.from_string:
@@ -553,7 +555,7 @@ The following sections discuss both use cases in more detail, including how to m
 
 The simplest way to use the analyzer is to analyze a pre-recorded agent trace. This can be useful to learning more about agent behavior or to detect potential security issues.
 
-To get started, make sure your traces are in [the expected format](#trace-format) and define a policy that specifies the security properties you want to check for. Then, you can use the `Policy` class to analyze the trace:
+To get started, make sure your traces are in [the expected format](#trace-format) and define a policy that specifies the security properties you want to check for. Then, you can use the `Policy` class to analyze the trace ([Open example in Playground](https://playground.invariantlabs.ai/#10)):
 
 ```python
 from invariant import Policy
