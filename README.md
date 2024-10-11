@@ -13,7 +13,8 @@
 
 [Use Cases](#use-cases) |
 [Documentation](#documentation) |
-[Development](docs/DEVELOPMENT.md#development)
+[Development](docs/DEVELOPMENT.md#development) |
+[Paper](https://invariantlabs.ai/blog/icml2024-agents-formal-security)
 
   </p>
 </div>
