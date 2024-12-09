@@ -26,10 +26,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install poetry
         poetry install --with dev
-    - name: Verify invariant installation
-      run: |
-        cd testing
-        poetry run invariant --help
     - name: Set PYTHONPATH
       run: echo "PYTHONPATH=$PYTHONPATH:$(pwd)/testing" >> $GITHUB_ENV
     - name: Run tests
@@ -37,7 +33,4 @@ jobs:
         OPENAI_API_KEY: ${{ secrets.INVARIANT_TESTING_OPENAI_KEY }}
       run: |
         cd testing
-        echo "Running tests..."
-        echo $(pwd)
-        echo $PYTHONPATH
-        poetry run pytest --cov=invariant --cov-report=term --cov-fail-under=60 -s -vv tests/test_modes.py
+        poetry run pytest --cov=invariant --cov-report=term --cov-fail-under=60 -s -vv tests
