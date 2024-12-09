@@ -22,6 +22,7 @@ jobs:
         python-version: "3.12.2"
     - name: Setup dependencies
       run: |
+        cd testing
         python -m pip install --upgrade pip
         pip install poetry
         poetry install --with dev
@@ -31,4 +32,5 @@ jobs:
       env:
         OPENAI_API_KEY: ${{ secrets.INVARIANT_TESTING_OPENAI_KEY }}
       run: |
+        cd testing
         poetry run pytest --cov=invariant --cov-report=term --cov-fail-under=60 -s -vv tests/
