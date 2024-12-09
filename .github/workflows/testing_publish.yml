@@ -1,0 +1,38 @@
+name: Publish to PyPI
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  pypi-publish:
+    name: Upload release to PyPI
+    runs-on: ubuntu-latest    
+    environment: pypi-package
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python 3.12.2
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.12.2"
+      
+      - name: Setup dependencies
+        run: |
+          cd python
+          python -m pip install --upgrade pip
+          pip install poetry
+          poetry install --with dev
+      
+      - name: Set PYTHONPATH
+        run: echo "PYTHONPATH=$PYTHONPATH:$(pwd)/python" >> $GITHUB_ENV
+
+      - name: Set PyPI credentials
+        run: poetry config pypi-token.pypi ${{ secrets.PYPI_API_TOKEN }}
+
+      - name: Publish to PyPI
+        run: |
+          cd python
+          poetry publish --build
