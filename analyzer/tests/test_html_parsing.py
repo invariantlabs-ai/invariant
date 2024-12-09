@@ -6,6 +6,7 @@ from invariant.traces import *
 from invariant.extras import extras_available, presidio_extra, transformers_extra
 from invariant.traces import user, assistant, tool, tool_call
 
+
 class TestHTMLParsing(unittest.TestCase):
     def test_html_parsing(self):
         p = Policy.from_string(

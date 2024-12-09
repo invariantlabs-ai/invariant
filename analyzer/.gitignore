@@ -1,0 +1,14 @@
+# python generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+# for local experimentation
+test.py
+
+# venv
+.venv
+.DS_Store
+.env.local
