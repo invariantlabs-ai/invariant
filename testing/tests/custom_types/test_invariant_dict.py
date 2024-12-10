@@ -51,7 +51,6 @@ def test_invariant_dict_get():
 
 def test_invariant_dict_matches():
     """Test the matches function in InvariantDict."""
-
     # Test case 1: Matching with a lambda that checks for specific keys
     matcher = LambdaMatcher(lambda d: "key1" in d and "key2" in d)
     value = {"key1": 1, "key2": 2, "key3": 3}

@@ -151,16 +151,14 @@ class IsFactuallyEqual(Matcher):
 
 
 class ContainsImage(Matcher):
-    """
-    Matcher for checking if string is an image or dict contains image.
+    """Matcher for checking if string is an image or dict contains image.
 
     Checks if the string starts with "local_base64_img: " or "local_img_link: ".
     Checks if dict has a content field, and if that content field starts with "local_base64_img: " or "local_img_link: ".
     """
 
     def matches(self, actual_value: str | dict) -> bool:
-        """
-        Args:
+        """Args:
             actual_value: str | dict - The value to check if it is an image.
 
         Returns:

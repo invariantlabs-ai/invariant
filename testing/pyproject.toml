@@ -41,8 +41,5 @@ log_cli_date_format = "%Y-%m-%d %H:%M:%S"
 [tool.poetry.scripts]
 invariant = "invariant.__main__:main"
 
-[tool.ruff.lint]
-select = ["D"]
-
 [tool.ruff.lint.pydocstyle]
 convention = "google"

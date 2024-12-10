@@ -1,7 +1,6 @@
 import pytest
 
 from invariant.custom_types.trace import Trace
-from invariant.custom_types.invariant_dict import InvariantDict
 
 @pytest.fixture(name="message_list")
 def fixture_message_list():

@@ -5,7 +5,7 @@ import pytest
 from invariant.scorers.base import approx
 from invariant.scorers.llm.classifier import Classifier
 from invariant.scorers.llm.detector import Detector
-from invariant.scorers.strings import *
+from invariant.scorers.strings import contains, levenshtein
 from invariant.scorers.utils.ocr import OCRDetector
 from invariant.utils.packages import is_program_installed
 
@@ -149,8 +149,5 @@ def test_OCRDetector():
 
     # Test case-insensitive detection
     ocr = OCRDetector()
-    assert ocr.contains(image, "agents") == True
-    assert (
-        ocr.contains(image, "making", bbox={"x1": 50, "y1": 10, "x2": 120, "y2": 40})
-        == True
-    )
+    assert ocr.contains(image, "agents")
+    assert ocr.contains(image, "making", bbox={"x1": 50, "y1": 10, "x2": 120, "y2": 40})

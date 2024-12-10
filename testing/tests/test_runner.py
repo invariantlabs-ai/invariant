@@ -81,8 +81,7 @@ def test_main_execution_with_pytest_args():
 
 
 def test_main_via_command():
-    """
-    On top of the test command tests above, this case ensure that also passing the arguments
+    """On top of the test command tests above, this case ensure that also passing the arguments
     via the invariant cli `invariant test --dataset_name test_dataset --push -s -v` works.
     """
     test_args = [

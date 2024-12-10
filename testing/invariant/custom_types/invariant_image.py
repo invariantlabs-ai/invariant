@@ -44,7 +44,9 @@ class InvariantImage(InvariantString):
             client (invariant.scorers.llm.clients.client.SupportedClients): The
             client to use for the LLM.
         """
-        llm_clf = Classifier(model=model, prompt=prompt, options=options, vision=True, client=client)
+        llm_clf = Classifier(
+            model=model, prompt=prompt, options=options, vision=True, client=client
+        )
         res = llm_clf.classify_vision(
             self.value, image_type=self.image_type, use_cached_result=use_cached_result
         )
@@ -58,7 +60,7 @@ class InvariantImage(InvariantString):
     ) -> InvariantBool:
         """Check if the value contains the given text using OCR."""
         addresses = self.addresses
-        if type(text) == InvariantString:
+        if isinstance(text, InvariantString):
             addresses.extend(text.addresses)
             text = text.value
         res = OCRDetector().contains(self.image, text, case_sensitive, bbox)

@@ -30,7 +30,6 @@ class CacheManager:
 
     def get_cache_key(self, data: dict) -> str:
         """Generate a consistent cache key based on request data."""
-
         serializable_data = {k: CacheManager.__serialize(v) for k, v in data.items()}
         request_str = json.dumps(serializable_data, sort_keys=True)
         return hashlib.sha256(request_str.encode()).hexdigest()

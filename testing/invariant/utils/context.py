@@ -1,4 +1,4 @@
-""" Utilities for working with contexts. """
+"""Utilities for working with contexts."""
 
 import contextvars
 from functools import wraps

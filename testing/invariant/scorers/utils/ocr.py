@@ -9,8 +9,7 @@ class OCRDetector:
     """Detect text in images using Tesseract OCR."""
 
     def __init__(self):
-        """
-        Initialize OCR detector with expected text to find in images
+        """Initialize OCR detector with expected text to find in images
         """
 
     @classmethod
@@ -28,8 +27,7 @@ class OCRDetector:
         return bbox1['x1'] <= bbox2['x1'] and bbox1['y1'] <= bbox2['y1'] and bbox1['x2'] >= bbox2['x2'] and bbox1['y2'] >= bbox2['y2']
 
     def contains(self, image: Image.Image, text: str, case_sensitive: bool = False, bbox: Optional[dict] = None) -> bool:
-        """
-        Detect if the expected text appears in the image using tesseract CLI
+        """Detect if the expected text appears in the image using tesseract CLI
 
         Args:
             base64_image: Base64 encoded image string

@@ -1,4 +1,4 @@
-""" Abstract base class for LLM clients. """
+"""Abstract base class for LLM clients."""
 
 from abc import ABC, abstractmethod
 from enum import StrEnum

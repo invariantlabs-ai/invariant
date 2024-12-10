@@ -1,0 +1,15 @@
+
+exclude = ["analyzer"]
+line-length = 100
+[lint]
+# 1. Enable flake8-bugbear (`B`) rules, in addition to the defaults.
+select = ["E4", "E7", "E9", "F", "B"]
+
+# 2. Avoid enforcing line-length violations (`E501`)
+
+[lint.pydocstyle]
+convention = "google"
+
+[format]
+# 5. Use single quotes in `ruff format`.
+quote-style = "double"

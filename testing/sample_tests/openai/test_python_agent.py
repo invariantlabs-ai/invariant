@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 import openai
 
 import invariant.testing.functional as F
-from invariant.testing import TraceFactory, assert_true, expect_equals, Trace
+from invariant.testing import TraceFactory, assert_true, expect_equals
 
 
 def run_python(code):
