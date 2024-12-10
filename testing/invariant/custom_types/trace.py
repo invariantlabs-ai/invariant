@@ -5,12 +5,13 @@ from __future__ import annotations
 import json
 from typing import Any, Callable, Dict, Generator, List
 
-from invariant.custom_types.invariant_dict import InvariantDict, InvariantValue
-from invariant.custom_types.matchers import ContainsImage, Matcher
-from invariant.utils.utils import ssl_verification_enabled
 from invariant_sdk.client import Client as InvariantClient
 from invariant_sdk.types.push_traces import PushTracesResponse
 from pydantic import BaseModel
+
+from invariant.custom_types.invariant_dict import InvariantDict, InvariantValue
+from invariant.custom_types.matchers import ContainsImage, Matcher
+from invariant.utils.utils import ssl_verification_enabled
 
 
 def iterate_tool_calls(
@@ -64,8 +65,7 @@ def iterate_tool_calls(
 def iterate_tool_outputs(
     messages: list[dict],
 ) -> Generator[tuple[list[str], dict], None, None]:
-    """
-    Generator function to iterate over tool outputs in a list of messages.
+    """Generator function to iterate over tool outputs in a list of messages.
 
     Args:
         messages (list[dict]): A list of messages without address information.
@@ -84,8 +84,7 @@ def iterate_tool_outputs(
 def iterate_messages(
     messages: list[dict],
 ) -> Generator[tuple[list[str], dict], None, None]:
-    """
-    Generator function to iterate over messages in a list of messages.
+    """Generator function to iterate over messages in a list of messages.
 
     Args:
         messages (list[dict]): A list of messages without address information.
@@ -211,8 +210,7 @@ class Trace(BaseModel):
     # Functions to check data_types
     @property
     def content_checkers(self) -> Dict[str, Matcher]:
-        """
-        Register content checkers for data_types. When implementing a new content checker,
+        """Register content checkers for data_types. When implementing a new content checker,
         add the new content checker to the dictionary below.
 
         Returns:
@@ -223,11 +221,8 @@ class Trace(BaseModel):
         }
         return __content_checkers__
 
-    def _is_data_type(
-        self, message: InvariantDict, data_type: str | None = None
-    ) -> bool:
-        """
-        Check if a message matches a given data_type using the content_checkers.
+    def _is_data_type(self, message: InvariantDict, data_type: str | None = None) -> bool:
+        """Check if a message matches a given data_type using the content_checkers.
         data_type should correspond to the keys in the content_checkers dictionary.
         If data_type is None, the message is considered to match the data_type
         (i.e., no filtering is performed).
@@ -262,8 +257,7 @@ class Trace(BaseModel):
         data_type: str | None = None,
         **filterkwargs,
     ) -> list[InvariantDict] | InvariantDict:
-        """
-        Filter the trace based on the provided selector, keyword arguments and data_type. Use this
+        """Filter the trace based on the provided selector, keyword arguments and data_type. Use this
         method as a helper for custom filters such as messages(), tool_calls(), and tool_outputs().
 
         Args:
@@ -278,27 +272,20 @@ class Trace(BaseModel):
         Returns:
             list[InvariantDict] | InvariantDict: The filtered trace.
         """
-
         # If a single index is provided, return the message at that index
         if isinstance(selector, int):
             for i, (addresses, message) in enumerate(iterator_func(self.trace)):
                 if i == selector:
                     return_val = InvariantDict(message, [f"{i}"])
-                    return (
-                        return_val
-                        if self._is_data_type(return_val, data_type)
-                        else None
-                    )
+                    return return_val if self._is_data_type(return_val, data_type) else None
 
         # If a dictionary is provided, filter messages based on the dictionary
         elif isinstance(selector, dict):
             return [
                 InvariantDict(message, addresses)
                 for addresses, message in iterator_func(self.trace)
-                if all(
-                    traverse_dot_path(message, kwname)[0] == kwvalue
-                    for kwname, kwvalue in selector.items()
-                )
+
+                if all(traverse_dot_path(message, kwname)[0] == kwvalue for kwname, kwvalue in selector.items())
                 and self._is_data_type(InvariantDict(message, addresses), data_type)
             ]
 
@@ -308,9 +295,7 @@ class Trace(BaseModel):
                 InvariantDict(message, addresses)
                 for addresses, message in iterator_func(self.trace)
                 if all(
-                    match_keyword_function(
-                        kwname, kwvalue, message.get(kwname), message
-                    )
+                    match_keyword_function(kwname, kwvalue, message.get(kwname), message)
                     for kwname, kwvalue in filterkwargs.items()
                 )
                 and self._is_data_type(InvariantDict(message, addresses), data_type)
@@ -329,8 +314,7 @@ class Trace(BaseModel):
         data_type: str | None = None,
         **filterkwargs,
     ) -> list[InvariantDict] | InvariantDict:
-        """
-        Get all messages from the trace that match the provided selector, data_type, and keyword filters.
+        """Get all messages from the trace that match the provided selector, data_type, and keyword filters.
 
         Args:
             selector: The selector to use to filter the trace.
@@ -340,13 +324,10 @@ class Trace(BaseModel):
         Returns:
             list[InvariantDict] | InvariantDict: The filtered messages.
         """
-
         if isinstance(selector, int):
             return InvariantDict(self.trace[selector], [str((selector + len(self.trace)) % len(self.trace))])
 
-        return self._filter_trace(
-            iterate_messages, match_keyword_filter, selector, data_type, **filterkwargs
-        )
+        return self._filter_trace(iterate_messages, match_keyword_filter, selector, data_type, **filterkwargs)
 
     def tool_calls(
         self,
@@ -354,8 +335,7 @@ class Trace(BaseModel):
         data_type: str | None = None,
         **filterkwargs,
     ) -> list[InvariantDict] | InvariantDict:
-        """
-        Get all tool calls from the trace that match the provided selector, data_type, and keyword filters.
+        """Get all tool calls from the trace that match the provided selector, data_type, and keyword filters.
 
         Args:
             selector: The selector to use to filter the trace.
@@ -379,8 +359,7 @@ class Trace(BaseModel):
         data_type: str | None = None,
         **filterkwargs,
     ) -> list[InvariantDict] | InvariantDict:
-        """
-        Get all tool outputs from the trace that match the provided selector, data_type, and keyword filters.
+        """Get all tool outputs from the trace that match the provided selector, data_type, and keyword filters.
 
         Args:
             selector: The selector to use to filter the trace.
@@ -433,32 +412,24 @@ class Trace(BaseModel):
                     )
                     break
 
-        return [
-            (res_pair[1], res_pair[2]) for res_pair in res if res_pair[2] is not None
-        ]
+        return [(res_pair[1], res_pair[2]) for res_pair in res if res_pair[2] is not None]
 
     def to_python(self) -> str:
-        """
-        Returns a snippet of Python code construct that can be used
+        """Returns a snippet of Python code construct that can be used
         to recreate the trace in a Python script.
 
         Returns:
             str: The Python string representing the trace.
 
         """
-        return (
-            "Trace(trace=[\n"
-            + ",\n".join("  " + str(msg) for msg in self.trace)
-            + "\n])"
-        )
+        return "Trace(trace=[\n" + ",\n".join("  " + str(msg) for msg in self.trace) + "\n])"
 
     def push_to_explorer(
         self,
         client: InvariantClient | None = None,
         dataset_name: None | str = None,
     ) -> PushTracesResponse:
-        """
-        Pushes the trace to the explorer.
+        """Pushes the trace to the explorer.
 
         Args:
             client: The client used to push. If None a standard invariant_sdk client is initialized.

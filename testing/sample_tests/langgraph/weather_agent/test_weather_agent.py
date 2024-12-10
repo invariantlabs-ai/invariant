@@ -58,7 +58,7 @@ def test_weather_agent_with_sf_and_nyc(weather_agent):
         find_weather_tool_calls = trace.tool_calls(name="_find_weather")
         assert_true(len(find_weather_tool_calls) == 2)
         find_weather_tool_call_args = str(
-            F.map(lambda x: x["function"]["arguments"], find_weather_tool_calls)
+            F.map(lambda x: x.argument(), find_weather_tool_calls)
         )
         assert_true(
             "San Francisco" in find_weather_tool_call_args

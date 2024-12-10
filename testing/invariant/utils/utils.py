@@ -1,13 +1,23 @@
 """Utility functions for the invariant runner."""
 
 import ast
+import json
 import os
 import shutil
 
 from invariant.constants import (
+    INVARIANT_AGENT_PARAMS_ENV_VAR,
     INVARIANT_RUNNER_TEST_RESULTS_DIR,
     INVARIANT_TEST_RUNNER_TERMINAL_WIDTH_ENV_VAR,
 )
+
+
+def get_agent_param(param: str) -> str | None:
+    """Get a parameter from the environment variable."""
+    params = os.getenv(INVARIANT_AGENT_PARAMS_ENV_VAR)
+    if params is None:
+        return None
+    return json.loads(params)[param]
 
 
 def get_test_results_directory_path(dataset_name: str) -> str:

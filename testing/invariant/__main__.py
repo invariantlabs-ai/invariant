@@ -14,6 +14,7 @@ from invariant_sdk.client import Client as InvariantClient
 
 from invariant.config import Config
 from invariant.constants import (
+    INVARIANT_AGENT_PARAMS_ENV_VAR,
     INVARIANT_AP_KEY_ENV_VAR,
     INVARIANT_RUNNER_TEST_RESULTS_DIR,
     INVARIANT_TEST_RUNNER_CONFIG_ENV_VAR,
@@ -54,6 +55,9 @@ def parse_args(args: list[str]) -> tuple[argparse.Namespace, list[str]]:
         {BOLD}https://explorer.invariantlabs.ai/docs/{END} to see steps to generate
         an API key.""",
     )
+    parser.add_argument(
+        "--agent-params", help="JSON containing the parameters of the agent", type=str, default=None
+    )
     return parser.parse_known_args(args)
 
 
@@ -68,6 +72,11 @@ def create_config(args: argparse.Namespace) -> Config:
     """
     api_key = os.getenv(INVARIANT_AP_KEY_ENV_VAR)
 
+    try:
+        agent_params = None if args.agent_params is None else json.loads(args.agent_params)
+    except json.JSONDecodeError as e:
+        raise ValueError("--agent-params should be a valid JSON") from e
+
     prefix = args.dataset_name
     dataset_name = f"{prefix}-{int(time.time())}"
 
@@ -78,6 +87,7 @@ def create_config(args: argparse.Namespace) -> Config:
         push=args.push,
         api_key=api_key,
         result_output_dir=INVARIANT_RUNNER_TEST_RESULTS_DIR,
+        agent_params=agent_params,
     )
 
 
@@ -122,15 +132,19 @@ def finalize_tests_and_print_summary(conf: Config, open_browser: bool) -> None:
 
     # update dataset metadata if --push
     if conf.push:
+        metadata = {
+            "invariant_test_results": {
+                "num_tests": tests,
+                "num_passed": passed_count,
+            }
+        }
+        if conf.agent_params:
+            metadata["agent_params"] = conf.agent_params
+
         client = InvariantClient()
         client.create_request_and_update_dataset_metadata(
             dataset_name=conf.dataset_name,
-            metadata={
-                "invariant_test_results": {
-                    "num_tests": tests,
-                    "num_passed": passed_count,
-                }
-            },
+            metadata=metadata,
             request_kwargs={"verify": utils.ssl_verification_enabled()},
         )
 
@@ -148,16 +162,14 @@ def test(args: list[str]) -> None:
         config = create_config(invariant_runner_args)
         os.environ[INVARIANT_TEST_RUNNER_CONFIG_ENV_VAR] = config.model_dump_json()
         # pass along actual terminal width to the test runner (for better formatting)
-        os.environ[INVARIANT_TEST_RUNNER_TERMINAL_WIDTH_ENV_VAR] = str(
-            utils.terminal_width()
-        )
+        os.environ[INVARIANT_TEST_RUNNER_TERMINAL_WIDTH_ENV_VAR] = str(utils.terminal_width())
+        if invariant_runner_args.agent_params:
+            os.environ[INVARIANT_AGENT_PARAMS_ENV_VAR] = invariant_runner_args.agent_params
     except ValueError as e:
         logger.error("Configuration error: %s", e)
         sys.exit(1)
 
-    test_results_directory_path = utils.get_test_results_directory_path(
-        config.dataset_name
-    )
+    test_results_directory_path = utils.get_test_results_directory_path(config.dataset_name)
     if os.path.exists(test_results_directory_path):
         shutil.rmtree(test_results_directory_path)
 
