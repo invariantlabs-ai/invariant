@@ -28,7 +28,7 @@ def test_capital_finder_agent_when_capital_found(swarm_wrapper):
         get_capital_tool_calls = trace.tool_calls(name="get_capital")
         assert_true(F.len(get_capital_tool_calls) == 1)
         assert_equals(
-            "France", get_capital_tool_calls[0]["function"]["arguments"]["country_name"]
+            "France", get_capital_tool_calls[0].argument("country_name")
         )
 
         assert_true(trace.messages(-1)["content"].contains("paris"))
@@ -48,7 +48,7 @@ def test_capital_finder_agent_when_capital_not_found(swarm_wrapper):
         get_capital_tool_calls = trace.tool_calls(name="get_capital")
         assert_true(F.len(get_capital_tool_calls) == 1)
         assert_equals(
-            "Spain", get_capital_tool_calls[0]["function"]["arguments"]["country_name"]
+            "Spain", get_capital_tool_calls[0].argument("country_name")
         )
 
         tool_outputs = trace.tool_outputs(tool_name="get_capital")
