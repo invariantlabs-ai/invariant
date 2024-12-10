@@ -60,7 +60,7 @@ class InvariantImage(InvariantString):
     ) -> InvariantBool:
         """Check if the value contains the given text using OCR."""
         addresses = self.addresses
-        if type(text) == InvariantString:
+        if isinstance(text, InvariantString):
             addresses.extend(text.addresses)
             text = text.value
         res = OCRDetector().contains(self.image, text, case_sensitive, bbox)
