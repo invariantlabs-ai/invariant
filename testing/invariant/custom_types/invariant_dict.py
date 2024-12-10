@@ -2,8 +2,8 @@
 
 from typing import Any
 
-from invariant.custom_types.invariant_bool import InvariantBool
-from invariant.custom_types.invariant_value import InvariantValue
+from .invariant_bool import InvariantBool
+from .invariant_value import InvariantValue
 
 
 class InvariantDict:
@@ -80,7 +80,7 @@ class InvariantDict:
         key = input[-1]
         arguments = None
 
-        from invariant.custom_types.trace import traverse_dot_path
+        from .trace import traverse_dot_path
 
         for path in paths:
             res, add_function_prefix = traverse_dot_path(self.value, path)

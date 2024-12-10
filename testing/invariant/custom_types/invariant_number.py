@@ -3,8 +3,8 @@
 from operator import eq, ge, gt, le, lt, ne
 from typing import Union
 
-from invariant.custom_types.invariant_bool import InvariantBool
-from invariant.custom_types.invariant_value import InvariantValue
+from .invariant_bool import InvariantBool
+from .invariant_value import InvariantValue
 
 
 class InvariantNumber(InvariantValue):

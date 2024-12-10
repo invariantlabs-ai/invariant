@@ -5,12 +5,13 @@ from __future__ import annotations
 import json
 from typing import Any, Callable, Dict, Generator, List
 
-from invariant.custom_types.invariant_dict import InvariantDict, InvariantValue
-from invariant.custom_types.matchers import ContainsImage, Matcher
 from invariant.utils.utils import ssl_verification_enabled
 from invariant_sdk.client import Client as InvariantClient
 from invariant_sdk.types.push_traces import PushTracesResponse
 from pydantic import BaseModel
+
+from .invariant_dict import InvariantDict, InvariantValue
+from .matchers import ContainsImage, Matcher
 
 
 def iterate_tool_calls(

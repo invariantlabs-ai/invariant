@@ -4,11 +4,12 @@ import base64
 import io
 from typing import Optional
 
-from invariant.custom_types.invariant_bool import InvariantBool
-from invariant.custom_types.invariant_string import InvariantString
 from invariant.scorers.llm.classifier import Classifier
 from invariant.scorers.utils.ocr import OCRDetector
 from PIL import Image
+
+from .invariant_bool import InvariantBool
+from .invariant_string import InvariantString
 
 
 class InvariantImage(InvariantString):
