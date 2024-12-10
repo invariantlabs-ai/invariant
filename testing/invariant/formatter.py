@@ -77,7 +77,7 @@ def _format_trace(json_obj, indent="", path=[], highlights=[]):
         ""  # ("\n" + " " * len(indent) + "⌃" + "---------- </highlighted> ----------")
     )
 
-    if type(json_obj) is dict:
+    if isinstance(json_obj, dict):
         entries = []
         for k, v in json_obj.items():
             value = _format_trace(v, indent + "  ", path + [k], highlights=highlights)
@@ -92,7 +92,7 @@ def _format_trace(json_obj, indent="", path=[], highlights=[]):
             + f"{indent}}}"
             + (highlight_line if is_highlighted else "")
         )
-    elif type(json_obj) is list:
+    elif isinstance(json_obj, list):
         value_repr = (
             # (f"---- <highlighted> ----\n{indent}" if is_highlighted else "")
             "[\n"
@@ -103,7 +103,7 @@ def _format_trace(json_obj, indent="", path=[], highlights=[]):
             + f"{indent}]"
             + (highlight_line if is_highlighted else "")
         )
-    elif type(json_obj) is str:
+    elif isinstance(json_obj, str):
         value_repr = json.dumps(_format_str(json_obj), ensure_ascii=False)
     else:
         value_repr = json.dumps(json_obj, ensure_ascii=False)
