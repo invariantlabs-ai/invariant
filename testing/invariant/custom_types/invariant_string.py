@@ -8,7 +8,6 @@ from operator import ge, gt, le, lt, ne
 from typing import Any, Literal, Union
 
 from _pytest.python_api import ApproxBase
-
 from invariant.custom_types.invariant_bool import InvariantBool
 from invariant.custom_types.invariant_number import InvariantNumber
 from invariant.custom_types.invariant_value import InvariantValue
@@ -69,7 +68,9 @@ class InvariantString(InvariantValue):
     def __add__(self, other: Union[str, "InvariantString"]) -> "InvariantString":
         """Concatenate the string with another string."""
         if isinstance(other, InvariantString):
-            return InvariantString(self.value + other.value, self.addresses + other.addresses)
+            return InvariantString(
+                self.value + other.value, self.addresses + other.addresses
+            )
         return InvariantString(self.value + other, self.addresses)
 
     def __radd__(self, other: str) -> "InvariantString":
@@ -114,7 +115,11 @@ class InvariantString(InvariantValue):
             new_addresses.append(f"{start}-{end}")
         return InvariantNumber(
             len(new_addresses),
-            (self.addresses if len(new_addresses) == 0 else self._concat_addresses(new_addresses)),
+            (
+                self.addresses
+                if len(new_addresses) == 0
+                else self._concat_addresses(new_addresses)
+            ),
         )
 
     def len(self):
@@ -146,7 +151,9 @@ class InvariantString(InvariantValue):
             return method
         raise AttributeError(f"'InvariantString' object has no attribute '{attr}'")
 
-    def _concat_addresses(self, other_addresses: list[str] | None, separator: str = ":") -> list[str]:
+    def _concat_addresses(
+        self, other_addresses: list[str] | None, separator: str = ":"
+    ) -> list[str]:
         """Concatenate the addresses of two invariant values."""
         if other_addresses is None:
             return self.addresses
@@ -233,13 +240,17 @@ class InvariantString(InvariantValue):
         if match is None:
             return None
         start, end = match.span(group_id)
-        return InvariantString(match.group(group_id), self._concat_addresses([f"{start}-{end}"]))
+        return InvariantString(
+            match.group(group_id), self._concat_addresses([f"{start}-{end}"])
+        )
 
     def match_all(self, pattern: str, group_id: int | str = 0):
         """Match the value against the given regex pattern and return all matches."""
         for match in re.finditer(pattern, self.value):
             start, end = match.span(group_id)
-            yield InvariantString(match.group(group_id), self._concat_addresses([f"{start}-{end}"]))
+            yield InvariantString(
+                match.group(group_id), self._concat_addresses([f"{start}-{end}"])
+            )
 
     def is_similar(self, other: str, threshold: float = 0.5) -> InvariantBool:
         """Check if the value is similar to the given string using cosine similarity."""

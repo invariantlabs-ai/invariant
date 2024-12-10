@@ -1,11 +1,11 @@
 """Tests for the invariant list functions."""
 
 import pytest
-
-import invariant.testing.functional as F
 from invariant.custom_types.invariant_bool import InvariantBool
 from invariant.custom_types.invariant_number import InvariantNumber
 from invariant.custom_types.invariant_string import InvariantString
+
+import invariant.testing.functional as F
 from invariant.testing import Trace
 
 

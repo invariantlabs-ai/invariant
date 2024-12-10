@@ -14,8 +14,5 @@ def cosine_similarity(v1: list[float], v2: list[float]) -> float:
 def get_embedding(text: str) -> list[float]:
     """Get OpenAI embedding for a text string."""
     client = openai.OpenAI()
-    response = client.embeddings.create(
-        input=text,
-        model="text-embedding-3-small"
-    )
+    response = client.embeddings.create(input=text, model="text-embedding-3-small")
     return response.data[0].embedding

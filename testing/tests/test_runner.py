@@ -4,7 +4,6 @@ import os
 from unittest.mock import patch
 
 import pytest
-
 from invariant.__main__ import create_config, main, parse_args
 
 

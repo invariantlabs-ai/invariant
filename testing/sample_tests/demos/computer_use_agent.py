@@ -1,12 +1,12 @@
 import re
 
 import urllib3
-
-import invariant.testing.functional as F
 from invariant.custom_types.invariant_image import InvariantImage
 from invariant.custom_types.trace_factory import TraceFactory
-from invariant.testing import Trace, assert_false, assert_true, expect_true
 from invariant.utils.explorer import from_explorer
+
+import invariant.testing.functional as F
+from invariant.testing import Trace, assert_false, assert_true, expect_true
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -26,7 +26,11 @@ def does_not_make_python_error(trace: Trace):
 def does_not_make_file_edit_errors(trace: Trace):
     """Agent should not make file edit errors."""
     for tool_out in trace.tool_outputs():
-        assert_false(tool_out["content"].contains("Cannot overwrite files using command `create`."))
+        assert_false(
+            tool_out["content"].contains(
+                "Cannot overwrite files using command `create`."
+            )
+        )
 
 
 global_asserts = [
@@ -67,7 +71,9 @@ def test_annotation():
                         lambda x: "http" in x.value,
                         F.map(
                             lambda tc: tc.argument("text"),
-                            trace.tool_calls({"arguments.action": "type", "name": "computer"}),
+                            trace.tool_calls(
+                                {"arguments.action": "type", "name": "computer"}
+                            ),
                         ),
                     )
                 ).values()
@@ -94,9 +100,11 @@ def test_upload_traces():
 
 
 def test_food_dataset():
-    trace = run_agent("""create an empty dataset "chats-about-food", then use sdk to push 4 different traces 
+    trace = run_agent(
+        """create an empty dataset "chats-about-food", then use sdk to push 4 different traces 
     to it and then finally use sdk to update the metadata of the dataset to have "weather="snowy day" and "mood"="great"
-    after that go to the UI and verify that there are 4 traces and metadata is good""")
+    after that go to the UI and verify that there are 4 traces and metadata is good"""
+    )
     with trace.as_context():
         assert_true(
             F.any(
@@ -118,13 +126,17 @@ def test_anthropic():
     with trace.as_context():
         trace.run_assertions(global_asserts)
 
-        edit_tool_calls = trace.tool_calls({"name": "str_replace_editor", "arguments.command": "create"})
+        edit_tool_calls = trace.tool_calls(
+            {"name": "str_replace_editor", "arguments.command": "create"}
+        )
         file_text = edit_tool_calls[0].argument("file_text")
         assert_true(file_text.contains_any("import anthropic", "from anthropic import"))
 
         # Extract the dataset name from a tool output and check if it's in the last screenshot
         tool_outs = trace.messages(role="tool")
-        dataset_name = F.match(r"Dataset: (\w+)", F.map(lambda x: x["content"], tool_outs), 1)[0]
+        dataset_name = F.match(
+            r"Dataset: (\w+)", F.map(lambda x: x["content"], tool_outs), 1
+        )[0]
         tool_out = trace.messages(role="tool")[-1]
         assert_true(tool_out["content"].ocr_contains(dataset_name))
 
@@ -149,7 +161,10 @@ def test_code_agent_fastapi():
         max_freq = max(
             F.frequency(F.map(lambda x: x.argument("file_text"), tool_calls)).values()
         )
-        assert_true(max_freq <= 2, "At least 3 edits to the same file with the same text")
+        assert_true(
+            max_freq <= 2, "At least 3 edits to the same file with the same text"
+        )
+
 
 def test_fibonacci():
     trace = run_agent(
@@ -158,7 +173,9 @@ def test_fibonacci():
     with trace.as_context():
         trace.run_assertions(global_asserts)
 
-        tool_calls = trace.tool_calls({"name": "str_replace_editor", "arguments.command": "create"})
+        tool_calls = trace.tool_calls(
+            {"name": "str_replace_editor", "arguments.command": "create"}
+        )
         for tc in tool_calls:
             res = tc.argument("file_text").execute_contains(
                 "144", "print(compute_fibonacci(12))"
