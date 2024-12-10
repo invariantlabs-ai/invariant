@@ -1,5 +1,6 @@
 """Checks that flipping the order of (expected, actual) on _equals assertions and
-expectations does not crash the test."""
+expectations does not crash the test.
+"""
 
 from invariant.testing import Trace, assert_equals, expect_equals
 

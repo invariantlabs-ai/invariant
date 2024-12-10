@@ -10,6 +10,7 @@ import time
 import traceback as tb
 from contextvars import ContextVar
 from json import JSONEncoder
+from typing import Literal
 
 import pytest
 from invariant_sdk.client import Client as InvariantClient
@@ -18,6 +19,8 @@ from pydantic import ValidationError
 
 from invariant.config import Config
 from invariant.constants import INVARIANT_TEST_RUNNER_CONFIG_ENV_VAR
+from invariant.custom_types.invariant_dict import InvariantDict
+from invariant.custom_types.invariant_string import InvariantString
 from invariant.custom_types.test_result import AssertionResult, TestResult
 from invariant.formatter import format_trace
 from invariant.utils import utils
@@ -265,10 +268,18 @@ class Manager:
 
             pytest.fail(error_message, pytrace=False)
 
-    def _create_annotation(
+    def _create_annotations(
         self, assertion: AssertionResult, address: str, source: str, assertion_id: int
-    ):
-        """Create an annotation for a single assertion."""
+    ) -> list[dict]:
+        """Create annotations for a single assertion.
+
+        This converts assertion to a standard which is easy to parse by the explorer.
+        In particular:
+        * addresses pointing at a part of a message content, are rendered by highlighting that part.
+        * addresses pointing at full messages are rendered by highlighting,
+          the whole message content if available, otherwise all the tool calls.
+        * addresses pointing at tool calls are rendered by highlighting the tool call name.
+        """
         content = assertion.message
 
         # if there is no message, we extract the assertion call
@@ -279,21 +290,69 @@ class Manager:
             content = "\n".join(remainder)
             content = utils.ast_truncate(content.lstrip(">"))
 
-        return {
-            # non-localized assertions are top-level
-            "address": "messages." + address if address != "<root>" else address,
-            # the assertion message
-            "content": content,
-            # metadata as expected by Explorer
-            "extra_metadata": {
-                "source": source,
-                "test": assertion.test,
-                "passed": assertion.passed,
-                "line": assertion.test_line,
-                # ID of the assertion (if an assertion results in multiple annotations)
-                "assertion_id": assertion_id,
-            },
-        }
+        if address == "<root>":
+            address_to_push = ["<root>"]
+
+        elif address.isdigit():
+            # Case where the address points to a message, but not a portion of the content
+            msg = self.trace.trace[int(address)]
+            if msg.get("content", False):
+                if isinstance(msg["content"], str | InvariantString):
+                    address_to_push_inner = [f".content:0-{len(msg['content'])}"]
+                elif isinstance(msg["content"], dict | InvariantDict):
+                    address_to_push_inner = [
+                        f".content.{k}:0-{len(msg['content'][k])}"
+                        for k in msg["content"]
+                    ]
+                else:
+                    address_to_push_inner = [""]
+            elif msg.get("tool_calls", False):
+                address_to_push_inner = [
+                    f".tool_calls.{i}.function.name:0-{len(tool_call['function']['name'])}"
+                    for i, tool_call in enumerate(msg["tool_calls"])
+                ]
+
+            address_to_push = [
+                "messages." + address + atpi for atpi in address_to_push_inner
+            ]
+
+        elif len(address.split(".")) > 1 and address.split(".")[1] == "tool_calls":
+            msg = self.trace.trace[int(address.split(".")[0])]
+            if len(address.split(".")) > 2:
+                if not address.split(".")[2].isdigit():
+                    raise ValueError(
+                        f"Tool call index must be an integer, got {address.split('.')[2]}"
+                    )
+                tool_calls = [msg["tool_calls"][int(address.split(".")[2])]]
+            else:
+                tool_calls = msg["tool_calls"]
+            address_to_push = [
+                "messages."
+                + address
+                + f".function.name:0-{len(tool_call['function']['name'])}"
+                for tool_call in tool_calls
+            ]
+        else:
+            address_to_push = ["messages." + address]
+
+        return [
+            {
+                # non-localized assertions are top-level
+                "address": atp,
+                # the assertion message
+                "content": content,
+                # metadata as expected by Explorer
+                "extra_metadata": {
+                    "source": source,
+                    "test": assertion.test,
+                    "passed": assertion.passed,
+                    "line": assertion.test_line,
+                    # ID of the assertion (if an assertion results in multiple annotations)
+                    "assertion_id": assertion_id,
+                },
+            }
+            for atp in address_to_push
+        ]
 
     def push(self) -> PushTracesResponse:
         """Push the test results to Explorer."""
@@ -304,7 +363,6 @@ class Manager:
         annotations = []
         for assertion in self.assertions:
             assertion_id = id(assertion)
-
             for address in assertion.addresses:
                 source = (
                     "test-assertion" if assertion.type == "HARD" else "test-expectation"
@@ -312,18 +370,16 @@ class Manager:
                 if assertion.passed:
                     source += "-passed"
 
-                annotations.append(
-                    self._create_annotation(assertion, address, source, assertion_id)
+                annotations += self._create_annotations(
+                    assertion, address, source, assertion_id
                 )
 
             if len(assertion.addresses) == 0:
-                annotations.append(
-                    self._create_annotation(
-                        assertion,
-                        "<root>",
-                        "test-assertion" + ("-passed" if assertion.passed else ""),
-                        assertion_id,
-                    )
+                annotations += self._create_annotations(
+                    assertion,
+                    "<root>",
+                    "test-assertion" + ("-passed" if assertion.passed else ""),
+                    assertion_id,
                 )
         test_result = self._get_test_result()
         metadata = {

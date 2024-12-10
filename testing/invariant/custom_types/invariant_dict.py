@@ -5,7 +5,6 @@ from typing import Any
 from invariant.custom_types.invariant_bool import InvariantBool
 from invariant.custom_types.invariant_value import InvariantValue
 
-
 class InvariantDict:
     """Invariant implementation of a dict type"""
 

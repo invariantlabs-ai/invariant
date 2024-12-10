@@ -11,6 +11,7 @@ from typing import Any, Callable
 from invariant.custom_types.invariant_bool import InvariantBool
 from invariant.custom_types.invariant_number import InvariantNumber
 from invariant.custom_types.invariant_value import InvariantValue
+from invariant.custom_types.invariant_string import InvariantString
 
 
 def map(  # pylint: disable=redefined-builtin
@@ -80,6 +81,18 @@ def count(
         return InvariantNumber(0, a.addresses)
 
     return sum(map(map_func, iterable))
+
+
+def frequency(iterable: Iterable[InvariantNumber | InvariantString]) -> dict[int | float | str, InvariantNumber]:
+    """Return a dictionary with the frequency of each string in the iterable."""
+    freq = {}
+    for item in iterable:
+        if item.value in freq:
+            new_freq = (freq[item.value][0] + 1, freq[item.value][1] + item.addresses)
+            freq[item.value] = new_freq
+        else:
+            freq[item.value] = (1, item.addresses)
+    return {k: InvariantNumber(v[0], v[1]) for k, v in freq.items()}
 
 
 def match(

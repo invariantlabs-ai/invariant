@@ -1,8 +1,9 @@
-""" Tests for the InvariantImage class. """
+"""Tests for the InvariantImage class."""
 
 import base64
 
 import pytest
+
 from invariant.custom_types.invariant_image import InvariantImage
 from invariant.custom_types.invariant_string import InvariantString
 from invariant.utils.packages import is_program_installed
@@ -56,3 +57,8 @@ def test_ocr_detector():
         "making", bbox={"x1": 50, "y1": 10, "x2": 120, "y2": 40}
     )
     assert not inv_img.ocr_contains("LLM")
+
+    assert inv_img.ocr_contains_all(["agents", "making"])
+    assert not inv_img.ocr_contains_all(["agents", "making", "LLM"])
+    assert inv_img.ocr_contains_any(["something", "agents", "abc"])
+    assert not inv_img.ocr_contains_any(["something", "def", "abc"])

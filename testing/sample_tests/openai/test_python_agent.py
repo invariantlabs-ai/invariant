@@ -1,9 +1,10 @@
 import json
 from unittest.mock import MagicMock
 
-import invariant.testing.functional as F
 import openai
-from invariant.testing import TraceFactory, assert_true, expect_equals
+
+import invariant.testing.functional as F
+from invariant.testing import TraceFactory, assert_true, expect_equals, Trace
 
 
 def run_python(code):
@@ -161,7 +162,7 @@ def test_java_question():
         run_python_tool_call = trace.tool_calls(name="run_python")
         assert_true(F.len(run_python_tool_call) == 0)
         expect_equals(
-            "I can only help with Python code.", trace.messages(-1)["content"]
+            expected_response, trace.messages(-1)["content"]
         )
 
         assert_true(trace.messages(-1)["content"].levenshtein(expected_response) < 5)
