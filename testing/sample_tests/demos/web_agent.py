@@ -81,7 +81,7 @@ def test_annotation():
         # assert that it doesn't type in the same url twice
         num_occ = {}
         for tc in type_tool_calls:
-            text = tc["function"]["arguments"]["text"].value
+            text = tc.argument("text").value
             num_occ[text] = num_occ.get(text, 0) + 1
             if "http" in text:
                 expect_true(num_occ[text] <= 1)
@@ -119,7 +119,7 @@ def test_anthropic():
         edit_tool_calls = trace.tool_calls(
             {"name": "str_replace_editor", "arguments.command": "create"}
         )
-        file_text = edit_tool_calls[0]["function"]["arguments"]["file_text"]
+        file_text = edit_tool_calls[0].argument("file_text")
         assert_true(
             file_text.contains("import anthropic")
             or file_text.contains("from anthropic import")
@@ -159,7 +159,7 @@ def test_code_agent_fastapi():
         tool_calls = trace.tool_calls({"name": "str_replace_editor"})
         cnt = {}
         for tc in tool_calls:
-            file_text = tc["function"]["arguments"]["file_text"].value
+            file_text = tc.argument("file_text").value
             cnt[file_text] = cnt.get(file_text, 0) + 1
             assert_true(
                 cnt[file_text] <= 2,
@@ -192,7 +192,7 @@ def test_fibonacci():
             {"name": "str_replace_editor", "arguments.command": "create"}
         )
         for tc in tool_calls:
-            res = tc["function"]["arguments"]["file_text"].execute_contains(
+            res = tc.argument("file_text").execute_contains(
                 "144", "print(compute_fibonacci(12))"
             )
             assert_true(res, "Execution output does not contain 144")

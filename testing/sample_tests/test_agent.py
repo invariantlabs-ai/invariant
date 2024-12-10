@@ -224,10 +224,10 @@ def test_trace_rules(trace_with_tool_calls: Trace):
             name=lambda n: n == "ask"
         )
         assert_true(
-            tool_calls_with_ask[0]["function"]["arguments"]["question"].contains("help")
+            tool_calls_with_ask[0].argument("question").contains("help")
         )
         assert_true(
-            not tool_calls_with_ask[0]["function"]["arguments"]["question"].contains(
+            not tool_calls_with_ask[0].argument("question").contains(
                 "helpp"
             )
         )
@@ -313,7 +313,7 @@ def test_custom_trace():
         assert_true(tool_calls[1]["function"]["name"] == "get_weather")
 
         # single index
-        res = tool_calls[1]["function"]["arguments"][19]
+        res = tool_calls[1].argument()[19]
         assert_true(res == "l")
         assert (
             len(res.addresses) == 1
@@ -321,7 +321,7 @@ def test_custom_trace():
         )
 
         # slice
-        res = tool_calls[1]["function"]["arguments"][19:22]
+        res = tool_calls[1].argument()[19:22]
         assert_true(res == "lon")
         assert (
             len(res.addresses) == 1
@@ -329,9 +329,9 @@ def test_custom_trace():
         )
 
         # json parameters
-        assert_true(tool_calls[1]["function"]["arguments"].is_valid_code("json"))
-        assert_true(tool_calls[1]["function"]["arguments"]["lat"] == "46.948")
-        assert_true(tool_calls[1]["function"]["arguments"]["lon"] == "7.4474")
+        assert_true(tool_calls[1].argument().is_valid_code("json"))
+        assert_true(tool_calls[1].argument("lat") == "46.948")
+        assert_true(tool_calls[1].argument("lon") == "7.4474")
 
 
 @pytest.mark.parametrize(
