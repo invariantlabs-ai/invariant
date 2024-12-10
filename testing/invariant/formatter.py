@@ -33,7 +33,7 @@ def format_trace(json_obj, highlights=[]):
         is_comment = line.lstrip().startswith("#")
         # if is_comment, remove first #, otherwise add a space
         if is_comment:
-            # replace first occurence of # with a space
+            # replace first occurrence of # with a space
             line = line.replace("#", " ", 1)
         else:
             line = " " + line

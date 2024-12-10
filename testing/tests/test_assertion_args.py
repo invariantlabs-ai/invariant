@@ -18,7 +18,7 @@ def test_wrong_order():
 
 @should_fail_with(num_assertion=1)
 def test_right_order():
-    """Test that asser_equals works fine with the right order."""
+    """Test that assert_equals works fine with the right order."""
     trace = Trace(trace=[{"role": "user", "content": "Hello there"}])
 
     with trace.as_context():

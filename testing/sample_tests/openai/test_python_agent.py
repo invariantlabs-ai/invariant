@@ -45,7 +45,7 @@ tools = [
 
 
 class PythonAgent:
-    """An openai agent that run Pyhon code fullfilling the user's request then return the result."""
+    """An openai agent that run Python code fulfilling the user's request."""
 
     def __init__(self):
         self.client = openai.OpenAI()

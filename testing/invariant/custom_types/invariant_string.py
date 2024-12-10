@@ -107,7 +107,7 @@ class InvariantString(InvariantValue):
         raise TypeError("InvariantString indices must be integer, slices or strings")
 
     def count(self, pattern: str) -> InvariantNumber:
-        """Counts the number of occurences of the given regex pattern."""
+        """Counts the number of occurrences of the given regex pattern."""
         new_addresses = []
         for match in re.finditer(pattern, self.value, re.DOTALL):
             start, end = match.span()

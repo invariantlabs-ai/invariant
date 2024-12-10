@@ -374,7 +374,7 @@ def test_check_window_works_over_trace_with_filtering(simple_trace: Trace):
 
 def test_check_order_returns_expected(invariant_number_list: list):
     """Test that the check_order function works."""
-    # Concequitive numbers
+    # Consecutive numbers
     checks = [4, 2, 4]
 
     result = F.check_order(checks, invariant_number_list)

@@ -1,4 +1,4 @@
-"""Decribes the result class for the invariant runner."""
+"""Describes the result class for the invariant runner."""
 
 from pydantic import BaseModel
 

@@ -17,7 +17,7 @@ def test_assertion_points_to_substring():
 
 
 def test_assertion_points_to_message_content_string():
-    """Test to display how addresses pointing to message with content wich is a str."""
+    """Test to display how addresses pointing to message with content which is a str."""
     trace = Trace(
         trace=[
             {"role": "user", "content": "Hello there"},
@@ -31,7 +31,7 @@ def test_assertion_points_to_message_content_string():
 
 
 def test_assertion_points_to_message_content_dict():
-    """Test to display how addresses pointing to message with content wich is a dict."""
+    """Test to display how addresses pointing to message with content which is a dict."""
     trace = Trace(
         trace=[
             {"role": "user", "content": {"this": "is", "a": "dictionary"}},
