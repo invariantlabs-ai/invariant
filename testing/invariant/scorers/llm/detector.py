@@ -4,8 +4,8 @@ import json
 import logging
 from typing import Any, Tuple
 
-from invariant.cache.cache_manager import CacheManager
-from invariant.custom_types.addresses import Range
+from invariant.cache import CacheManager
+from invariant.custom_types import Range
 from openai.types.chat.parsed_chat_completion import ParsedChatCompletion
 from pydantic import BaseModel
 

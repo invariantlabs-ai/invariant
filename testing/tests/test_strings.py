@@ -1,13 +1,11 @@
 import base64
 
 import pytest
-
+from invariant.scorers import levenshtein
+from invariant.scorers import Classifier, Detector, OCRDetector
 from invariant.scorers.base import approx
-from invariant.scorers.llm.classifier import Classifier
-from invariant.scorers.llm.detector import Detector
-from invariant.scorers.strings import *
-from invariant.scorers.utils.ocr import OCRDetector
 from invariant.utils.packages import is_program_installed
+from invariant.utils.utils import contains
 
 
 def test_levenshtein():

@@ -6,7 +6,7 @@ import tempfile
 import time
 
 import pytest
-from invariant.cache.cache_manager import CacheManager
+from invariant.cache import CacheManager
 
 
 @pytest.fixture(name="cache_manager")

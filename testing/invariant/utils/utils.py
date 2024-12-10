@@ -3,6 +3,7 @@
 import ast
 import json
 import os
+import re
 import shutil
 
 from invariant.constants import (
@@ -10,6 +11,11 @@ from invariant.constants import (
     INVARIANT_RUNNER_TEST_RESULTS_DIR,
     INVARIANT_TEST_RUNNER_TERMINAL_WIDTH_ENV_VAR,
 )
+
+
+def contains(text: str, pattern: str) -> bool:
+    """Check if a text contains a regex pattern."""
+    return re.search(pattern, text) is not None
 
 
 def get_agent_param(param: str) -> str | None:

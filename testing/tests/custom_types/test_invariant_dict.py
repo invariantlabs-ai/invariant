@@ -1,10 +1,13 @@
 """Tests for the InvariantDict class."""
 
 import pytest
-from invariant.custom_types.invariant_bool import InvariantBool
-from invariant.custom_types.invariant_dict import InvariantDict
-from invariant.custom_types.invariant_number import InvariantNumber
-from invariant.custom_types.invariant_string import InvariantString
+from invariant.custom_types import (
+    InvariantBool,
+    InvariantDict,
+    InvariantNumber,
+    InvariantString,
+)
+
 from invariant.testing import LambdaMatcher
 
 

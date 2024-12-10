@@ -1,5 +1,6 @@
 """Imports for invariant testing."""
 
+from invariant.custom_types import Trace, TraceFactory
 from invariant.custom_types.assertions import (
     assert_equals,
     assert_false,
@@ -17,8 +18,6 @@ from invariant.custom_types.matchers import (
     LambdaMatcher,
     Matcher,
 )
-from invariant.custom_types.trace import Trace
-from invariant.custom_types.trace_factory import TraceFactory
 from invariant.utils.utils import get_agent_param
 
 # re-export trace and various assertion types

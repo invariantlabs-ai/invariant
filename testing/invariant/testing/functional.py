@@ -8,10 +8,12 @@ from collections import deque
 from collections.abc import Iterable
 from typing import Any, Callable
 
-from invariant.custom_types.invariant_bool import InvariantBool
-from invariant.custom_types.invariant_number import InvariantNumber
-from invariant.custom_types.invariant_value import InvariantValue
-from invariant.custom_types.invariant_string import InvariantString
+from invariant.custom_types import (
+    InvariantBool,
+    InvariantNumber,
+    InvariantString,
+    InvariantValue,
+)
 
 
 def map(  # pylint: disable=redefined-builtin
@@ -83,7 +85,9 @@ def count(
     return sum(map(map_func, iterable))
 
 
-def frequency(iterable: Iterable[InvariantNumber | InvariantString]) -> dict[int | float | str, InvariantNumber]:
+def frequency(
+    iterable: Iterable[InvariantNumber | InvariantString],
+) -> dict[int | float | str, InvariantNumber]:
     """Return a dictionary with the frequency of each string in the iterable."""
     freq = {}
     for item in iterable:

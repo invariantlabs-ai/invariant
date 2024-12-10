@@ -6,7 +6,7 @@ import tempfile
 from typing import Tuple
 
 import openai
-from invariant.custom_types.addresses import Range
+from invariant.custom_types import Range
 from invariant.utils.packages import is_program_installed
 from pydantic import BaseModel
 

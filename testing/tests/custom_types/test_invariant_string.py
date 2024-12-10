@@ -3,13 +3,10 @@
 from unittest.mock import patch
 
 import pytest
-from pytest import approx
-
-from invariant.custom_types.invariant_bool import InvariantBool
-from invariant.custom_types.invariant_number import InvariantNumber
-from invariant.custom_types.invariant_string import InvariantString
+from invariant.custom_types import InvariantBool, InvariantNumber, InvariantString
 from invariant.scorers.code import Dependencies
 from invariant.utils.packages import is_program_installed
+from pytest import approx
 
 
 def test_invariant_string_initialization():
@@ -128,7 +125,9 @@ def test_invariant_string_contains_any(value, substrings, expected):
         ("World", InvariantString("Hello", ["addr1"]), "WorldHello", ["addr1:0-5"]),
     ],
 )
-def test_invariant_string_concatenation(value1, value2, expected_value, expected_addresses):
+def test_invariant_string_concatenation(
+    value1, value2, expected_value, expected_addresses
+):
     """Test the concatenation of InvariantString objects."""
     result = value1 + value2
     assert isinstance(result, InvariantString)
@@ -193,11 +192,17 @@ def test_contains_ignores_case_by_default():
 
 def test_match():
     """Test the match transformer of InvariantString."""
-    res = InvariantString("Dataset: demo\nAuthor: demo-agent", [""]).match("Dataset: (.*)", 1)
+    res = InvariantString("Dataset: demo\nAuthor: demo-agent", [""]).match(
+        "Dataset: (.*)", 1
+    )
     assert res.value == "demo" and res.addresses == [":9-13"]
-    res = InvariantString("Dataset: demo\nAuthor: demo-agent", [""]).match("Author: (?P<author>.*)", "author")
+    res = InvariantString("Dataset: demo\nAuthor: demo-agent", [""]).match(
+        "Author: (?P<author>.*)", "author"
+    )
     assert res.value == "demo-agent" and res.addresses == [":22-32"]
-    res = InvariantString("My e-mail is abc@def.com, and yours?", [""]).match("[a-z\\.]*@[a-z\\.]*", 0)
+    res = InvariantString("My e-mail is abc@def.com, and yours?", [""]).match(
+        "[a-z\\.]*@[a-z\\.]*", 0
+    )
     assert res.value == "abc@def.com" and res.addresses == [":13-24"]
 
 
@@ -215,7 +220,9 @@ def test_is_valid_code():
     """Test the is_valid_code transformer of InvariantString."""
     assert InvariantString("def hello():\n\treturn 1").is_valid_code("python")
 
-    res = InvariantString("""a = 2\n2x = a\nc=a""", ["messages.0.content"]).is_valid_code("python")
+    res = InvariantString(
+        """a = 2\n2x = a\nc=a""", ["messages.0.content"]
+    ).is_valid_code("python")
     assert isinstance(res, InvariantBool)
     assert len(res.addresses) == 1 and res.addresses[0] == "messages.0.content:6-12"
     assert not res
@@ -228,7 +235,9 @@ def test_is_valid_code():
     }
     """
 
-    res = InvariantString(invalid_json_example, ["messages.0.content"]).is_valid_code("json")
+    res = InvariantString(invalid_json_example, ["messages.0.content"]).is_valid_code(
+        "json"
+    )
     assert isinstance(res, InvariantBool)
     assert len(res.addresses) == 1 and res.addresses[0] == "messages.0.content:33-54"
     assert not res
@@ -265,7 +274,9 @@ def test_moderation():
         pytest.param(
             "claude-3-5-sonnet-20241022",
             "Anthropic",
-            marks=pytest.mark.skip("Skipping because we have not setup the API key in the CI"),
+            marks=pytest.mark.skip(
+                "Skipping because we have not setup the API key in the CI"
+            ),
         ),
     ],
 )
@@ -301,7 +312,9 @@ def test_extract():
     assert res[3] == "pears" and res[3].addresses[0] == "message.0.content:104-109"
 
 
-@pytest.mark.skipif(not is_program_installed("docker"), reason="Skip for now, needs docker")
+@pytest.mark.skipif(
+    not is_program_installed("docker"), reason="Skip for now, needs docker"
+)
 def test_execute_without_detect_packages():
     """Test the code execution transformer of InvariantString without detect_packages."""
     code = InvariantString("""def f(n):\treturn n**2""", ["messages.0.content"])
@@ -310,7 +323,9 @@ def test_execute_without_detect_packages():
     assert len(res.addresses) == 1 and res.addresses[0] == "messages.0.content:0-21"
 
 
-@pytest.mark.skipif(not is_program_installed("docker"), reason="Skip for now, needs docker")
+@pytest.mark.skipif(
+    not is_program_installed("docker"), reason="Skip for now, needs docker"
+)
 def test_execute_with_detect_packages():
     """Test the code execution transformer of InvariantString with detect_packages."""
     with patch("invariant.scorers.code._get_dependencies") as mock_get_dependencies:

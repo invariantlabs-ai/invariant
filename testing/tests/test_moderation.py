@@ -1,6 +1,6 @@
 """Tests for moderation"""
 
-from invariant.scorers.moderation import ModerationAnalyzer
+from invariant.scorers import ModerationAnalyzer
 
 
 def test_moderation():

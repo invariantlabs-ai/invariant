@@ -3,9 +3,7 @@
 import base64
 
 import pytest
-
-from invariant.custom_types.invariant_image import InvariantImage
-from invariant.custom_types.invariant_string import InvariantString
+from invariant.custom_types import InvariantImage, InvariantString
 from invariant.utils.packages import is_program_installed
 
 

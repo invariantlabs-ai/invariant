@@ -2,8 +2,8 @@
 
 from pydantic import BaseModel
 
-from invariant.custom_types.assertion_result import AssertionResult
-from invariant.custom_types.trace import Trace
+from .assertion_result import AssertionResult
+from .trace import Trace
 
 
 class TestResult(BaseModel):

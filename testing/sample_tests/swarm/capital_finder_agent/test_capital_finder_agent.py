@@ -1,11 +1,11 @@
 """Tests for the capital_finder_agent"""
 
-import invariant.testing.functional as F
 import pytest
-from invariant.wrappers.swarm_wrapper import SwarmWrapper
-
-from invariant.testing import assert_equals, assert_false, assert_true
+from invariant.wrappers import SwarmWrapper
 from swarm import Swarm
+
+import invariant.testing.functional as F
+from invariant.testing import assert_equals, assert_false, assert_true
 
 from .capital_finder_agent import create_agent
 
@@ -29,9 +29,7 @@ def test_capital_finder_agent_when_capital_found(swarm_wrapper):
     with trace.as_context():
         get_capital_tool_calls = trace.tool_calls(name="get_capital")
         assert_true(F.len(get_capital_tool_calls) == 1)
-        assert_equals(
-            "France", get_capital_tool_calls[0].argument("country_name")
-        )
+        assert_equals("France", get_capital_tool_calls[0].argument("country_name"))
 
         assert_true(trace.messages(-1)["content"].contains("paris"))
 
@@ -49,9 +47,7 @@ def test_capital_finder_agent_when_capital_not_found(swarm_wrapper):
     with trace.as_context():
         get_capital_tool_calls = trace.tool_calls(name="get_capital")
         assert_true(F.len(get_capital_tool_calls) == 1)
-        assert_equals(
-            "Spain", get_capital_tool_calls[0].argument("country_name")
-        )
+        assert_equals("Spain", get_capital_tool_calls[0].argument("country_name"))
 
         tool_outputs = trace.tool_outputs(tool_name="get_capital")
         assert_true(F.len(tool_outputs) == 1)
