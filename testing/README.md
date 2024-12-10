@@ -63,7 +63,7 @@ def test_weather():
     # make assertions about the agent's behavior
     with trace.as_context():
         # extract the locations mentioned in the agent's response using OpenAI
-        locations = trace.messages()[0]["content"].extract("locations")
+        locations = trace.messages()[-1]["content"].extract("locations")
 
         # assert that the agent responded about Paris and only Paris
         assert_equals(1, F.len(locations),
