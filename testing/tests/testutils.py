@@ -1,5 +1,6 @@
 from _pytest.outcomes import Failed
-from invariant.utils.packages import is_program_installed, is_package_installed
+from invariant.utils.packages import is_package_installed, is_program_installed
+
 
 def should_fail_with(num_assertion: int | None = None):
     def decorator(fct):
@@ -7,7 +8,9 @@ def should_fail_with(num_assertion: int | None = None):
             try:
                 fct(*args, **kwargs)
                 if num_assertion != 0:
-                    assert False, f"Expected test {fct.__name__} to fail, but it unexpectedly passed"
+                    assert (
+                        False
+                    ), f"Expected test {fct.__name__} to fail, but it unexpectedly passed"
             except Failed as e:
                 first_line = str(e).split("\n")[0]
                 assert (
@@ -25,6 +28,7 @@ def test_is_program_installed():
     assert is_program_installed("grep")
     assert not is_program_installed("nonexistent_program")
     assert not is_program_installed("bashbashbash123")
+
 
 def test_is_package_installed():
     """Test the is_package_installed function."""

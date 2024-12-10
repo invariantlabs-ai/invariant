@@ -2,6 +2,7 @@ import re
 
 import urllib3
 from invariant.custom_types.invariant_image import InvariantImage
+
 from invariant.testing import (
     Trace,
     TraceFactory,

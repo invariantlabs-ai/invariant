@@ -4,12 +4,11 @@ import base64
 import io
 from typing import Optional
 
-from PIL import Image
-
 from invariant.custom_types.invariant_bool import InvariantBool
 from invariant.custom_types.invariant_string import InvariantString
 from invariant.scorers.llm.classifier import Classifier
 from invariant.scorers.utils.ocr import OCRDetector
+from PIL import Image
 
 
 class InvariantImage(InvariantString):
@@ -44,7 +43,9 @@ class InvariantImage(InvariantString):
             client (invariant.scorers.llm.clients.client.SupportedClients): The
             client to use for the LLM.
         """
-        llm_clf = Classifier(model=model, prompt=prompt, options=options, vision=True, client=client)
+        llm_clf = Classifier(
+            model=model, prompt=prompt, options=options, vision=True, client=client
+        )
         res = llm_clf.classify_vision(
             self.value, image_type=self.image_type, use_cached_result=use_cached_result
         )

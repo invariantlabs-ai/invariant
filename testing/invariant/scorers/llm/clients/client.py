@@ -22,7 +22,7 @@ class LLMClient(ABC):
     @abstractmethod
     def completions_create(self, **request_data) -> Any:
         """Make a completion request to the LLM."""
-   
+
     @abstractmethod
     def completions_parse(self, **request_data) -> Any:
         """Make a completion parse request to the LLM."""

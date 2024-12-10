@@ -5,6 +5,7 @@ from typing import Any
 from invariant.custom_types.invariant_bool import InvariantBool
 from invariant.custom_types.invariant_value import InvariantValue
 
+
 class InvariantDict:
     """Invariant implementation of a dict type"""
 
@@ -48,13 +49,13 @@ class InvariantDict:
 
     def __repr__(self) -> str:
         return str(self)
-    
+
     def __eq__(self, other: "InvariantDict") -> bool:
         """Check if the InvariantDict value is equal to the given value."""
         if not isinstance(other, InvariantDict):
             raise TypeError(f"Cannot compare InvariantDict with {type(other)}")
         return self.value == other.value
-    
+
     def __contains__(self, key: str) -> InvariantBool:
         """Support the `in` operator to check for key existence."""
         return InvariantBool(key in self.value, self.addresses)
@@ -79,7 +80,7 @@ class InvariantDict:
         key = input[-1]
         arguments = None
 
-        from invariant.custom_types.trace import traverse_dot_path           
+        from invariant.custom_types.trace import traverse_dot_path
 
         for path in paths:
             res, add_function_prefix = traverse_dot_path(self.value, path)
@@ -99,5 +100,6 @@ class InvariantDict:
                 raise KeyError(f"Key {key} not found in {arguments}")
             return arguments[key]
         else:
-            raise ValueError("Can only use .argument(...) on tool-call-like objects or provide a path to the arguments")
-            
+            raise ValueError(
+                "Can only use .argument(...) on tool-call-like objects or provide a path to the arguments"
+            )

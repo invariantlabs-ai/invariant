@@ -13,10 +13,6 @@ from json import JSONEncoder
 from typing import Literal
 
 import pytest
-from invariant_sdk.client import Client as InvariantClient
-from invariant_sdk.types.push_traces import PushTracesResponse
-from pydantic import ValidationError
-
 from invariant.config import Config
 from invariant.constants import INVARIANT_TEST_RUNNER_CONFIG_ENV_VAR
 from invariant.custom_types.invariant_dict import InvariantDict
@@ -24,6 +20,9 @@ from invariant.custom_types.invariant_string import InvariantString
 from invariant.custom_types.test_result import AssertionResult, TestResult
 from invariant.formatter import format_trace
 from invariant.utils import utils
+from invariant_sdk.client import Client as InvariantClient
+from invariant_sdk.types.push_traces import PushTracesResponse
+from pydantic import ValidationError
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
