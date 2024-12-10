@@ -1,7 +1,29 @@
-**/__pycache__/
-**/.pytest_cache/
+# Python cache and test artifacts
+__pycache__/
+.pytest_cache/
+.py[oc]
+
+# Coverage and build artifacts
 .coverage
-htmlcov
-.invariant
+htmlcov/
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environment
+.venv/
+
+# Environment files
 .env
+.env.local
+
+# Temporary test files
 test_tmp.py
+test.py
+
+# MacOS metadata
+.DS_Store
+
+# Custom directory
+.invariant/

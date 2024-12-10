@@ -1,7 +1,0 @@
-**/__pycache__/
-**/.pytest_cache/
-.coverage
-htmlcov
-.invariant
-.env
-test_tmp.py
