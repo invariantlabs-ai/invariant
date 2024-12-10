@@ -31,13 +31,24 @@ Using localized assertions, testing always points you to the exact part of the a
 ## Installation
 
 ```
-pip install invariant
+pip install invariant-ai
 ```
 
 ## A quick example
 
+The example below uses `extract(...)` to detect `locations` from messages. This uses the `gpt-4o` model from OpenAI.
+
+Setup your OpenAI key as
+
+```bash
+export OPENAI_API_KEY=<your-key>
+```
+
+Code:
+
 ```python
 # content of tests/test_weather.py
+import invariant.testing.functional as F
 from invariant.testing import Trace, assert_equals
 
 def test_weather():
@@ -51,11 +62,11 @@ def test_weather():
 
     # make assertions about the agent's behavior
     with trace.as_context():
-        # extract the locations mentioned in the agent's response
-        locations = trace.messages()[-1]["content"].extract("locations")
+        # extract the locations mentioned in the agent's response using OpenAI
+        locations = trace.messages()[0]["content"].extract("locations")
 
         # assert that the agent responded about Paris and only Paris
-        assert_equals(1, locations.len(), 
+        assert_equals(1, F.len(locations),
             "The agent should respond about one location only")
 
         assert_equals("Paris", locations[0], "The agent should respond about Paris")
