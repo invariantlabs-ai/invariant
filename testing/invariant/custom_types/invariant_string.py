@@ -8,14 +8,15 @@ from operator import ge, gt, le, lt, ne
 from typing import Any, Literal, Union
 
 from _pytest.python_api import ApproxBase
-from invariant.custom_types.invariant_bool import InvariantBool
-from invariant.custom_types.invariant_number import InvariantNumber
-from invariant.custom_types.invariant_value import InvariantValue
 from invariant.scorers.code import execute, is_valid_json, is_valid_python
 from invariant.scorers.llm.classifier import Classifier
 from invariant.scorers.llm.detector import Detector
 from invariant.scorers.moderation import ModerationAnalyzer
 from invariant.scorers.strings import embedding_similarity, levenshtein
+
+from .invariant_bool import InvariantBool
+from .invariant_number import InvariantNumber
+from .invariant_value import InvariantValue
 
 
 class InvariantString(InvariantValue):

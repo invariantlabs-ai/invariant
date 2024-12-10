@@ -1,7 +1,8 @@
 from typing import Optional, Tuple
 
 from invariant.custom_types.addresses import Range
-from invariant.scorers.utils.base import BaseDetector
+
+from .utils.base import BaseDetector
 
 DEFAULT_MODERATION_MODEL = "OpenAI"
 
