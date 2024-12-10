@@ -59,7 +59,7 @@ class InvariantImage(InvariantString):
     ) -> InvariantBool:
         """Check if the value contains the given text using OCR."""
         addresses = self.addresses
-        if type(text) == InvariantString:
+        if isinstance(text, InvariantString):
             addresses.extend(text.addresses)
             text = text.value
         res = OCRDetector().contains(self.image, text, case_sensitive, bbox)
@@ -71,6 +71,7 @@ class InvariantImage(InvariantString):
         case_sensitive: bool = False,
         bbox: Optional[dict] = None,
     ) -> InvariantBool:
+        """Check if the image contains any of the given texts using OCR."""
         for text in texts:
             if res := self.ocr_contains(text, case_sensitive, bbox):
                 return res
@@ -82,6 +83,7 @@ class InvariantImage(InvariantString):
         case_sensitive: bool = False,
         bbox: Optional[dict] = None,
     ) -> InvariantBool:
+        """Check if the image contains all of the given texts using OCR."""
         for text in texts:
             if not (res := self.ocr_contains(text, case_sensitive, bbox)):
                 return res

@@ -50,7 +50,8 @@ class HasSubstring(Matcher):
 
 
 class IsSimilar(Matcher):
-    """A Matcher for checking if a string is similar to an expected string by checking if the similary score reaches a given threshold."""
+    """A Matcher for checking if a string is similar to an expected string by
+    checking if the similary score reaches a given threshold."""
 
     LEVENSHTEIN = "levenshtein"
     EMBEDDING = "embedding"
@@ -156,7 +157,8 @@ class ContainsImage(Matcher):
     Matcher for checking if string is an image or dict contains image.
 
     Checks if the string starts with "local_base64_img: " or "local_img_link: ".
-    Checks if dict has a content field, and if that content field starts with "local_base64_img: " or "local_img_link: ".
+    Checks if dict has a content field, and if that content field starts with
+    "local_base64_img: " or "local_img_link: ".
     """
 
     def matches(self, actual_value: str | dict) -> bool:

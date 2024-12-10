@@ -200,7 +200,8 @@ class InvariantString(InvariantValue):
             *patterns: Variable number of patterns to check for. Each pattern can be a string
                       or InvariantString.
             criterion: The criterion to use for the contains check - can be "all" or "any".
-            flags: The flags to use for the regex search. To pass in multiple flags, use the bitwise OR operator (|). By default, this is re.IGNORECASE.
+            flags: The flags to use for the regex search. To pass in multiple flags, use
+                   the bitwise OR operator (|). By default, this is re.IGNORECASE.
 
         Returns:
             InvariantBool: True if all patterns are found, False otherwise. The addresses will
