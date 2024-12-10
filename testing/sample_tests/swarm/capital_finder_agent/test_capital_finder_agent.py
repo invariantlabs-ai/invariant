@@ -1,9 +1,11 @@
 """Tests for the capital_finder_agent"""
 
-import invariant.testing.functional as F
 import pytest
-from invariant.testing import SwarmWrapper, assert_equals, assert_false, assert_true
+from invariant.wrappers.swarm_wrapper import SwarmWrapper
 from swarm import Swarm
+
+import invariant.testing.functional as F
+from invariant.testing import assert_equals, assert_false, assert_true
 
 from .capital_finder_agent import create_agent
 

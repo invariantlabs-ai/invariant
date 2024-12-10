@@ -19,7 +19,6 @@ from invariant.custom_types.matchers import (
 )
 from invariant.custom_types.trace import Trace
 from invariant.custom_types.trace_factory import TraceFactory
-from invariant.wrappers.swarm_wrapper import SwarmWrapper
 
 # re-export trace and various assertion types
 __all__ = [
@@ -38,5 +37,4 @@ __all__ = [
     "HasSubstring",
     "IsSimilar",
     "IsFactuallyEqual",
-    "SwarmWrapper",
 ]
