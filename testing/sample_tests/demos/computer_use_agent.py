@@ -1,9 +1,5 @@
-import re
-
 import urllib3
-from invariant.custom_types.invariant_image import InvariantImage
 from invariant.custom_types.trace_factory import TraceFactory
-from invariant.utils.explorer import from_explorer
 
 import invariant.testing.functional as F
 from invariant.testing import Trace, assert_false, assert_true, expect_true
