@@ -43,10 +43,10 @@ def format_trace(json_obj, highlights=[]):
 
     start = None
     end = len(updated)
-    for i in range(len(updated)):
-        if start is None and not updated[i].lstrip().startswith("#"):
+    for i, line in enumerate(updated):
+        if start is None and not line.lstrip().startswith("#"):
             start = i
-        if not updated[i].lstrip().startswith("#"):
+        if not line.lstrip().startswith("#"):
             end = i + 1
     start = max(0, (start or 0) - 5)
     end = min(len(updated), end + 5)
