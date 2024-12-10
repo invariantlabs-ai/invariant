@@ -10,7 +10,6 @@ import time
 import traceback as tb
 from contextvars import ContextVar
 from json import JSONEncoder
-from typing import Literal
 
 import pytest
 from invariant.config import Config

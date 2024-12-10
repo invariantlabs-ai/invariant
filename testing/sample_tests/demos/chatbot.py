@@ -1,5 +1,3 @@
-import os
-
 import openai
 import pytest
 from invariant.custom_types.trace_factory import TraceFactory
