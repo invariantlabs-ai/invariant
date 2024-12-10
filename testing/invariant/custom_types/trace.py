@@ -140,8 +140,7 @@ def match_keyword_filter(
 
 
 def traverse_dot_path(message: dict, path: str) -> Any | None:
-    """
-    Traverse a dictionary using a dot-separated path. If argument is not
+    """Traverse a dictionary using a dot-separated path. If argument is not
     found, .function will be added as a prefix to the path to search the
     function fields for tool calls.
 
@@ -150,9 +149,10 @@ def traverse_dot_path(message: dict, path: str) -> Any | None:
         path (str): The dot-separated path to traverse.
 
     Returns:
-        Any: The value at the end of the path, or None if the path does not exist.
+        Any: The value at the end of the path, or None if the path does not exist;
+             If the function prefix is added, the second return value will be True, otherwise False.
     """
-
+    add_function_prefix = False
     def _inner(d, _path):
         for k in _path.split("."):
             if isinstance(d, str) and isinstance(k, str):
@@ -161,10 +161,10 @@ def traverse_dot_path(message: dict, path: str) -> Any | None:
                 return None
             d = d[k]
         return d
-
     if (res := _inner(message, path)) is None:
-        return _inner(message, "function." + path)
-    return res
+        add_function_prefix = True
+        return (_inner(message, "function." + path), add_function_prefix)
+    return (res, add_function_prefix)
 
 
 class Trace(BaseModel):
@@ -296,7 +296,7 @@ class Trace(BaseModel):
                 InvariantDict(message, addresses)
                 for addresses, message in iterator_func(self.trace)
                 if all(
-                    traverse_dot_path(message, kwname) == kwvalue
+                    traverse_dot_path(message, kwname)[0] == kwvalue
                     for kwname, kwvalue in selector.items()
                 )
                 and self._is_data_type(InvariantDict(message, addresses), data_type)
