@@ -2,7 +2,7 @@ name: Run Tests
 
 on:
   push:
-    branches: [ "main", "ci-testing", "ci-testing-12" ]
+    branches: [ "main", "ci-testing" ]
 
 permissions:
   contents: read
