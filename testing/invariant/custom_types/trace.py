@@ -5,10 +5,11 @@ from __future__ import annotations
 import json
 from typing import Any, Callable, Dict, Generator, List
 
-from invariant.utils.utils import ssl_verification_enabled
 from invariant_sdk.client import Client as InvariantClient
 from invariant_sdk.types.push_traces import PushTracesResponse
 from pydantic import BaseModel
+
+from invariant.utils.utils import ssl_verification_enabled
 
 from .invariant_dict import InvariantDict, InvariantValue
 from .matchers import ContainsImage, Matcher
@@ -139,8 +140,9 @@ def match_keyword_filter(
 
 
 def traverse_dot_path(message: dict, path: str) -> Any | None:
-    """Traverse a dictionary using a dot-separated path. If argument is not
-    found, .function will be added as a prefix to the path to search the
+    """Traverse a dictionary using a dot-separated path.
+
+    If argument is not found, "function." will be added as a prefix to the path to search the
     function fields for tool calls.
 
     Args:
@@ -149,15 +151,19 @@ def traverse_dot_path(message: dict, path: str) -> Any | None:
 
     Returns:
         Any: The value at the end of the path, or None if the path does not exist;
-             If the function prefix is added, the second return value will be True, otherwise False.
+             If the "function." prefix is added, the second return value will be True,
+             otherwise False.
     """
     add_function_prefix = False
 
     def _inner(d, _path):
         for k in _path.split("."):
-            if isinstance(d, str) and isinstance(k, str):
-                d = json.loads(d)
-            if k not in d:
+            if isinstance(d, str):
+                try:
+                    d = json.loads(d)  # Attempt to parse string as JSON.
+                except json.JSONDecodeError:
+                    return None
+            if not isinstance(d, dict) or d.get(k) is None:
                 return None
             d = d[k]
         return d
