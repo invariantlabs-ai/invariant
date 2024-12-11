@@ -70,8 +70,7 @@ class TraceFactory:
 
     @staticmethod
     def from_openai(messages: list[dict]) -> Trace:
-        """
-        Creates a Trace instance from the history messages exchanged with the openai client.
+        """Creates a Trace instance from the history messages exchanged with the openai client.
 
         Args:
             messages (list[dict]): The history messages exchanged with the openai client.
@@ -79,7 +78,6 @@ class TraceFactory:
         Returns:
             Trace: A Trace object with all the messages combined.
         """
-
         assert isinstance(messages, list)
         assert all(isinstance(msg, dict) for msg in messages)
         trace_messages = copy.deepcopy(messages)

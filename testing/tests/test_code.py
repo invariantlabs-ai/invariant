@@ -1,4 +1,4 @@
-""" Tests for the code module. """
+"""Tests for the code module."""
 
 from invariant.scorers.code import is_valid_json, is_valid_python
 

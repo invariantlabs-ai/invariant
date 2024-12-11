@@ -1,4 +1,5 @@
 import pytest
+
 from invariant.custom_types.trace import Trace
 
 

@@ -43,7 +43,6 @@ class InvariantDict:
 
     def matches(self, matcher: "Matcher") -> "InvariantBool":  # type: ignore # noqa: F821
         """Check if the value matches the given matcher."""
-
         cmp_result = matcher.matches(self.value)
         return InvariantBool(cmp_result, self.addresses)
 
@@ -62,7 +61,6 @@ class InvariantDict:
 
     def argument(self, input: str = "") -> InvariantValue:
         """Get the argument of the tool call at the given key, or the whole arguments if no key is provided."""
-
         if input and not isinstance(input, str):
             raise TypeError(f"input must be a string, got {type(input)}")
 

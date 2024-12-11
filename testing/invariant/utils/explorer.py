@@ -49,7 +49,6 @@ def from_explorer(
     Returns:
         A Trace object with the loaded trace.
     """
-
     metadata = {
         "id": identifier_or_id,
     }

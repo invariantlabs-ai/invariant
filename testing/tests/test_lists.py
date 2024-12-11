@@ -194,7 +194,7 @@ def test_any_helper(invariant_bool_list: list):
     any_value = F.any(invariant_bool_list)
 
     assert isinstance(any_value, InvariantBool)
-    assert any_value.value == True
+    assert any_value.value
     assert len(any_value.addresses) == len(invariant_bool_list)
 
 
@@ -203,7 +203,7 @@ def test_all_helper(invariant_bool_list: list):
     all_value = F.all(invariant_bool_list)
 
     assert isinstance(all_value, InvariantBool)
-    assert all_value.value == False
+    assert not all_value.value
     assert len(all_value.addresses) == len(invariant_bool_list)
 
 
@@ -297,7 +297,7 @@ def test_check_window_with_builtin_value(invariant_number_list: list):
 
     result = F.check_window(checks, invariant_number_list)
 
-    assert result.value == True
+    assert result.value
     assert result.addresses == ["3", "4", "5"]
 
 
@@ -307,7 +307,7 @@ def test_check_window_with_invariant_value(invariant_number_list: list):
 
     result = F.check_window(checks, invariant_number_list)
 
-    assert result.value == True
+    assert result.value
     assert result.addresses == ["3", "4", "5"]
 
 
@@ -317,7 +317,7 @@ def test_check_window_with_lambda(invariant_number_list: list):
 
     result = F.check_window(checks, invariant_number_list)
 
-    assert result.value == True
+    assert result.value
     assert result.addresses == ["2", "3", "4"]
 
 
@@ -327,7 +327,7 @@ def test_check_window_returns_false(invariant_number_list: list):
 
     result = F.check_window(checks, invariant_number_list)
 
-    assert result.value == False
+    assert not result.value
 
 
 @pytest.mark.parametrize(
@@ -343,7 +343,7 @@ def test_check_window_returns_last_match_address(
     """Test that the check_window function returns the address of the last element that matched when no complete window matched the checks."""
     result = F.check_window(checks, invariant_number_list)
 
-    assert result.value == False
+    assert not result.value
     assert result.addresses == address
 
 
@@ -355,7 +355,7 @@ def test_check_window_returns_first_address_if_no_matches_found(
 
     result = F.check_window(checks, invariant_number_list)
 
-    assert result.value == False
+    assert not result.value
     assert result.addresses == invariant_number_list[0].addresses
 
 
@@ -368,7 +368,7 @@ def test_check_window_works_over_trace_with_filtering(simple_trace: Trace):
 
     res = F.check_window(checks, simple_trace.messages(role="assistant"))
 
-    assert res.value == True
+    assert res.value
     assert res.addresses == ["1", "3"]
 
 
@@ -379,7 +379,7 @@ def test_check_order_returns_expected(invariant_number_list: list):
 
     result = F.check_order(checks, invariant_number_list)
 
-    assert result.value == True
+    assert result.value
     assert result.addresses == ["3", "4", "5"]
 
     # Non-consecutive numbers
@@ -387,7 +387,7 @@ def test_check_order_returns_expected(invariant_number_list: list):
 
     result = F.check_order(checks, invariant_number_list)
 
-    assert result.value == True
+    assert result.value
     assert result.addresses == ["0", "2", "4"]
 
 
@@ -398,7 +398,7 @@ def test_check_order_returns_false(invariant_number_list: list):
 
     result = F.check_order(checks, invariant_number_list)
 
-    assert result.value == False
+    assert not result.value
     assert result.addresses == ["0"]
 
     # No match (2 is never before 5)
@@ -406,7 +406,7 @@ def test_check_order_returns_false(invariant_number_list: list):
 
     result = F.check_order(checks, invariant_number_list)
 
-    assert result.value == False
+    assert not result.value
     assert result.addresses == ["4"]
 
 
@@ -416,14 +416,14 @@ def test_check_order_returns_last_match_address(invariant_number_list: list):
 
     result = F.check_order(checks, invariant_number_list)
 
-    assert result.value == False
+    assert not result.value
     assert result.addresses == ["2"]
 
     checks = [5, 9, 4]
 
     result = F.check_order(checks, invariant_number_list)
 
-    assert result.value == False
+    assert not result.value
     assert result.addresses == ["1"]
 
 
@@ -435,7 +435,7 @@ def test_check_order_returns_first_address_if_no_matches_found(
 
     result = F.check_order(checks, invariant_number_list)
 
-    assert result.value == False
+    assert not result.value
     assert result.addresses == ["0"]
 
 
@@ -445,7 +445,7 @@ def test_check_order_works_with_callable(invariant_number_list: list):
 
     result = F.check_order(checks, invariant_number_list)
 
-    assert result.value == True
+    assert result.value
     assert result.addresses == ["0", "2", "3"]
 
 
@@ -459,7 +459,7 @@ def test_check_returns_first_match_address(invariant_number_list: list):
 
     result = F.check_order(checks, invariant_number_list)
 
-    assert result.value == True
+    assert result.value
     assert result.addresses == ["0", "1", "3"]
 
 
@@ -470,7 +470,7 @@ def test_check_handles_duplicate_values(invariant_number_list: list):
 
     result = F.check_order(checks, invariant_number_list)
 
-    assert result.value == True
+    assert result.value
     assert result.addresses == ["3", "5"]
 
     # Should not find multiple 5s
@@ -478,7 +478,7 @@ def test_check_handles_duplicate_values(invariant_number_list: list):
 
     result = F.check_order(checks, invariant_number_list)
 
-    assert result.value == False
+    assert not result.value
     assert result.addresses == ["1"]
 
 
@@ -486,7 +486,7 @@ def test_check_order_handles_empty_checks(invariant_number_list: list):
     """Test that check_order handles empty checks."""
     result = F.check_order([], invariant_number_list)
 
-    assert result.value == True
+    assert result.value
     assert result.addresses == []
 
 
@@ -500,7 +500,7 @@ def test_check_order_handles_check_longer_than_trace(invariant_number_list: list
     result = F.check_order(checks, invariant_number_list)
 
     # Should return the last matched element
-    assert result.value == False
+    assert not result.value
     assert result.addresses == ["5"]
 
 
@@ -511,7 +511,7 @@ def test_check_order_handles_iterable(invariant_number_list: list):
 
     result = F.check_order(checks, iter(invariant_number_list))
 
-    assert result.value == True
+    assert result.value
     assert result.addresses == ["0", "1", "2"]
 
     # Should find partial match
@@ -519,7 +519,7 @@ def test_check_order_handles_iterable(invariant_number_list: list):
 
     result = F.check_order(checks, iter(invariant_number_list))
 
-    assert result.value == False
+    assert not result.value
     assert result.addresses == ["2"]
 
     # Should find no match
@@ -527,7 +527,7 @@ def test_check_order_handles_iterable(invariant_number_list: list):
 
     result = F.check_order(checks, iter(invariant_number_list))
 
-    assert result.value == False
+    assert not result.value
     assert result.addresses == ["0"]
 
 
@@ -538,7 +538,7 @@ def test_check_window_handles_iterable(invariant_number_list: list):
 
     result = F.check_window(checks, iter(invariant_number_list))
 
-    assert result.value == True
+    assert result.value
     assert result.addresses == ["3", "4", "5"]
 
     # Should find partial match
@@ -546,7 +546,7 @@ def test_check_window_handles_iterable(invariant_number_list: list):
 
     result = F.check_window(checks, iter(invariant_number_list))
 
-    assert result.value == False
+    assert not result.value
     assert result.addresses == ["2"]
 
     # Should find no match
@@ -554,7 +554,7 @@ def test_check_window_handles_iterable(invariant_number_list: list):
 
     result = F.check_window(checks, iter(invariant_number_list))
 
-    assert result.value == False
+    assert not result.value
     assert result.addresses == ["0"]
 
 
@@ -562,5 +562,5 @@ def test_check_window_handles_empty_values():
     """Test that check_window handles empty values."""
     result = F.check_window([1, 2, 3], [])
 
-    assert result.value == False
+    assert not result.value
     assert result.addresses == []

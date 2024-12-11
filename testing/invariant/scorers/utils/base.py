@@ -21,6 +21,7 @@ class BaseDetector:
 
         Args:
             results: A list of DetectorResult objects.
+
         Returns:
             A list of entities.
         """
@@ -31,6 +32,7 @@ class BaseDetector:
 
         Args:
             text: The text to analyze.
+
         Returns:
             A list of DetectorResult objects.
         """
@@ -41,6 +43,7 @@ class BaseDetector:
 
         Args:
             text: The text to analyze.
+
         Returns:
             A boolean indicating whether there has been any detection.
         """

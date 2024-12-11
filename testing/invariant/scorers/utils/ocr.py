@@ -4,17 +4,16 @@ import subprocess
 import tempfile
 from typing import Any, Dict, Optional
 
-from invariant.utils.packages import is_program_installed
 from PIL import Image
+
+from invariant.utils.packages import is_program_installed
 
 
 class OCRDetector:
     """Detect text in images using Tesseract OCR."""
 
     def __init__(self):
-        """
-        Initialize OCR detector with expected text to find in images
-        """
+        """Initialize OCR detector with expected text to find in images"""
 
     @classmethod
     def check_tesseract_installed(cls):

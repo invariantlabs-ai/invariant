@@ -1,7 +1,7 @@
 import urllib3
-from invariant.custom_types.trace_factory import TraceFactory
 
 import invariant.testing.functional as F
+from invariant.custom_types.trace_factory import TraceFactory
 from invariant.testing import Trace, assert_false, assert_true, expect_true
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)

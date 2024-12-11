@@ -192,9 +192,7 @@ def trace_with_images():
 
 @pytest.fixture
 def trace_tool_call_with_duplicate_field():
-    """
-    Trace with a tool call that has the
-    """
+    """Trace with a tool call that has the"""
     return Trace(
         trace=[
             {
@@ -372,8 +370,7 @@ def test_dict_selector_with_and_without_function_dot(swarm_trace: Trace):
 def test_dict_selector_finds_top_field_for_tool_calls(
     trace_tool_call_with_duplicate_field: Trace,
 ):
-    """
-    Test that selector finds the first level field for tool calls
+    """Test that selector finds the first level field for tool calls
     and only checks nested structure if the field is not found.
     """
     assert (

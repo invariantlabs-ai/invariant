@@ -73,7 +73,7 @@ def ast_truncate(s: str, n: int = 256) -> str:
         try:
             compile(s, "<string>", "exec")
             return True
-        except SyntaxError as e:
+        except SyntaxError:
             return False
 
     def postprocess(s: str):

@@ -1,12 +1,11 @@
-""" Utility functions for checking if programs and packages are installed. """
+"""Utility functions for checking if programs and packages are installed."""
 
 import importlib.util
 import shutil
 
 
 def is_program_installed(program_name: str) -> bool:
-    """
-    Check if a program is installed and available in the system PATH.
+    """Check if a program is installed and available in the system PATH.
 
     Args:
         program_name (str): The name of the program to check for
@@ -18,8 +17,7 @@ def is_program_installed(program_name: str) -> bool:
 
 
 def is_package_installed(package_name: str) -> bool:
-    """
-    Check if a Python package is installed.
+    """Check if a Python package is installed.
 
     Args:
         package_name (str): The name of the package to check for

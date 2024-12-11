@@ -132,7 +132,8 @@ E       assert False"""
 
 def test_pytest_with_context():
     """With just pytest, Invariant assertions should be tracked and produce correct
-    error messages (but you can't push)"""
+    error messages (but you can't push)
+    """
     with WorkspaceHelper(
         {
             "test_file1.py": """
@@ -190,7 +191,7 @@ def test_my_trace():
 
 
 def test_pytest_with_context_regular_assertions():
-    """with just pytest, regular assertions should still work and produce correct error messages"""
+    """With just pytest, regular assertions should still work and produce correct error messages"""
     with WorkspaceHelper(
         {
             "test_file1.py": """
@@ -234,7 +235,8 @@ E           assert False"""
 
 def test_invariant_no_context():
     """With invariant test, Invariant assertions should be tracked and
-    produce correct error messages (and you can push)"""
+    produce correct error messages (and you can push)
+    """
     with WorkspaceHelper(
         {
             "test_file1.py": """
@@ -303,7 +305,7 @@ E       assert False"""
 
 
 def test_invariant_with_context():
-    """with invariant test, Invariant assertions should be tracked and produce correct
+    """With invariant test, Invariant assertions should be tracked and produce correct
     error messages. Also, there should be the Invariant summary of your tests (and you can push)
     """
     with WorkspaceHelper(
@@ -363,7 +365,7 @@ def test_my_trace():
 
 
 def test_invariant_with_context_regular_assertions():
-    """with invariant test, regular assertions should still work and produce correct error
+    """With invariant test, regular assertions should still work and produce correct error
     messages (they show up in summary, but error messages are not localized in the trace)
     """
     with WorkspaceHelper(

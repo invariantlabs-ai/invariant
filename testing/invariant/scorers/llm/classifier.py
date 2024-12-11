@@ -74,14 +74,13 @@ class Classifier:
         vision: bool = False,
         client: str = "OpenAI",
     ):
-        """
-        Args:
-            model (str): The language model to use.
-            prompt (str): The prompt to use for the classification.
-            options (list[str]): The options to choose from when classifying.
-            vision (bool): Whether to classify images instead of text.
-            client (invariant.scorers.llm.clients.client.SupportedClients): The
-            client to use for the LLM.
+        """Args:
+        model (str): The language model to use.
+        prompt (str): The prompt to use for the classification.
+        options (list[str]): The options to choose from when classifying.
+        vision (bool): Whether to classify images instead of text.
+        client (invariant.scorers.llm.clients.client.SupportedClients): The
+        client to use for the LLM.
         """
         self.model = model
         self.prompt = (
