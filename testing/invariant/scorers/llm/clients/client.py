@@ -1,11 +1,11 @@
 """Abstract base class for LLM clients."""
 
 from abc import ABC, abstractmethod
-from enum import StrEnum
+from enum import Enum
 from typing import Any
 
 
-class SupportedClients(StrEnum):
+class SupportedClients(str, Enum):
     """Enumeration of supported LLM clients."""
 
     OPENAI = "OpenAI"
