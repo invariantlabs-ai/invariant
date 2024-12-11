@@ -1,10 +1,10 @@
+"""A module for detecting text content that violates moderation guidelines."""
+
 from typing import Optional, Tuple
 
 from invariant.custom_types.addresses import Range
 
 from .utils.base import BaseDetector
-
-DEFAULT_MODERATION_MODEL = "OpenAI"
 
 MODERATION_CATEGORIES = {
     "OpenAI": {
@@ -16,17 +16,7 @@ MODERATION_CATEGORIES = {
         "sexual/minors": "sexual/minors",
         "hate/threatening": "hate/threatening",
         "violence/graphic": "violence/graphic",
-    },
-    "KoalaAI/Text-Moderation": {
-        "HR": "harassment",
-        "H": "hate",
-        "SH": "self-harm",
-        "S": "sexual",
-        "V": "violence",
-        "S3": "sexual/minors",
-        "H2": "hate/threatening",
-        "V2": "violence/graphic",
-    },
+    }
 }
 
 MODERATION_CATEGORIES_INV = {
@@ -42,56 +32,34 @@ class ModerationAnalyzer(BaseDetector):
     to detect text content that falls into predefined categories such as harassment,
     hate speech, self-harm, and graphic violence. The moderation categories and their mappings
     are configurable for different providers.
+
+    Example:
+        analyzer = ModerationAnalyzer()
+        results = analyzer.detect_all(
+            text="Some potentially harmful text.",
+            model="OpenAI",
+            default_threshold=0.7,
+        )
+        print(results)  # Outputs: [('harassment', Range(start=0, end=25))]
+
     """
 
     def __init__(self):
         pass
 
-    def _load_model(self, model):
+    def _initialize_client(self, model: str):
+        """Initialize and return the client for the specified model."""
         if model == "OpenAI":
-            return
+            import openai  # pylint: disable=import-outside-toplevel
 
-    def _has_model(self, model):
-        return True
+            return openai.Client()
+        raise ValueError(f"Model {model} not supported.")
 
-    def moderate_openai(self, client, text: str):
-        # NOTE: OpenAI suggests: for higher accuracy, try splitting long pieces of text into smaller chunks each less than 2,000 characters.
-        moderated = client.moderations.create(input=text)
-        scores = moderated.results[0].category_scores.to_dict()
-        scores = {
-            MODERATION_CATEGORIES["OpenAI"][cat]: score
-            for cat, score in scores.items()
-            if cat in MODERATION_CATEGORIES["OpenAI"]
-        }
-        return scores
-
-    def detect_all(
-        self,
-        text: str,
-        split="\n",
-        model=DEFAULT_MODERATION_MODEL,
-        default_threshold=0.5,
-        cat_thresholds: Optional[dict] = None,
-    ) -> list[Tuple[str, Range]]:
-        """Detect whether the text matches any of the categories that should be moderated.
-
-        Args:
-            text: The text to analyze.
-            split: The delimiter to split the text into chunks.
-            model: The model to use for moderation detection.
-            default_threshold: The threshold for the model score above which text is considered to be moderated.
-            cat_thresholds: A dictionary of category-specific thresholds.
-
-        Returns:
-            A list of (category, range) objects, each representing a substring that should be moderated.
-
-        """
-        if not self._has_model(model):
-            self._load_model(model)
-
-        # split by a delimiter
-        # TODO: Invariant Language doesn't support split=\n, so let's always split for now
-        if split is not None:
+    def _split_text(
+        self, text: str, split: Optional[str], max_length: int = 2000
+    ) -> list[str]:
+        """Split text into chunks by delimiter and maximum length."""
+        if split:
             text_splits = [
                 split + chunk if i > 0 else chunk
                 for i, chunk in enumerate(text.split(split))
@@ -99,41 +67,83 @@ class ModerationAnalyzer(BaseDetector):
         else:
             text_splits = [text]
 
-        # split into chunks of 2000 characters (suggested by OpenAI)
-        text_chunks = []
+        chunks = []
         for chunk in text_splits:
-            if len(chunk) > 2000:
-                text_chunks.extend(
-                    [chunk[i : i + 2000] for i in range(0, len(chunk), 2000)]
+            if len(chunk) > max_length:
+                chunks.extend(
+                    [
+                        chunk[i : i + max_length]
+                        for i in range(0, len(chunk), max_length)
+                    ]
                 )
             else:
-                text_chunks.append(chunk)
+                chunks.append(chunk)
 
-        assert len(text) == sum([len(chunk) for chunk in text_chunks])
+        return chunks
 
-        res = []
+    def _moderate_with_openai(self, client, text: str):
+        """Moderate text using OpenAI's moderation model."""
+        # NOTE: OpenAI suggests: for higher accuracy, try splitting long pieces of text into
+        # smaller chunks each less than 2,000 characters.
+        moderated = client.moderations.create(input=text)
+        scores = moderated.results[0].category_scores.to_dict()
+        scores = {
+            MODERATION_CATEGORIES["OpenAI"][category]: score
+            for category, score in scores.items()
+            if category in MODERATION_CATEGORIES["OpenAI"]
+        }
+        return scores
+
+    def detect_all(  # pylint: disable=arguments-differ
+        self,
+        text: str,
+        split: Optional[str] = "\n",
+        model: str = "OpenAI",
+        default_threshold: float = 0.5,
+        category_thresholds: Optional[dict[str, float]] = None,
+    ) -> list[Tuple[str, Range]]:
+        """Provides tools to detect text content that may violate moderation guidelines.
+
+        Args:
+            text: The text to analyze.
+            split: The delimiter to split the text into chunks.
+            model: The model to use for moderation detection.
+            default_threshold: The threshold for the model score above which text is considered
+                to be moderated.
+            category_thresholds: A dictionary of category-specific thresholds.
+
+        Returns:
+            A list of (category, range) objects, each representing a substring that should be
+            moderated.
+
+        """
+        client = self._initialize_client(model)
+
+        # split by a delimiter
+        # TODO: Invariant Language doesn't support split=\n, so let's always split for now
+        text_chunks = self._split_text(text, split)
+
+        if len(text) != sum(len(chunk) for chunk in text_chunks):
+            raise RuntimeError("Mismatch in text splitting logic.")
+
+        result = []
         pos = 0
-        if model == "OpenAI":
-            import openai
 
-            client = openai.Client()
         for chunk in text_chunks:
-            if model == "OpenAI":
-                scores = self.moderate_openai(client, chunk)
-            else:
-                raise ValueError(f"Model {model} not supported.")
-
+            scores = (
+                self._moderate_with_openai(client, chunk) if model == "OpenAI" else {}
+            )
             flagged = None
-            for cat in MODERATION_CATEGORIES_INV[model]:
-                if scores[cat] > default_threshold:
-                    flagged = cat
+            for category in MODERATION_CATEGORIES_INV[model]:
+                if scores[category] > default_threshold:
+                    flagged = category
                 if (
-                    cat_thresholds
-                    and cat in cat_thresholds
-                    and scores[cat] > cat_thresholds[cat]
+                    category_thresholds
+                    and category in category_thresholds
+                    and scores[category] > category_thresholds[category]
                 ):
-                    flagged = cat
+                    flagged = category
             if flagged:
-                res.append((flagged, Range(start=pos, end=pos + len(chunk))))
+                result.append((flagged, Range(start=pos, end=pos + len(chunk))))
             pos += len(chunk)
-        return res
+        return result
