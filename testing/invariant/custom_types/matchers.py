@@ -1,6 +1,6 @@
 """Defines the expect functions."""
 
-from enum import StrEnum
+from enum import Enum
 from typing import Any
 
 from invariant.scorers.llm.classifier import Classifier
@@ -86,7 +86,7 @@ class IsSimilar(Matcher):
 class IsFactuallyEqual(Matcher):
     """Matcher for checking if the output is close to expected using llm."""
 
-    class Agreement(StrEnum):
+    class Agreement(str, Enum):
         """Enum for different levels of agreement."""
 
         SUPER_STRICT_AGREEMENT = "super strict agreement"
