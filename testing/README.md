@@ -100,7 +100,7 @@ ________________________________________________________________________________
 #     },
 #  ]
 ```
-The test result precisely [localizes the failure in the provided agent trace](https://explorer.invariantlabs.ai/docs/testing/Writing_Tests/2_Tests/).
+The test result precisely [localizes the failure in the provided agent trace](https://explorer.invariantlabs.ai/docs/testing/Writing_Tests/tests/).
 
 **Visual Test Viewer (Explorer):**
 
