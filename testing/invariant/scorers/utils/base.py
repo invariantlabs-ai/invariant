@@ -17,7 +17,7 @@ class BaseDetector:
     """Base class for detectors."""
 
     def get_entities(self, results: list[DetectorResult]) -> list[str]:
-        """Returns a list of entities from a list of DetectorResult objects.
+        """Return a list of entities from a list of DetectorResult objects.
 
         Args:
             results: A list of DetectorResult objects.
@@ -29,10 +29,12 @@ class BaseDetector:
         return [result.entity for result in results]
 
     def detect_all(self, text: str, *args, **kwargs) -> list[DetectorResult]:
-        """Performs detection on the given text and returns a list of DetectorResult objects.
+        """Perform detection on the given text and returns a list of DetectorResult objects.
 
         Args:
             text: The text to analyze.
+            *args: Additional arguments.
+            **kwargs: Additional keyword arguments.
 
         Returns:
             A list of DetectorResult objects.
@@ -41,10 +43,12 @@ class BaseDetector:
         raise NotImplementedError("")
 
     def detect(self, text: str, *args, **kwargs) -> bool:
-        """Performs detection on the given text and returns a list of DetectorResult objects.
+        """Perform detection on the given text and returns a list of DetectorResult objects.
 
         Args:
             text: The text to analyze.
+            *args: Additional arguments.
+            **kwargs: Additional keyword arguments.
 
         Returns:
             A boolean indicating whether there has been any detection.

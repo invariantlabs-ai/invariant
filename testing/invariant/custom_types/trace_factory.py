@@ -13,7 +13,7 @@ class TraceFactory:
 
     @staticmethod
     def from_swarm(history: list[dict]) -> Trace:
-        """Creates a Trace instance from the history of messages exchanged with the Swarm client.
+        """Create a Trace instance from the history of messages exchanged with the Swarm client.
 
         Args:
             history (list[dict]): The history of messages exchanged with the Swarm client.
@@ -26,7 +26,7 @@ class TraceFactory:
 
     @staticmethod
     def from_langgraph(invocation_response: dict[str, Any] | Any) -> Trace:
-        """Converts a Langgraph invocation response to a Trace object.
+        """Convert a Langgraph invocation response to a Trace object.
 
         Sample usage:
 
@@ -38,8 +38,8 @@ class TraceFactory:
 
         """
         from langchain_community.adapters.openai import (
-            convert_message_to_dict,
-        )  # pylint: disable=import-outside-toplevel
+            convert_message_to_dict,  # pylint: disable=import-outside-toplevel
+        )
 
         messages = []
         for message in invocation_response["messages"]:
@@ -52,7 +52,7 @@ class TraceFactory:
         index: int | None = None,
         explorer_endpoint: str = "https://explorer.invariantlabs.ai",
     ) -> Trace:
-        """Loads a public trace from the Explorer (https://explorer.invariantlabs.ai).
+        """Load a public trace from the Explorer (https://explorer.invariantlabs.ai).
 
         The identifier_or_id can be either a trace ID or a <username>/<dataset> pair, in which case
         the index of the trace to load must be provided.
@@ -60,6 +60,7 @@ class TraceFactory:
         Args:
             identifier_or_id: The trace ID or <username>/<dataset> pair.
             index: The index of the trace to load from the dataset.
+            explorer_endpoint: The URL of the Explorer.
 
         Returns:
             Trace: A Trace object with the loaded trace.
@@ -72,7 +73,7 @@ class TraceFactory:
 
     @staticmethod
     def from_openai(messages: list[dict]) -> Trace:
-        """Creates a Trace instance from the history messages exchanged with the openai client.
+        """Create a Trace instance from the history messages exchanged with the openai client.
 
         Args:
             messages (list[dict]): The history messages exchanged with the openai client.

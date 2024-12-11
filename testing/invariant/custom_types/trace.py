@@ -5,10 +5,11 @@ from __future__ import annotations
 import json
 from typing import Any, Callable, Dict, Generator, List
 
-from invariant.utils.utils import ssl_verification_enabled
 from invariant_sdk.client import Client as InvariantClient
 from invariant_sdk.types.push_traces import PushTracesResponse
 from pydantic import BaseModel
+
+from invariant.utils.utils import ssl_verification_enabled
 
 from .invariant_dict import InvariantDict, InvariantValue
 from .matchers import ContainsImage, Matcher
@@ -17,7 +18,7 @@ from .matchers import ContainsImage, Matcher
 def iterate_tool_calls(
     messages: list[dict],
 ) -> Generator[tuple[list[str], dict], None, None]:
-    """Generator function to iterate over tool calls in a list of messages.
+    """Return generator to iterate over tool calls in a list of messages.
 
     Args:
         messages (list[dict]): A list of messages without address information.
@@ -66,7 +67,7 @@ def iterate_tool_calls(
 def iterate_tool_outputs(
     messages: list[dict],
 ) -> Generator[tuple[list[str], dict], None, None]:
-    """Generator function to iterate over tool outputs in a list of messages.
+    """Return generator to iterate over tool outputs in a list of messages.
 
     Args:
         messages (list[dict]): A list of messages without address information.
@@ -86,7 +87,7 @@ def iterate_tool_outputs(
 def iterate_messages(
     messages: list[dict],
 ) -> Generator[tuple[list[str], dict], None, None]:
-    """Generator function to iterate over messages in a list of messages.
+    """Return generator to iterate over messages in a list of messages.
 
     Args:
         messages (list[dict]): A list of messages without address information.
@@ -108,8 +109,10 @@ def match_keyword_filter_on_tool_call(
     value: InvariantValue | Any,
     tool_call: dict,
 ) -> bool:
-    # redirect checks on name, arguments and id to the 'function' sub-dictionary
-    # this enables checks like tool_calls(name='greet') to work
+    """Redirect checks on name, arguments and id to the 'function' sub-dictionary.
+
+    This enables checks like tool_calls(name='greet') to work
+    """
     if kwname in ["name", "arguments", "id"]:
         value = tool_call["function"].get(kwname)
     return match_keyword_filter(kwname, kwvalue, value, tool_call)
@@ -142,8 +145,9 @@ def match_keyword_filter(
 
 
 def traverse_dot_path(message: dict, path: str) -> Any | None:
-    """Traverse a dictionary using a dot-separated path. If argument is not
-    found, .function will be added as a prefix to the path to search the
+    """Traverse a dictionary using a dot-separated path.
+
+    If argument is not found, .function will be added as a prefix to the path to search the
     function fields for tool calls.
 
     Args:
@@ -204,8 +208,7 @@ class Trace(BaseModel):
         return self.manager
 
     def run_assertions(self, assertions: list[Callable[Trace, Any]]):
-        """Runs a list of assertions on the trace. Assertions are run by providing a list of functions,
-        each taking Trace object as a single argument.
+        """Run a list of assertions on the trace. Assertions are run by providing a list of functions, each taking Trace object as a single argument.
 
         Args:
             assertions: A list of functions taking Trace as a single argument
@@ -217,8 +220,7 @@ class Trace(BaseModel):
     # Functions to check data_types
     @property
     def content_checkers(self) -> Dict[str, Matcher]:
-        """Register content checkers for data_types. When implementing a new content checker,
-        add the new content checker to the dictionary below.
+        """Register content checkers for data_types. When implementing a new content checker, add the new content checker to the dictionary below.
 
         Returns:
             Dict[str, Matcher]: The content checkers for the trace.
@@ -233,6 +235,7 @@ class Trace(BaseModel):
         self, message: InvariantDict, data_type: str | None = None
     ) -> bool:
         """Check if a message matches a given data_type using the content_checkers.
+
         data_type should correspond to the keys in the content_checkers dictionary.
         If data_type is None, the message is considered to match the data_type
         (i.e., no filtering is performed).
@@ -268,8 +271,7 @@ class Trace(BaseModel):
         data_type: str | None = None,
         **filterkwargs,
     ) -> list[InvariantDict] | InvariantDict:
-        """Filter the trace based on the provided selector, keyword arguments and data_type. Use this
-        method as a helper for custom filters such as messages(), tool_calls(), and tool_outputs().
+        """Filter the trace based on the provided selector, keyword arguments and data_type. Use this method as a helper for custom filters such as messages(), tool_calls(), and tool_outputs().
 
         Args:
             iterator_func: The iterator function to use to iterate over the trace.
@@ -406,7 +408,7 @@ class Trace(BaseModel):
         )
 
     def tool_pairs(self) -> list[tuple[InvariantDict, InvariantDict]]:
-        """Returns the list of tuples of (tool_call, tool_output)."""
+        """Return the list of tuples of (tool_call, tool_output)."""
         res = []
         for tc_address, tc in iterate_tool_calls(self.trace):
             msg_idx = int(tc_address[0].split(".")[0])
@@ -445,8 +447,7 @@ class Trace(BaseModel):
         ]
 
     def to_python(self) -> str:
-        """Returns a snippet of Python code construct that can be used
-        to recreate the trace in a Python script.
+        """Return a snippet of Python code construct that can be used to recreate the trace in a Python script.
 
         Returns:
             str: The Python string representing the trace.

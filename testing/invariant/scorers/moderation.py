@@ -36,6 +36,14 @@ MODERATION_CATEGORIES_INV = {
 
 
 class ModerationAnalyzer(BaseDetector):
+    """A class for analyzing and detecting text content that violates moderation guidelines.
+
+    The ModerationAnalyzer class leverages different moderation models (e.g., OpenAI)
+    to detect text content that falls into predefined categories such as harassment,
+    hate speech, self-harm, and graphic violence. The moderation categories and their mappings
+    are configurable for different providers.
+    """
+
     def __init__(self):
         pass
 
@@ -65,7 +73,7 @@ class ModerationAnalyzer(BaseDetector):
         default_threshold=0.5,
         cat_thresholds: Optional[dict] = None,
     ) -> list[Tuple[str, Range]]:
-        """Detects whether the text matches any of the categories that should be moderated.
+        """Detect whether the text matches any of the categories that should be moderated.
 
         Args:
             text: The text to analyze.

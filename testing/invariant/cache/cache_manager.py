@@ -1,4 +1,4 @@
-"""Cache Manager"""
+"""Cache Manager."""
 
 import hashlib
 import json

@@ -1,4 +1,4 @@
-"""InvariantDict class definition for a dict type"""
+"""InvariantDict class definition for a dict type."""
 
 from typing import Any
 
@@ -7,7 +7,7 @@ from .invariant_value import InvariantValue
 
 
 class InvariantDict:
-    """Invariant implementation of a dict type"""
+    """Invariant implementation of a dict type."""
 
     def __init__(self, value: dict, address: list):
         """Initialize an InvariantDict with a value and a list of addresses."""
