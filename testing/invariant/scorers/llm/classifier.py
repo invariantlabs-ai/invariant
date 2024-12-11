@@ -68,21 +68,21 @@ class Classifier:
 
     def __init__(
         self,
-        model: str,
         prompt: str,
         options: list[str],
-        vision: bool = False,
+        model: str = "gpt-4o",
         client: str = "OpenAI",
+        vision: bool = False,
     ):
         """Instantiate a Classifier object.
 
         Args:
-            model (str): The language model to use.
             prompt (str): The prompt to use for the classification.
             options (list[str]): The options to choose from when classifying.
-            vision (bool): Whether to classify images instead of text.
+            model (str): The language model to use.
             client (invariant.scorers.llm.clients.client.SupportedClients): The
                 client to use for the LLM.
+            vision (bool): Whether to classify images instead of text.
 
         """
         self.model = model

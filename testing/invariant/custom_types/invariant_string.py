@@ -8,6 +8,7 @@ from operator import ge, gt, le, lt, ne
 from typing import Any, Literal, Union
 
 from _pytest.python_api import ApproxBase
+
 from invariant.scorers.code import execute, is_valid_json, is_valid_python
 from invariant.scorers.llm.classifier import Classifier
 from invariant.scorers.llm.detector import Detector
@@ -284,8 +285,8 @@ class InvariantString(InvariantValue):
         prompt: str,
         options: list[str],
         model: str = "gpt-4o",
-        use_cached_result: bool = True,
         client: str = "OpenAI",
+        use_cached_result: bool = True,
     ) -> InvariantString:
         """Check if the value is similar to the given string using an LLM.
 
@@ -293,12 +294,12 @@ class InvariantString(InvariantValue):
             prompt (str): The prompt to use for the LLM.
             options (list[str]): The options to use for the LLM.
             model (str): The model to use for the LLM.
-            use_cached_result (bool): Whether to use a cached result if available.
             client (invariant.scorers.llm.clients.client.SupportedClients): The
-            client to use for the LLM.
+                client to use for the LLM.
+            use_cached_result (bool): Whether to use a cached result if available.
 
         """
-        llm_clf = Classifier(model=model, prompt=prompt, options=options, client=client)
+        llm_clf = Classifier(prompt=prompt, options=options, model=model, client=client)
         res = llm_clf.classify(self.value, use_cached_result)
         return InvariantString(res, self.addresses)
 
@@ -306,23 +307,23 @@ class InvariantString(InvariantValue):
         self,
         predicate: str,
         model: str = "gpt-4o",
-        use_cached_result: bool = True,
         client: str = "OpenAI",
+        use_cached_result: bool = True,
     ) -> list[InvariantString]:
         """Extract values from the underlying string using an LLM.
 
         Args:
             predicate (str): The predicate to use for extraction. This is a rule
-            that the LLM uses to extract values. For example with a predicate
-            "cities in Switzerland", the LLM would extract all cities in
-            Switzerland from the text.
+                that the LLM uses to extract values. For example with a predicate
+                "cities in Switzerland", the LLM would extract all cities in
+                Switzerland from the text.
             model (str): The model to use for extraction.
-            use_cached_result (bool): Whether to use a cached result if available.
             client (invariant.scorers.llm.clients.client.SupportedClients): The
-            client to use for the LLM.
+                client to use for the LLM.
+            use_cached_result (bool): Whether to use a cached result if available.
 
         """
-        llm_detector = Detector(model=model, predicate_rule=predicate, client=client)
+        llm_detector = Detector(predicate_rule=predicate, model=model, client=client)
         detections = llm_detector.detect(self.value, use_cached_result)
         ret = []
         for substr, r in detections:

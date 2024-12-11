@@ -1,14 +1,16 @@
 """Test cases for the InvariantString class."""
 
+import os
 from unittest.mock import patch
 
 import pytest
+from pytest import approx
+
 from invariant.custom_types.invariant_bool import InvariantBool
 from invariant.custom_types.invariant_number import InvariantNumber
 from invariant.custom_types.invariant_string import InvariantString
 from invariant.scorers.code import Dependencies
 from invariant.utils.packages import is_program_installed
-from pytest import approx
 
 
 def test_invariant_string_initialization():
@@ -276,8 +278,9 @@ def test_moderation():
         pytest.param(
             "claude-3-5-sonnet-20241022",
             "Anthropic",
-            marks=pytest.mark.skip(
-                "Skipping because we have not setup the API key in the CI"
+            marks=pytest.mark.skipif(
+                not os.getenv("ANTHROPIC_API_KEY"),
+                reason="Skipping because ANTHROPIC_API_KEY is not set",
             ),
         ),
     ],
@@ -300,12 +303,26 @@ def test_llm(model, client):
     assert isinstance(res, InvariantString) and res.value == "de"
 
 
-def test_extract():
+@pytest.mark.parametrize(
+    ("model", "client"),
+    [
+        ("gpt-4o", "OpenAI"),
+        pytest.param(
+            "claude-3-5-sonnet-20241022",
+            "Anthropic",
+            marks=pytest.mark.skipif(
+                not os.getenv("ANTHROPIC_API_KEY"),
+                reason="Skipping because ANTHROPIC_API_KEY is not set",
+            ),
+        ),
+    ],
+)
+def test_extract(model, client):
     """Test the extract transformer of InvariantString."""
     res = InvariantString(
         "I like apples and carrots, but I don't like bananas.\nThe only thing better than apples are potatoes and pears.",
         ["message.0.content"],
-    ).extract("fruits")
+    ).extract("fruits", model=model, client=client)
     assert isinstance(res, list)
     assert len(res) == 4
     assert res[0] == "apples" and res[0].addresses[0] == "message.0.content:7-13"
