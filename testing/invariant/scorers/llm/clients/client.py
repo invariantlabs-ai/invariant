@@ -1,8 +1,12 @@
 """Abstract base class for LLM clients."""
 
 from abc import ABC, abstractmethod
-from enum import StrEnum
 from typing import Any
+
+try:
+    from enum import StrEnum  # Python 3.11+
+except ImportError:
+    from strenum import StrEnum  # Python < 3.11
 
 
 class SupportedClients(StrEnum):

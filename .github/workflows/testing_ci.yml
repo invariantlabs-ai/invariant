@@ -11,15 +11,17 @@ permissions:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11"]
 
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python 3.12.2
+    - name: Set up Python
       uses: actions/setup-python@v3
       with:
-        python-version: "3.12.2"
+        python-version: ${{ matrix.python-version }}
     - name: Setup dependencies
       run: |
         cd testing
