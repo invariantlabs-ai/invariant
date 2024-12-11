@@ -1,10 +1,14 @@
 """Defines the expect functions."""
 
-from enum import StrEnum
 from typing import Any
 
 from invariant.scorers.llm.classifier import Classifier
 from invariant.scorers.strings import embedding_similarity, levenshtein
+
+try:
+    from enum import StrEnum  # Python 3.11+
+except ImportError:
+    from strenum import StrEnum  # Python < 3.11
 
 
 class Matcher:
