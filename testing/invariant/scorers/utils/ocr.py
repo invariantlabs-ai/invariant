@@ -40,14 +40,14 @@ class OCRDetector:
         case_sensitive: bool = False,
         bbox: Optional[dict] = None,
     ) -> bool:
-        """
-        Detect if the expected text appears in the image using tesseract CLI
+        """Detect if the expected text appears in the image using tesseract CLI
 
         Args:
             base64_image: Base64 encoded image string
 
         Returns:
             bool: True if expected text was found, False otherwise
+
         """
         if not is_program_installed("tesseract"):
             raise RuntimeError(
@@ -112,6 +112,7 @@ class OCRDetector:
 
         Returns:
             Dict containing structured OCR data with word positions and confidence
+
         """
         from bs4 import BeautifulSoup  # pylint: disable=import-outside-toplevel
 

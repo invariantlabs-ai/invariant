@@ -71,6 +71,7 @@ def count(
 
     Returns:
         InvariantNumber: The number of elements that match the given value or condition
+
     """
 
     def map_func(a):
@@ -108,6 +109,7 @@ def match(
         pattern: The regex pattern to match against.
         iterable: The iterable of InvariantValue objects to match against.
         group_id: The group ID to return during the match.
+
     """
     return reduce(
         lambda a, b: a + b,
@@ -182,6 +184,7 @@ def len(iterable: Iterable[InvariantValue]) -> InvariantNumber:
 
     Returns:
         InvariantNumber: The length of the iterable with addresses.
+
     """
     return InvariantNumber(
         builtin_len(iterable), [addr for item in iterable for addr in item.addresses]
@@ -211,6 +214,7 @@ def check_order(
 
     Returns:
         InvariantBool: True if the checks are satisfied in order
+
     """
     current_check = 0
     check_match_addresses = []
@@ -271,6 +275,7 @@ def check_window(
 
     Returns:
         InvariantBool: True if the checks are satisfied at least once.
+
     """
 
     def _check_if_window_matches(
@@ -283,6 +288,7 @@ def check_window(
 
         Returns:
             tuple[bool, list[str]]: True if the window matches all checks, and the addresses of the elements in the window.
+
         """
         # Holds the addresses of the last element that matched a check in the window.
         last_match_addresses = []

@@ -48,6 +48,7 @@ class SwarmWrapper:
         Returns:
             InvariantSwarmResponse: The response from the Swarm client, including the
             updated history of messages.
+
         """
         # Extract 'messages' from kwargs if provided. This represents the full
         # history of messages passed to and from the agent.

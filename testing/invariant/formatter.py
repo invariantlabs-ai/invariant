@@ -25,6 +25,7 @@ def format_trace(json_obj, highlights=[]):
     Args:
         json_obj: The JSON object to format (dict, list, number, string, etc.).
         highlights: A list of paths to highlight in the JSON object (e.g. "0.content").
+
     """
     result = _format_trace(json_obj, highlights=highlights)
     updated = []

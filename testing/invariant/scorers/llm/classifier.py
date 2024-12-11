@@ -221,6 +221,7 @@ class Classifier:
             image_type (str): The MIME type of the image.
             use_cached_result (bool): Whether to use a cached result if available.
             default (str): The default classification if the model fails to classify.
+
         """
         response = self._make_completions_create_request(
             {
@@ -239,6 +240,7 @@ class Classifier:
             text (str): The text to classify.
             use_cached_result (bool): Whether to use a cached result if available.
             default (str): The default classification if the model fails to classify.
+
         """
         response = self._make_completions_create_request(
             {

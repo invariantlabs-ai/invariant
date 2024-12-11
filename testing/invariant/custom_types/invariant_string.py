@@ -137,6 +137,7 @@ class InvariantString(InvariantValue):
             Any: Uses InvariantValue.of to return the result.
                  If the result is a string, then an InvariantString is returned with that
                  the result string as the value. If the result is a number, then an InvariantNumber.
+
         """
         if hasattr(self.value, attr):
             method = getattr(self.value, attr)
@@ -202,6 +203,7 @@ class InvariantString(InvariantValue):
         Returns:
             InvariantBool: True if all patterns are found, False otherwise. The addresses will
                           contain the locations of all pattern matches if found.
+
         """
         if criterion not in ["all", "any"]:
             raise ValueError("Criterion must be either 'all' or 'any'")
@@ -294,6 +296,7 @@ class InvariantString(InvariantValue):
             use_cached_result (bool): Whether to use a cached result if available.
             client (invariant.scorers.llm.clients.client.SupportedClients): The
             client to use for the LLM.
+
         """
         llm_clf = Classifier(model=model, prompt=prompt, options=options, client=client)
         res = llm_clf.classify(self.value, use_cached_result)
@@ -317,6 +320,7 @@ class InvariantString(InvariantValue):
             use_cached_result (bool): Whether to use a cached result if available.
             client (invariant.scorers.llm.clients.client.SupportedClients): The
             client to use for the LLM.
+
         """
         llm_detector = Detector(model=model, predicate_rule=predicate, client=client)
         detections = llm_detector.detect(self.value, use_cached_result)
@@ -334,6 +338,7 @@ class InvariantString(InvariantValue):
             pattern (str): The pattern to check for in the output.
             suffix_code (str): The Python code to append to the value before execution.
             detect_packages (bool): Whether to detect the dependencies of the code.
+
         """
         res = execute(self.value + "\n" + suffix_code, detect_packages)
         has_pattern = re.search(pattern, res) is not None

@@ -20,6 +20,7 @@ class TraceFactory:
 
         Returns:
             Trace: A Trace object with all the messages combined.
+
         """
         return TraceFactory.from_openai(history)
 
@@ -64,6 +65,7 @@ class TraceFactory:
             Trace: A Trace object with the loaded trace.
 
         :return: A Trace object with the loaded trace.
+
         """
         messages, metadata = from_explorer(identifier_or_id, index, explorer_endpoint)
         return Trace(trace=messages, metadata=metadata)
@@ -77,6 +79,7 @@ class TraceFactory:
 
         Returns:
             Trace: A Trace object with all the messages combined.
+
         """
         assert isinstance(messages, list)
         assert all(isinstance(msg, dict) for msg in messages)

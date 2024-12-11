@@ -69,6 +69,7 @@ def create_config(args: argparse.Namespace) -> Config:
 
     Returns:
         Config: Config instance with dataset name, push status, and API key.
+
     """
     api_key = os.getenv(INVARIANT_AP_KEY_ENV_VAR)
 

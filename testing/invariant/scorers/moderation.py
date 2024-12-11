@@ -76,6 +76,7 @@ class ModerationAnalyzer(BaseDetector):
 
         Returns:
             A list of (category, range) objects, each representing a substring that should be moderated.
+
         """
         if not self._has_model(model):
             self._load_model(model)

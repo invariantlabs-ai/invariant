@@ -24,6 +24,7 @@ class BaseDetector:
 
         Returns:
             A list of entities.
+
         """
         return [result.entity for result in results]
 
@@ -35,6 +36,7 @@ class BaseDetector:
 
         Returns:
             A list of DetectorResult objects.
+
         """
         raise NotImplementedError("")
 
@@ -46,5 +48,6 @@ class BaseDetector:
 
         Returns:
             A boolean indicating whether there has been any detection.
+
         """
         return len(self.detect_all(text, *args, **kwargs)) > 0

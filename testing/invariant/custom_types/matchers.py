@@ -165,6 +165,7 @@ class ContainsImage(Matcher):
 
         Returns:
             bool: True if the value is an image, False otherwise.
+
         """
         if not isinstance(actual_value, dict) and not isinstance(actual_value, str):
             raise TypeError(

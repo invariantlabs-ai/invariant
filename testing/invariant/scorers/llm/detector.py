@@ -201,6 +201,7 @@ class Detector:
         Args:
             text (str): The text to detect on.
             use_cached_result (bool): Whether to use a cached result if available.
+
         """
         formatted_text = self._insert_lines(text)
         response = self._make_completions_parse_request(

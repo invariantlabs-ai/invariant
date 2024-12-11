@@ -59,6 +59,7 @@ def execute(text: str, detect_packages: bool = False) -> str:
     Args:
         text (str): The Python code to execute.
         detect_packages (bool): Whether to detect the dependencies of the code.
+
     """
     if not is_program_installed("docker"):
         raise RuntimeError("Please install docker to use the execute function.")

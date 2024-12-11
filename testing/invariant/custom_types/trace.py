@@ -53,6 +53,7 @@ def iterate_tool_calls(
         Output:
             ['1.tool_calls.0'] {'function': {'name': 'weather_tool', 'arguments': {'location':
             'NYC'}}, 'id': 'call_1', 'type': 'function'}
+
     """
     for msg_i, msg in enumerate(messages):
         if msg.get("role") != "assistant":
@@ -75,6 +76,7 @@ def iterate_tool_outputs(
             - A list of strings representing the hierarchical address of the tool output
               in the message. For example, `["2"]` indicates the third message in the list.
             - The tool output data (a dictionary or object representing the tool output).
+
     """
     for msg_i, msg in enumerate(messages):
         if msg.get("role") == "tool":
@@ -94,6 +96,7 @@ def iterate_messages(
             - A list of strings representing the hierarchical address of the message
               in the list. For example, `["1"]` indicates the second message in the list.
             - The message data (a dictionary or object representing the message).
+
     """
     for msg_i, msg in enumerate(messages):
         yield [f"{msg_i}"], msg
@@ -150,6 +153,7 @@ def traverse_dot_path(message: dict, path: str) -> Any | None:
     Returns:
         Any: The value at the end of the path, or None if the path does not exist;
              If the function prefix is added, the second return value will be True, otherwise False.
+
     """
     add_function_prefix = False
 
@@ -205,6 +209,7 @@ class Trace(BaseModel):
 
         Args:
             assertions: A list of functions taking Trace as a single argument
+
         """
         for assertion in assertions:
             assertion(self)
@@ -217,6 +222,7 @@ class Trace(BaseModel):
 
         Returns:
             Dict[str, Matcher]: The content checkers for the trace.
+
         """
         __content_checkers__ = {
             "image": ContainsImage(),
@@ -240,6 +246,7 @@ class Trace(BaseModel):
 
         Raises:
             ValueError: If the data_type is not supported.
+
         """
         # If not filtering on data_type
         if data_type is None:
@@ -275,6 +282,7 @@ class Trace(BaseModel):
 
         Returns:
             list[InvariantDict] | InvariantDict: The filtered trace.
+
         """
         # If a single index is provided, return the message at that index
         if isinstance(selector, int):
@@ -335,6 +343,7 @@ class Trace(BaseModel):
 
         Returns:
             list[InvariantDict] | InvariantDict: The filtered messages.
+
         """
         if isinstance(selector, int):
             return InvariantDict(
@@ -361,6 +370,7 @@ class Trace(BaseModel):
 
         Returns:
             list[InvariantDict] | InvariantDict: The filtered tool calls.
+
         """
         return self._filter_trace(
             iterate_tool_calls,
@@ -385,6 +395,7 @@ class Trace(BaseModel):
 
         Returns:
             list[InvariantDict] | InvariantDict: The filtered tool outputs.
+
         """
         return self._filter_trace(
             iterate_tool_outputs,
@@ -460,6 +471,7 @@ class Trace(BaseModel):
 
         Returns:
             PushTracesResponse: response of push trace request.
+
         """
         if client is None:
             client = InvariantClient()
