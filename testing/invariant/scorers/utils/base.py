@@ -7,10 +7,9 @@ from pydantic.dataclasses import dataclass
 @dataclass
 class DetectorResult:
     """A class to represent the result of a detection."""
-    entity: str = Field(...,
-                        description="The type of entity that was detected.")
-    start: int = Field(...,
-                       description="The start index of the detected entity.")
+
+    entity: str = Field(..., description="The type of entity that was detected.")
+    start: int = Field(..., description="The start index of the detected entity.")
     end: int = Field(..., description="The end index of the detected entity.")
 
 

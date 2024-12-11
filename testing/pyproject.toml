@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "invariant-ai"
-version = "0.0.2"
+version = "0.0.3"
 description = "Testing library for AI Agents by InvariantLabs"
 authors = ["InvariantLabs <hello@invariantlabs.ai>"]
 readme = "README.md"
@@ -19,7 +19,6 @@ invariant-sdk = "^0.0.4"
 diskcache = "^5.6.3"
 
 [tool.poetry.dev-dependencies]
-pytest = "^8.3.3"
 pytest-cov = "^5.0.0"
 openai-swarm = "^0.1.1"
 langgraph = "^0.2.53"

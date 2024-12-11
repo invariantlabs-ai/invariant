@@ -1,6 +1,7 @@
 """Contains sample tests which use the Invariant Runner."""
 
 import pytest
+
 from invariant.testing import (
     HasSubstring,
     Trace,
@@ -223,14 +224,8 @@ def test_trace_rules(trace_with_tool_calls: Trace):
         tool_calls_with_ask = trace_with_tool_calls.tool_calls(
             name=lambda n: n == "ask"
         )
-        assert_true(
-            tool_calls_with_ask[0].argument("question").contains("help")
-        )
-        assert_true(
-            not tool_calls_with_ask[0].argument("question").contains(
-                "helpp"
-            )
-        )
+        assert_true(tool_calls_with_ask[0].argument("question").contains("help"))
+        assert_true(not tool_calls_with_ask[0].argument("question").contains("helpp"))
 
         assistant_messages = trace_with_tool_calls.messages(role="assistant")
         assert len(assistant_messages) == 2

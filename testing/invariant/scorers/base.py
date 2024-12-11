@@ -1,6 +1,6 @@
 from typing import Optional
 
-from invariant.scorers.strings import embedding_similarity
+from .strings import embedding_similarity
 
 
 class ApproxString(str):
@@ -23,5 +23,4 @@ def approx(expected: str, threshold: Optional[float] = None) -> ApproxString:
     """Create an ApproxString object with a given threshold."""
     if isinstance(expected, str):
         return ApproxString(expected, threshold)
-    else:
-        raise ValueError("expected must be a string")
+    raise ValueError("expected must be a string")

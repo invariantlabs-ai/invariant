@@ -45,7 +45,7 @@ tools = [
 
 
 class PythonAgent:
-    """An openai agent that run Pyhon code fullfilling the user's request then return the result."""
+    """An openai agent that run Python code fulfilling the user's request."""
 
     def __init__(self):
         self.client = openai.OpenAI()
@@ -102,11 +102,7 @@ def test_python_question():
     with trace.as_context():
         run_python_tool_call = trace.tool_calls(name="run_python")
         assert_true(F.len(run_python_tool_call) == 1)
-        assert_true(
-            run_python_tool_call[0].argument("code").is_valid_code(
-                "python"
-            )
-        )
+        assert_true(run_python_tool_call[0].argument("code").is_valid_code("python"))
         assert_true("34" in trace.messages(-1)["content"])
 
 
@@ -144,9 +140,7 @@ def test_python_question_invalid():
         run_python_tool_call = trace.tool_calls(name="run_python")
         assert_true(F.len(run_python_tool_call) == 1)
         assert_true(
-            not run_python_tool_call[0].argument("code").is_valid_code(
-                "python"
-            )
+            not run_python_tool_call[0].argument("code").is_valid_code("python")
         )
 
 
@@ -161,8 +155,6 @@ def test_java_question():
     with trace.as_context():
         run_python_tool_call = trace.tool_calls(name="run_python")
         assert_true(F.len(run_python_tool_call) == 0)
-        expect_equals(
-            expected_response, trace.messages(-1)["content"]
-        )
+        expect_equals(expected_response, trace.messages(-1)["content"])
 
         assert_true(trace.messages(-1)["content"].levenshtein(expected_response) < 5)

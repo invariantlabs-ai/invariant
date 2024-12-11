@@ -4,7 +4,6 @@ import os
 from unittest.mock import patch
 
 import pytest
-
 from invariant.__main__ import create_config, main, parse_args
 
 
@@ -25,8 +24,9 @@ def test_create_config_with_timestamp_dataset_name():
     """Test create_config when dataset_name defaults to a timestamp-based name."""
     test_args = ["runner.py", "--push"]
 
-    with patch.dict(os.environ, {"INVARIANT_API_KEY": "env_api_key"}), patch(
-        "time.time", return_value=1234567890
+    with (
+        patch.dict(os.environ, {"INVARIANT_API_KEY": "env_api_key"}),
+        patch("time.time", return_value=1234567890),
     ):
         invariant_runner_args, _ = parse_args(test_args[1:])
         config = create_config(invariant_runner_args)
@@ -62,9 +62,11 @@ def test_main_execution_with_pytest_args():
         "-v",
     ]
 
-    with patch.dict(os.environ, {"INVARIANT_API_KEY": "env_api_key"}), patch(
-        "time.time", return_value=1234567890
-    ), patch("pytest.main") as mock_pytest_main:
+    with (
+        patch.dict(os.environ, {"INVARIANT_API_KEY": "env_api_key"}),
+        patch("time.time", return_value=1234567890),
+        patch("pytest.main") as mock_pytest_main,
+    ):
         # Parse args and create config
         invariant_runner_args, pytest_args = parse_args(test_args[1:])
         config = create_config(invariant_runner_args)
@@ -94,9 +96,12 @@ def test_main_via_command():
         "-v",
     ]
 
-    with patch.dict(os.environ, {"INVARIANT_API_KEY": "env_api_key"}), patch(
-        "time.time", return_value=1234567890
-    ), patch("sys.argv", test_args), patch("pytest.main") as mock_pytest_main:
+    with (
+        patch.dict(os.environ, {"INVARIANT_API_KEY": "env_api_key"}),
+        patch("time.time", return_value=1234567890),
+        patch("sys.argv", test_args),
+        patch("pytest.main") as mock_pytest_main,
+    ):
         # Parse args and create config
         main()
         mock_pytest_main.assert_called_once_with(["-s", "-v"])

@@ -1,8 +1,10 @@
+"""Utility functions for string similarity."""
+
 import re
 
 from nltk.metrics.distance import edit_distance
 
-from invariant.scorers.utils.embeddings import cosine_similarity, get_embedding
+from .utils.embeddings import cosine_similarity, get_embedding
 
 
 def levenshtein(str1: str, str2: str) -> float:

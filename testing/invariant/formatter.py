@@ -33,7 +33,7 @@ def format_trace(json_obj, highlights=[]):
         is_comment = line.lstrip().startswith("#")
         # if is_comment, remove first #, otherwise add a space
         if is_comment:
-            # replace first occurence of # with a space
+            # replace first occurrence of # with a space
             line = line.replace("#", " ", 1)
         else:
             line = " " + line
@@ -43,10 +43,10 @@ def format_trace(json_obj, highlights=[]):
 
     start = None
     end = len(updated)
-    for i in range(len(updated)):
-        if start is None and not updated[i].lstrip().startswith("#"):
+    for i, line in enumerate(updated):
+        if start is None and not line.lstrip().startswith("#"):
             start = i
-        if not updated[i].lstrip().startswith("#"):
+        if not line.lstrip().startswith("#"):
             end = i + 1
     start = max(0, (start or 0) - 5)
     end = min(len(updated), end + 5)
@@ -77,7 +77,7 @@ def _format_trace(json_obj, indent="", path=[], highlights=[]):
         ""  # ("\n" + " " * len(indent) + "⌃" + "---------- </highlighted> ----------")
     )
 
-    if type(json_obj) is dict:
+    if isinstance(json_obj, dict):
         entries = []
         for k, v in json_obj.items():
             value = _format_trace(v, indent + "  ", path + [k], highlights=highlights)
@@ -92,7 +92,7 @@ def _format_trace(json_obj, indent="", path=[], highlights=[]):
             + f"{indent}}}"
             + (highlight_line if is_highlighted else "")
         )
-    elif type(json_obj) is list:
+    elif isinstance(json_obj, list):
         value_repr = (
             # (f"---- <highlighted> ----\n{indent}" if is_highlighted else "")
             "[\n"
@@ -103,7 +103,7 @@ def _format_trace(json_obj, indent="", path=[], highlights=[]):
             + f"{indent}]"
             + (highlight_line if is_highlighted else "")
         )
-    elif type(json_obj) is str:
+    elif isinstance(json_obj, str):
         value_repr = json.dumps(_format_str(json_obj), ensure_ascii=False)
     else:
         value_repr = json.dumps(json_obj, ensure_ascii=False)

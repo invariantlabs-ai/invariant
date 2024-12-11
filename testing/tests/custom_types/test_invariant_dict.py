@@ -5,6 +5,7 @@ from invariant.custom_types.invariant_bool import InvariantBool
 from invariant.custom_types.invariant_dict import InvariantDict
 from invariant.custom_types.invariant_number import InvariantNumber
 from invariant.custom_types.invariant_string import InvariantString
+
 from invariant.testing import LambdaMatcher
 
 

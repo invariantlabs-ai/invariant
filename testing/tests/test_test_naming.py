@@ -3,6 +3,7 @@
 from unittest.mock import patch
 
 import pytest
+
 from invariant.testing import Trace, assert_true
 
 # pylint: disable=protected-access

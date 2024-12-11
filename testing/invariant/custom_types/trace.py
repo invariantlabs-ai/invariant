@@ -5,13 +5,13 @@ from __future__ import annotations
 import json
 from typing import Any, Callable, Dict, Generator, List
 
+from invariant.utils.utils import ssl_verification_enabled
 from invariant_sdk.client import Client as InvariantClient
 from invariant_sdk.types.push_traces import PushTracesResponse
 from pydantic import BaseModel
 
-from invariant.custom_types.invariant_dict import InvariantDict, InvariantValue
-from invariant.custom_types.matchers import ContainsImage, Matcher
-from invariant.utils.utils import ssl_verification_enabled
+from .invariant_dict import InvariantDict, InvariantValue
+from .matchers import ContainsImage, Matcher
 
 
 def iterate_tool_calls(
@@ -152,6 +152,7 @@ def traverse_dot_path(message: dict, path: str) -> Any | None:
              If the function prefix is added, the second return value will be True, otherwise False.
     """
     add_function_prefix = False
+
     def _inner(d, _path):
         for k in _path.split("."):
             if isinstance(d, str) and isinstance(k, str):
@@ -160,6 +161,7 @@ def traverse_dot_path(message: dict, path: str) -> Any | None:
                 return None
             d = d[k]
         return d
+
     if (res := _inner(message, path)) is None:
         add_function_prefix = True
         return (_inner(message, "function." + path), add_function_prefix)
@@ -221,7 +223,9 @@ class Trace(BaseModel):
         }
         return __content_checkers__
 
-    def _is_data_type(self, message: InvariantDict, data_type: str | None = None) -> bool:
+    def _is_data_type(
+        self, message: InvariantDict, data_type: str | None = None
+    ) -> bool:
         """Check if a message matches a given data_type using the content_checkers.
         data_type should correspond to the keys in the content_checkers dictionary.
         If data_type is None, the message is considered to match the data_type
@@ -277,15 +281,21 @@ class Trace(BaseModel):
             for i, (addresses, message) in enumerate(iterator_func(self.trace)):
                 if i == selector:
                     return_val = InvariantDict(message, [f"{i}"])
-                    return return_val if self._is_data_type(return_val, data_type) else None
+                    return (
+                        return_val
+                        if self._is_data_type(return_val, data_type)
+                        else None
+                    )
 
         # If a dictionary is provided, filter messages based on the dictionary
         elif isinstance(selector, dict):
             return [
                 InvariantDict(message, addresses)
                 for addresses, message in iterator_func(self.trace)
-
-                if all(traverse_dot_path(message, kwname)[0] == kwvalue for kwname, kwvalue in selector.items())
+                if all(
+                    traverse_dot_path(message, kwname)[0] == kwvalue
+                    for kwname, kwvalue in selector.items()
+                )
                 and self._is_data_type(InvariantDict(message, addresses), data_type)
             ]
 
@@ -295,7 +305,9 @@ class Trace(BaseModel):
                 InvariantDict(message, addresses)
                 for addresses, message in iterator_func(self.trace)
                 if all(
-                    match_keyword_function(kwname, kwvalue, message.get(kwname), message)
+                    match_keyword_function(
+                        kwname, kwvalue, message.get(kwname), message
+                    )
                     for kwname, kwvalue in filterkwargs.items()
                 )
                 and self._is_data_type(InvariantDict(message, addresses), data_type)
@@ -325,9 +337,14 @@ class Trace(BaseModel):
             list[InvariantDict] | InvariantDict: The filtered messages.
         """
         if isinstance(selector, int):
-            return InvariantDict(self.trace[selector], [str((selector + len(self.trace)) % len(self.trace))])
+            return InvariantDict(
+                self.trace[selector],
+                [str((selector + len(self.trace)) % len(self.trace))],
+            )
 
-        return self._filter_trace(iterate_messages, match_keyword_filter, selector, data_type, **filterkwargs)
+        return self._filter_trace(
+            iterate_messages, match_keyword_filter, selector, data_type, **filterkwargs
+        )
 
     def tool_calls(
         self,
@@ -412,7 +429,9 @@ class Trace(BaseModel):
                     )
                     break
 
-        return [(res_pair[1], res_pair[2]) for res_pair in res if res_pair[2] is not None]
+        return [
+            (res_pair[1], res_pair[2]) for res_pair in res if res_pair[2] is not None
+        ]
 
     def to_python(self) -> str:
         """Returns a snippet of Python code construct that can be used
@@ -422,7 +441,11 @@ class Trace(BaseModel):
             str: The Python string representing the trace.
 
         """
-        return "Trace(trace=[\n" + ",\n".join("  " + str(msg) for msg in self.trace) + "\n])"
+        return (
+            "Trace(trace=[\n"
+            + ",\n".join("  " + str(msg) for msg in self.trace)
+            + "\n])"
+        )
 
     def push_to_explorer(
         self,

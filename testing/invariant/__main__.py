@@ -10,17 +10,14 @@ import time
 import webbrowser
 
 import pytest
-from invariant_sdk.client import Client as InvariantClient
-
 from invariant.config import Config
-from invariant.constants import (
-    INVARIANT_AGENT_PARAMS_ENV_VAR,
-    INVARIANT_AP_KEY_ENV_VAR,
-    INVARIANT_RUNNER_TEST_RESULTS_DIR,
-    INVARIANT_TEST_RUNNER_CONFIG_ENV_VAR,
-    INVARIANT_TEST_RUNNER_TERMINAL_WIDTH_ENV_VAR,
-)
+from invariant.constants import (INVARIANT_AGENT_PARAMS_ENV_VAR,
+                                 INVARIANT_AP_KEY_ENV_VAR,
+                                 INVARIANT_RUNNER_TEST_RESULTS_DIR,
+                                 INVARIANT_TEST_RUNNER_CONFIG_ENV_VAR,
+                                 INVARIANT_TEST_RUNNER_TERMINAL_WIDTH_ENV_VAR)
 from invariant.utils import utils
+from invariant_sdk.client import Client as InvariantClient
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -56,7 +53,10 @@ def parse_args(args: list[str]) -> tuple[argparse.Namespace, list[str]]:
         an API key.""",
     )
     parser.add_argument(
-        "--agent-params", help="JSON containing the parameters of the agent", type=str, default=None
+        "--agent-params",
+        help="JSON containing the parameters of the agent",
+        type=str,
+        default=None,
     )
     return parser.parse_known_args(args)
 
@@ -73,7 +73,9 @@ def create_config(args: argparse.Namespace) -> Config:
     api_key = os.getenv(INVARIANT_AP_KEY_ENV_VAR)
 
     try:
-        agent_params = None if args.agent_params is None else json.loads(args.agent_params)
+        agent_params = (
+            None if args.agent_params is None else json.loads(args.agent_params)
+        )
     except json.JSONDecodeError as e:
         raise ValueError("--agent-params should be a valid JSON") from e
 
@@ -162,14 +164,20 @@ def test(args: list[str]) -> None:
         config = create_config(invariant_runner_args)
         os.environ[INVARIANT_TEST_RUNNER_CONFIG_ENV_VAR] = config.model_dump_json()
         # pass along actual terminal width to the test runner (for better formatting)
-        os.environ[INVARIANT_TEST_RUNNER_TERMINAL_WIDTH_ENV_VAR] = str(utils.terminal_width())
+        os.environ[INVARIANT_TEST_RUNNER_TERMINAL_WIDTH_ENV_VAR] = str(
+            utils.terminal_width()
+        )
         if invariant_runner_args.agent_params:
-            os.environ[INVARIANT_AGENT_PARAMS_ENV_VAR] = invariant_runner_args.agent_params
+            os.environ[INVARIANT_AGENT_PARAMS_ENV_VAR] = (
+                invariant_runner_args.agent_params
+            )
     except ValueError as e:
         logger.error("Configuration error: %s", e)
         sys.exit(1)
 
-    test_results_directory_path = utils.get_test_results_directory_path(config.dataset_name)
+    test_results_directory_path = utils.get_test_results_directory_path(
+        config.dataset_name
+    )
     if os.path.exists(test_results_directory_path):
         shutil.rmtree(test_results_directory_path)
 

@@ -7,7 +7,7 @@ def test_is_factually_equal():
     """Test the IsFactuallyEqual assertion."""
     question = "Who wins the American Election of 2024?"
 
-    # Test case: super strict aggrement
+    # Test case: super strict agreement
     trace = Trace(trace=[{"role": "user", "content": "Trump"}])
     with trace.as_context():
         expected_output = "Trump"
@@ -18,11 +18,11 @@ def test_is_factually_equal():
         assert_that(
             trace.messages()[0]["content"],
             IsFactuallyEqual(
-                expected_output, question, IsFactuallyEqual.Agreement.FUZZY_AGGREMENT
+                expected_output, question, IsFactuallyEqual.Agreement.FUZZY_AGREEMENT
             ),
         )
 
-    # Test case: disaaggrement
+    # Test case: disagreement
     trace = Trace(trace=[{"role": "user", "content": "Harris"}])
     with trace.as_context():
         expected_output = "Trump"
@@ -38,7 +38,7 @@ def test_is_factually_equal():
             )
         )
 
-    # Test case: strict aggrement:
+    # Test case: strict agreement:
     question = "who's the best Japanese directors"
     trace = Trace(
         trace=[
@@ -50,28 +50,28 @@ def test_is_factually_equal():
     )
     with trace.as_context():
         expected_output = "Isao Takahata"
-        # under strict aggrement, the output is not close to the expected output (only 1/4 directors are correct)
+        # under strict agreement, the output is not close to the expected output (only 1/4 directors are correct)
         assert_false(
             trace.messages()[0]["content"].matches(
                 IsFactuallyEqual(
                     expected_output,
                     question,
-                    IsFactuallyEqual.Agreement.SUPER_STRICT_AGGREMENT,
+                    IsFactuallyEqual.Agreement.SUPER_STRICT_AGREEMENT,
                 )
             )
         )
-        # under strict aggrement, the output is close to the expected output (3/4 directors are correct)
+        # under strict agreement, the output is close to the expected output (3/4 directors are correct)
         assert_false(
             trace.messages()[0]["content"].matches(
                 IsFactuallyEqual(
                     expected_output,
                     question,
-                    IsFactuallyEqual.Agreement.SUPER_STRICT_AGGREMENT,
+                    IsFactuallyEqual.Agreement.SUPER_STRICT_AGREEMENT,
                 )
             )
         )
 
-    # sTest case: fuzzy aggrement:
+    # sTest case: fuzzy agreement:
     question = "who's the best Japanese directors"
     trace = Trace(
         trace=[
@@ -86,12 +86,12 @@ def test_is_factually_equal():
         assert_that(
             trace.messages()[0]["content"],
             IsFactuallyEqual(
-                expected_output, question, IsFactuallyEqual.Agreement.FUZZY_AGGREMENT
+                expected_output, question, IsFactuallyEqual.Agreement.FUZZY_AGREEMENT
             ),
         )
         assert_that(
             trace.messages()[0]["content"],
             IsFactuallyEqual(
-                expected_output, question, IsFactuallyEqual.Agreement.FUZZY_AGGREMENT
+                expected_output, question, IsFactuallyEqual.Agreement.FUZZY_AGREEMENT
             ),
         )

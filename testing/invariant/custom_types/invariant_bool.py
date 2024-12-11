@@ -3,8 +3,9 @@
 import logging
 from typing import Union
 
-from invariant.custom_types.invariant_value import InvariantValue
 from invariant.utils.logging import ProbabilityFilter
+
+from .invariant_value import InvariantValue
 
 logger = logging.getLogger(__name__)
 logger.addFilter(ProbabilityFilter(probability=0.05))

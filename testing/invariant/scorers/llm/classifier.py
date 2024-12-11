@@ -4,7 +4,7 @@ import json
 import logging
 from typing import Any
 
-from invariant.cache.cache_manager import CacheManager
+from invariant.cache import CacheManager
 
 from .clients.anthropic_client import AnthropicClient
 from .clients.client_factory import ClientFactory

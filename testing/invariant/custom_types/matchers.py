@@ -87,21 +87,23 @@ class IsFactuallyEqual(Matcher):
     """Matcher for checking if the output is close to expected using llm"""
 
     class Agreement(StrEnum):
-        SUPER_STRICT_AGGREMENT = "super strict aggrement"
-        STRICT_AGGREMENT = "strict aggrement"
-        FUZZY_AGGREMENT = "fuzzy aggrement"
+        """Enum for different levels of agreement."""
+
+        SUPER_STRICT_AGREEMENT = "super strict agreement"
+        STRICT_AGREEMENT = "strict agreement"
+        FUZZY_AGREEMENT = "fuzzy agreement"
 
     levels_to_score_mapping = {
-        Agreement.FUZZY_AGGREMENT: 1,
-        Agreement.STRICT_AGGREMENT: 2,
-        Agreement.SUPER_STRICT_AGGREMENT: 3,
+        Agreement.FUZZY_AGREEMENT: 1,
+        Agreement.STRICT_AGREEMENT: 2,
+        Agreement.SUPER_STRICT_AGREEMENT: 3,
     }
 
     def __init__(
         self,
         expected_value: str,
         question: str,
-        level: Agreement = Agreement.STRICT_AGGREMENT,
+        level: Agreement = Agreement.STRICT_AGREEMENT,
     ):
         assert (
             level in self.levels_to_score_mapping.keys()

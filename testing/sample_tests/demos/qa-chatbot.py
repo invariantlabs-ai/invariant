@@ -1,4 +1,3 @@
-
 import openai
 import pytest
 
@@ -20,11 +19,19 @@ def run_agent(prompt: str) -> Trace:
         model=agent_model,
         messages=messages,
     )
-    return TraceFactory.from_openai(messages + [response.choices[0].message.model_dump()])
+    return TraceFactory.from_openai(
+        messages + [response.choices[0].message.model_dump()]
+    )
 
 
 @pytest.mark.parametrize(
-    "country,capital", [("France", "Paris"), ("Germany", "Berlin"), ("Italy", "Rome"), ("Spain", "Madrid")]
+    "country,capital",
+    [
+        ("France", "Paris"),
+        ("Germany", "Berlin"),
+        ("Italy", "Rome"),
+        ("Spain", "Madrid"),
+    ],
 )
 def test_capitals(country, capital):
     trace = run_agent(f"What's the capital of {country}?")
@@ -37,7 +44,9 @@ def test_emails(n):
     trace = run_agent(f"Write {n} randomly generated e-mail addresses")
     with trace.as_context():
         emails = list(
-            trace.messages(role="assistant")[0]["content"].match_all(r"[a-zA-Z0-9_\.]+@[a-zA-Z0-9\._]+")
+            trace.messages(role="assistant")[0]["content"].match_all(
+                r"[a-zA-Z0-9_\.]+@[a-zA-Z0-9\._]+"
+            )
         )
         assert_true(F.len(emails) == n)
 
