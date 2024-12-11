@@ -1,6 +1,8 @@
 import base64
+import os
 
 import pytest
+
 from invariant.scorers.base import approx
 from invariant.scorers.llm.classifier import Classifier
 from invariant.scorers.llm.detector import Detector
@@ -48,8 +50,9 @@ def test_contains():
         pytest.param(
             "claude-3-5-sonnet-20241022",
             "Anthropic",
-            marks=pytest.mark.skip(
-                "Skipping because we have not setup the API key in the CI"
+            marks=pytest.mark.skipif(
+                not os.getenv("ANTHROPIC_API_KEY"),
+                reason="Skipping because ANTHROPIC_API_KEY is not set",
             ),
         ),
     ],
@@ -57,18 +60,18 @@ def test_contains():
 def test_classifier(model, client):
     """Test the LLM classifier with OpenAI and Anthropic models"""
     llm_clf = Classifier(
-        model=model,
         prompt="Does the text have positive sentiment?",
         options=["yes", "no"],
+        model=model,
         client=client,
     )
     res = llm_clf.classify(text="I am feeling great today!")
     assert res == "yes"
 
     llm_clf = Classifier(
-        model=model,
         prompt="Which language is this text in?",
         options=["en", "it", "de", "fr"],
+        model=model,
         client=client,
     )
     res = llm_clf.classify(text="Heute ist ein schöner Tag")
@@ -82,8 +85,9 @@ def test_classifier(model, client):
         pytest.param(
             "claude-3-5-sonnet-20241022",
             "Anthropic",
-            marks=pytest.mark.skip(
-                "Skipping because we have not setup the API key in the CI"
+            marks=pytest.mark.skipif(
+                not os.getenv("ANTHROPIC_API_KEY"),
+                reason="Skipping because ANTHROPIC_API_KEY is not set",
             ),
         ),
     ],
@@ -91,8 +95,8 @@ def test_classifier(model, client):
 def test_detector(model, client):
     """Test the LLM detector with OpenAI and Anthropic models"""
     text = """I like apples and carrots, but I don't like bananas.\nThe only thing better than apples are potatoes and pears."""
-    llm_detector = Detector(model=model, predicate_rule="fruits", client=client)
-    detections = [value for (value, addresses) in llm_detector.detect(text)]
+    llm_detector = Detector(predicate_rule="fruits", model=model, client=client)
+    detections = [value for (value, _) in llm_detector.detect(text)]
     assert detections[0] == "apples"
     assert detections[1] == "bananas"
     assert detections[2] == "apples"
@@ -106,8 +110,9 @@ def test_detector(model, client):
         pytest.param(
             "claude-3-5-sonnet-20241022",
             "Anthropic",
-            marks=pytest.mark.skip(
-                "Skipping because we have not setup the API key in the CI"
+            marks=pytest.mark.skipif(
+                not os.getenv("ANTHROPIC_API_KEY"),
+                reason="Skipping because ANTHROPIC_API_KEY is not set",
             ),
         ),
     ],
@@ -117,21 +122,21 @@ def test_vision_classifier(model, client):
     with open("sample_tests/assets/Group_of_cats_resized.jpg", "rb") as image_file:
         base64_image = base64.b64encode(image_file.read()).decode("utf-8")
     llm_clf = Classifier(
-        model=model,
         prompt="What is in the image?",
         options=["cats", "dogs", "birds", "none"],
-        vision=True,
+        model=model,
         client=client,
+        vision=True,
     )
     res = llm_clf.classify_vision(base64_image)
     assert res == "cats"
 
     llm_clf = Classifier(
-        model=model,
         prompt="How many cats are in the image?",
         options=["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
-        vision=True,
+        model=model,
         client=client,
+        vision=True,
     )
     res = llm_clf.classify_vision(base64_image)
     assert res == "3"

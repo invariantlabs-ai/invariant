@@ -205,7 +205,7 @@ class Trace(BaseModel):
             yield InvariantDict(msg, [str(i)])
 
     def as_context(self):
-        from invariant.manager import Manager
+        from invariant.manager import Manager # pylint: disable=import-outside-toplevelå
 
         if self.manager is None:
             self.manager = Manager(self)

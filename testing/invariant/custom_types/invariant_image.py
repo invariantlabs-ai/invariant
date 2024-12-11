@@ -31,8 +31,8 @@ class InvariantImage(InvariantString):
         prompt: str,
         options: list[str],
         model: str = "gpt-4o",
-        use_cached_result: bool = True,
         client: str = "OpenAI",
+        use_cached_result: bool = True,
     ) -> InvariantString:
         """Check if the value is similar to the given string using an LLM.
 
@@ -40,13 +40,13 @@ class InvariantImage(InvariantString):
             prompt (str): The prompt to use for the LLM.
             options (list[str]): The options to use for the LLM.
             model (str): The model to use for the LLM.
-            use_cached_result (bool): Whether to use a cached result if available
             client (invariant.scorers.llm.clients.client.SupportedClients): The
-            client to use for the LLM.
+                client to use for the LLM.
+            use_cached_result (bool): Whether to use a cached result if available.
 
         """
         llm_clf = Classifier(
-            model=model, prompt=prompt, options=options, vision=True, client=client
+            prompt=prompt, options=options, model=model, client=client, vision=True,
         )
         res = llm_clf.classify_vision(
             self.value, image_type=self.image_type, use_cached_result=use_cached_result

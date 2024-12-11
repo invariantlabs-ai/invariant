@@ -1,8 +1,10 @@
 """Tests for the InvariantImage class."""
 
 import base64
+import os
 
 import pytest
+
 from invariant.custom_types.invariant_image import InvariantImage
 from invariant.custom_types.invariant_string import InvariantString
 from invariant.utils.packages import is_program_installed
@@ -15,8 +17,9 @@ from invariant.utils.packages import is_program_installed
         pytest.param(
             "claude-3-5-sonnet-20241022",
             "Anthropic",
-            marks=pytest.mark.skip(
-                "Skipping because we have not setup the API key in the CI"
+            marks=pytest.mark.skipif(
+                not os.getenv("ANTHROPIC_API_KEY"),
+                reason="Skipping because ANTHROPIC_API_KEY is not set",
             ),
         ),
     ],
