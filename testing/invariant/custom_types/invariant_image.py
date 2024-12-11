@@ -43,6 +43,7 @@ class InvariantImage(InvariantString):
             use_cached_result (bool): Whether to use a cached result if available
             client (invariant.scorers.llm.clients.client.SupportedClients): The
             client to use for the LLM.
+
         """
         llm_clf = Classifier(
             model=model, prompt=prompt, options=options, vision=True, client=client

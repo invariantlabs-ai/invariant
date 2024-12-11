@@ -11,7 +11,7 @@ class Matcher:
     """Base class for all matchers."""
 
     def matches(self, actual_value: Any) -> bool:
-        """This is the method that subclasses should implement."""
+        """Is the method that subclasses should implement."""
         raise NotImplementedError("Subclasses should implement this method.")
 
 
@@ -84,7 +84,7 @@ class IsSimilar(Matcher):
 
 
 class IsFactuallyEqual(Matcher):
-    """Matcher for checking if the output is close to expected using llm"""
+    """Matcher for checking if the output is close to expected using llm."""
 
     class Agreement(StrEnum):
         """Enum for different levels of agreement."""
@@ -160,11 +160,14 @@ class ContainsImage(Matcher):
     """
 
     def matches(self, actual_value: str | dict) -> bool:
-        """Args:
+        """Run the matching logic.
+
+        Args:
             actual_value: str | dict - The value to check if it is an image.
 
         Returns:
             bool: True if the value is an image, False otherwise.
+
         """
         if not isinstance(actual_value, dict) and not isinstance(actual_value, str):
             raise TypeError(

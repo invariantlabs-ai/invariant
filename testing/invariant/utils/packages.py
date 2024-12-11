@@ -12,6 +12,7 @@ def is_program_installed(program_name: str) -> bool:
 
     Returns:
         bool: True if the program is installed and accessible, False otherwise
+
     """
     return shutil.which(program_name) is not None
 
@@ -24,5 +25,6 @@ def is_package_installed(package_name: str) -> bool:
 
     Returns:
         bool: True if the package is installed, False otherwise
+
     """
     return importlib.util.find_spec(package_name) is not None

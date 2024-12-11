@@ -14,6 +14,8 @@ def _get_image(
 
     Args:
         local_img_path: The path to the image in the local filesystem.
+        explorer_endpoint: The endpoint of the Explorer API.
+
     """
     path_parts = local_img_path.split("/")
     dataset_id = path_parts[-3]
@@ -36,7 +38,7 @@ def from_explorer(
     index: int | None = None,
     explorer_endpoint: str = "https://explorer.invariantlabs.ai",
 ):
-    """Loads a public trace from the Explorer (https://explorer.invariantlabs.ai).
+    """Load a public trace from the Explorer (https://explorer.invariantlabs.ai).
 
     The identifier_or_id can be either a trace ID or a <username>/<dataset> pair, in which case
     the index of the trace to load must be provided.
@@ -48,6 +50,7 @@ def from_explorer(
 
     Returns:
         A Trace object with the loaded trace.
+
     """
     metadata = {
         "id": identifier_or_id,

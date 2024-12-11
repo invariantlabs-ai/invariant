@@ -18,7 +18,7 @@ from .matchers import ContainsImage, Matcher
 def iterate_tool_calls(
     messages: list[dict],
 ) -> Generator[tuple[list[str], dict], None, None]:
-    """Generator function to iterate over tool calls in a list of messages.
+    """Return generator to iterate over tool calls in a list of messages.
 
     Args:
         messages (list[dict]): A list of messages without address information.
@@ -54,6 +54,7 @@ def iterate_tool_calls(
         Output:
             ['1.tool_calls.0'] {'function': {'name': 'weather_tool', 'arguments': {'location':
             'NYC'}}, 'id': 'call_1', 'type': 'function'}
+
     """
     for msg_i, msg in enumerate(messages):
         if msg.get("role") != "assistant":
@@ -66,7 +67,7 @@ def iterate_tool_calls(
 def iterate_tool_outputs(
     messages: list[dict],
 ) -> Generator[tuple[list[str], dict], None, None]:
-    """Generator function to iterate over tool outputs in a list of messages.
+    """Return generator to iterate over tool outputs in a list of messages.
 
     Args:
         messages (list[dict]): A list of messages without address information.
@@ -76,6 +77,7 @@ def iterate_tool_outputs(
             - A list of strings representing the hierarchical address of the tool output
               in the message. For example, `["2"]` indicates the third message in the list.
             - The tool output data (a dictionary or object representing the tool output).
+
     """
     for msg_i, msg in enumerate(messages):
         if msg.get("role") == "tool":
@@ -85,7 +87,7 @@ def iterate_tool_outputs(
 def iterate_messages(
     messages: list[dict],
 ) -> Generator[tuple[list[str], dict], None, None]:
-    """Generator function to iterate over messages in a list of messages.
+    """Return generator to iterate over messages in a list of messages.
 
     Args:
         messages (list[dict]): A list of messages without address information.
@@ -95,6 +97,7 @@ def iterate_messages(
             - A list of strings representing the hierarchical address of the message
               in the list. For example, `["1"]` indicates the second message in the list.
             - The message data (a dictionary or object representing the message).
+
     """
     for msg_i, msg in enumerate(messages):
         yield [f"{msg_i}"], msg
@@ -106,8 +109,10 @@ def match_keyword_filter_on_tool_call(
     value: InvariantValue | Any,
     tool_call: dict,
 ) -> bool:
-    # redirect checks on name, arguments and id to the 'function' sub-dictionary
-    # this enables checks like tool_calls(name='greet') to work
+    """Redirect checks on name, arguments and id to the 'function' sub-dictionary.
+
+    This enables checks like tool_calls(name='greet') to work
+    """
     if kwname in ["name", "arguments", "id"]:
         value = tool_call["function"].get(kwname)
     return match_keyword_filter(kwname, kwvalue, value, tool_call)
@@ -153,6 +158,7 @@ def traverse_dot_path(message: dict, path: str) -> Any | None:
         Any: The value at the end of the path, or None if the path does not exist;
              If the "function." prefix is added, the second return value will be True,
              otherwise False.
+
     """
     add_function_prefix = False
 
@@ -206,11 +212,11 @@ class Trace(BaseModel):
         return self.manager
 
     def run_assertions(self, assertions: list[Callable[Trace, Any]]):
-        """Runs a list of assertions on the trace. Assertions are run by providing a list of functions,
-        each taking Trace object as a single argument.
+        """Run a list of assertions on the trace. Assertions are run by providing a list of functions, each taking Trace object as a single argument.
 
         Args:
             assertions: A list of functions taking Trace as a single argument
+
         """
         for assertion in assertions:
             assertion(self)
@@ -218,11 +224,11 @@ class Trace(BaseModel):
     # Functions to check data_types
     @property
     def content_checkers(self) -> Dict[str, Matcher]:
-        """Register content checkers for data_types. When implementing a new content checker,
-        add the new content checker to the dictionary below.
+        """Register content checkers for data_types. When implementing a new content checker, add the new content checker to the dictionary below.
 
         Returns:
             Dict[str, Matcher]: The content checkers for the trace.
+
         """
         __content_checkers__ = {
             "image": ContainsImage(),
@@ -233,6 +239,7 @@ class Trace(BaseModel):
         self, message: InvariantDict, data_type: str | None = None
     ) -> bool:
         """Check if a message matches a given data_type using the content_checkers.
+
         data_type should correspond to the keys in the content_checkers dictionary.
         If data_type is None, the message is considered to match the data_type
         (i.e., no filtering is performed).
@@ -246,6 +253,7 @@ class Trace(BaseModel):
 
         Raises:
             ValueError: If the data_type is not supported.
+
         """
         # If not filtering on data_type
         if data_type is None:
@@ -267,8 +275,7 @@ class Trace(BaseModel):
         data_type: str | None = None,
         **filterkwargs,
     ) -> list[InvariantDict] | InvariantDict:
-        """Filter the trace based on the provided selector, keyword arguments and data_type. Use this
-        method as a helper for custom filters such as messages(), tool_calls(), and tool_outputs().
+        """Filter the trace based on the provided selector, keyword arguments and data_type. Use this method as a helper for custom filters such as messages(), tool_calls(), and tool_outputs().
 
         Args:
             iterator_func: The iterator function to use to iterate over the trace.
@@ -281,6 +288,7 @@ class Trace(BaseModel):
 
         Returns:
             list[InvariantDict] | InvariantDict: The filtered trace.
+
         """
         # If a single index is provided, return the message at that index
         if isinstance(selector, int):
@@ -341,6 +349,7 @@ class Trace(BaseModel):
 
         Returns:
             list[InvariantDict] | InvariantDict: The filtered messages.
+
         """
         if isinstance(selector, int):
             return InvariantDict(
@@ -367,6 +376,7 @@ class Trace(BaseModel):
 
         Returns:
             list[InvariantDict] | InvariantDict: The filtered tool calls.
+
         """
         return self._filter_trace(
             iterate_tool_calls,
@@ -391,6 +401,7 @@ class Trace(BaseModel):
 
         Returns:
             list[InvariantDict] | InvariantDict: The filtered tool outputs.
+
         """
         return self._filter_trace(
             iterate_tool_outputs,
@@ -401,7 +412,7 @@ class Trace(BaseModel):
         )
 
     def tool_pairs(self) -> list[tuple[InvariantDict, InvariantDict]]:
-        """Returns the list of tuples of (tool_call, tool_output)."""
+        """Return the list of tuples of (tool_call, tool_output)."""
         res = []
         for tc_address, tc in iterate_tool_calls(self.trace):
             msg_idx = int(tc_address[0].split(".")[0])
@@ -440,8 +451,7 @@ class Trace(BaseModel):
         ]
 
     def to_python(self) -> str:
-        """Returns a snippet of Python code construct that can be used
-        to recreate the trace in a Python script.
+        """Return a snippet of Python code construct that can be used to recreate the trace in a Python script.
 
         Returns:
             str: The Python string representing the trace.
@@ -466,6 +476,7 @@ class Trace(BaseModel):
 
         Returns:
             PushTracesResponse: response of push trace request.
+
         """
         if client is None:
             client = InvariantClient()

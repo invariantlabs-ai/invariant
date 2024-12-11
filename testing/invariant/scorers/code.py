@@ -6,9 +6,10 @@ import tempfile
 from typing import Tuple
 
 import openai
+from pydantic import BaseModel
+
 from invariant.custom_types.addresses import Range
 from invariant.utils.packages import is_program_installed
-from pydantic import BaseModel
 
 
 def is_valid_json(text: str) -> Tuple[bool, int | None]:
@@ -51,7 +52,7 @@ def _get_dependencies(text: str) -> Dependencies:
 
 
 def execute(text: str, detect_packages: bool = False) -> str:
-    """Executes a string of Python code and returns the standard output.
+    """Execute a string of Python code and returns the standard output.
 
     Optionally, this function can also detect the dependencies of the code using an LLM and append them as a header to the code.
     The code runs inside of a docker container and uses uv package manager to quickly install the dependencies.
@@ -59,6 +60,7 @@ def execute(text: str, detect_packages: bool = False) -> str:
     Args:
         text (str): The Python code to execute.
         detect_packages (bool): Whether to detect the dependencies of the code.
+
     """
     if not is_program_installed("docker"):
         raise RuntimeError("Please install docker to use the execute function.")

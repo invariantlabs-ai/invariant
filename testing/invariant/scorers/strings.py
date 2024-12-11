@@ -8,9 +8,7 @@ from .utils.embeddings import cosine_similarity, get_embedding
 
 
 def levenshtein(str1: str, str2: str) -> float:
-    """Compute the normalized score using Levenshtein (edit) distance between two strings
-    as 1 - distance / max(len(str1), len(str2)).
-    """
+    """Compute the normalized score using Levenshtein (edit) distance between two strings as 1 - distance / max(len(str1), len(str2))."""
     if len(str1) == 0 or len(str2) == 0:
         return 1.0 if str1 == str2 else 0.0
     edit_dist = edit_distance(str1, str2)

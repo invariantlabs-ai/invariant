@@ -64,6 +64,7 @@ def ast_truncate(s: str, n: int = 256) -> str:
     ```
     expect_equals("123", trace.messages(1)['content'])
     ```
+
     """
 
     def check_string(s):

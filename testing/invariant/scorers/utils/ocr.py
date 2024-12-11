@@ -4,16 +4,15 @@ import subprocess
 import tempfile
 from typing import Any, Dict, Optional
 
-from PIL import Image
-
 from invariant.utils.packages import is_program_installed
+from PIL import Image
 
 
 class OCRDetector:
     """Detect text in images using Tesseract OCR."""
 
     def __init__(self):
-        """Initialize OCR detector with expected text to find in images"""
+        """Initialize OCR detector with expected text to find in images."""
 
     @classmethod
     def check_tesseract_installed(cls):
@@ -25,7 +24,7 @@ class OCRDetector:
             return False
 
     def _is_in_bbox(self, bbox1: dict, bbox2: dict) -> bool:
-        """Checks if bbox2 is inside bbox1"""
+        """Check if bbox2 is inside bbox1."""
         return (
             bbox1["x1"] <= bbox2["x1"]
             and bbox1["y1"] <= bbox2["y1"]
@@ -40,14 +39,18 @@ class OCRDetector:
         case_sensitive: bool = False,
         bbox: Optional[dict] = None,
     ) -> bool:
-        """
-        Detect if the expected text appears in the image using tesseract CLI
+        """Detect if the expected text appears in the image using Tesseract OCR.
 
         Args:
-            base64_image: Base64 encoded image string
+            image (Image.Image): The image in which to search for the text.
+            text (str): The text to search for within the image.
+            case_sensitive (bool, optional): Whether the text search should be case-sensitive. Defaults to False.
+            bbox (Optional[dict], optional): A bounding box to limit the search area within the image.
+                                             The dictionary should contain keys 'x1', 'x2', 'y1', and 'y2'. Defaults to None.
 
-        Returns:
-            bool: True if expected text was found, False otherwise
+        Retruns:
+            bool: True if the text is found in the image, False otherwise.
+
         """
         if not is_program_installed("tesseract"):
             raise RuntimeError(
@@ -112,6 +115,7 @@ class OCRDetector:
 
         Returns:
             Dict containing structured OCR data with word positions and confidence
+
         """
         from bs4 import BeautifulSoup  # pylint: disable=import-outside-toplevel
 

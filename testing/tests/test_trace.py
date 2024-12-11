@@ -1,6 +1,5 @@
 import pytest
 
-
 from invariant.custom_types.trace import Trace, traverse_dot_path
 
 

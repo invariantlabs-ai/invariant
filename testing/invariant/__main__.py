@@ -1,4 +1,4 @@
-"""This script is used to run tests using Invariant."""
+"""Script is used to run tests using Invariant."""
 
 import argparse
 import json
@@ -10,14 +10,17 @@ import time
 import webbrowser
 
 import pytest
-from invariant.config import Config
-from invariant.constants import (INVARIANT_AGENT_PARAMS_ENV_VAR,
-                                 INVARIANT_AP_KEY_ENV_VAR,
-                                 INVARIANT_RUNNER_TEST_RESULTS_DIR,
-                                 INVARIANT_TEST_RUNNER_CONFIG_ENV_VAR,
-                                 INVARIANT_TEST_RUNNER_TERMINAL_WIDTH_ENV_VAR)
-from invariant.utils import utils
 from invariant_sdk.client import Client as InvariantClient
+
+from invariant.config import Config
+from invariant.constants import (
+    INVARIANT_AGENT_PARAMS_ENV_VAR,
+    INVARIANT_AP_KEY_ENV_VAR,
+    INVARIANT_RUNNER_TEST_RESULTS_DIR,
+    INVARIANT_TEST_RUNNER_CONFIG_ENV_VAR,
+    INVARIANT_TEST_RUNNER_TERMINAL_WIDTH_ENV_VAR,
+)
+from invariant.utils import utils
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -69,6 +72,7 @@ def create_config(args: argparse.Namespace) -> Config:
 
     Returns:
         Config: Config instance with dataset name, push status, and API key.
+
     """
     api_key = os.getenv(INVARIANT_AP_KEY_ENV_VAR)
 
@@ -94,7 +98,8 @@ def create_config(args: argparse.Namespace) -> Config:
 
 
 def finalize_tests_and_print_summary(conf: Config, open_browser: bool) -> None:
-    """Finalizes the test run:
+    """Finalize the test run.
+
     * pushes result metadata to the Explorer if --push
     * prints a summary of the test results.
     """
@@ -158,6 +163,7 @@ def finalize_tests_and_print_summary(conf: Config, open_browser: bool) -> None:
 
 
 def test(args: list[str]) -> None:
+    """Run Tests."""
     try:
         # Parse command-line arguments and create configuration
         invariant_runner_args, pytest_args = parse_args(args)
@@ -191,6 +197,7 @@ def test(args: list[str]) -> None:
 
 
 def main():
+    """Entry point for the Invariant Runner."""
     actions = {
         "test": "Runs a specified test (folder) with Invariant test (pytest compatible arguments)",
         "help": "Shows this help message",
