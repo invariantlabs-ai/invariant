@@ -203,7 +203,7 @@ def test_all_helper(invariant_bool_list: list):
     all_value = F.all(invariant_bool_list)
 
     assert isinstance(all_value, InvariantBool)
-    assert all_value.value
+    assert not all_value.value
     assert len(all_value.addresses) == len(invariant_bool_list)
 
 
