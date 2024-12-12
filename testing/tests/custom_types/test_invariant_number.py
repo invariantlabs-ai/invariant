@@ -1,6 +1,7 @@
 """Tests for the InvariantNumber class."""
 
 import pytest
+
 from invariant.custom_types.invariant_bool import InvariantBool
 from invariant.custom_types.invariant_number import InvariantNumber
 
@@ -14,6 +15,10 @@ def test_invariant_number_initialization():
     num = InvariantNumber(3.14)
     assert num.value == 3.14
     assert num.addresses == []
+
+    # The value field is read-only.
+    with pytest.raises(AttributeError, match="'value' attribute cannot be reassigned"):
+        num.value = 5
 
     with pytest.raises(TypeError, match="value must be an int or float"):
         InvariantNumber("not_a_number")
