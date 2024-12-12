@@ -178,6 +178,10 @@ def test_invariant_bool_with_addresses():
     assert bool1.addresses == ["address1"]
     assert bool3.addresses == ["address2"]
 
+    # The value field is read-only.
+    with pytest.raises(AttributeError, match="'value' attribute is immutable"):
+        bool1.value = False
+
 
 @pytest.mark.parametrize(
     "invariant_bool, expected",

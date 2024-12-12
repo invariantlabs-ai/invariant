@@ -11,13 +11,17 @@ from invariant.custom_types.matchers import LambdaMatcher
 
 def test_invariant_value_initialization():
     """Test initialization of InvariantValue."""
-    value = InvariantValue("test", ["address1"])
-    assert value.value == "test"
-    assert value.addresses == ["address1:0-4"]
+    invariant_value = InvariantValue("test", ["address1"])
+    assert invariant_value.value == "test"
+    assert invariant_value.addresses == ["address1:0-4"]
 
-    value = InvariantValue(123)
-    assert value.value == 123
-    assert value.addresses == []
+    invariant_value = InvariantValue(123)
+    assert invariant_value.value == 123
+    assert invariant_value.addresses == []
+
+    # The value field is read-only.
+    with pytest.raises(AttributeError, match="'value' attribute is immutable"):
+        invariant_value.value = "new value"
 
     with pytest.raises(TypeError, match="addresses must be a list of strings"):
         InvariantValue("test", ["address1", 123])

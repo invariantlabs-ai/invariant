@@ -26,6 +26,10 @@ def test_invariant_string_initialization():
     assert string.upper() == "WORLD"
     assert string.lower() == "world"
 
+    # The value field is read-only.
+    with pytest.raises(AttributeError, match="'value' attribute is immutable"):
+        string.value = "new value"
+
     # Test invalid value type
     with pytest.raises(TypeError, match="value must be a str"):
         InvariantString(123)

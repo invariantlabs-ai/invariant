@@ -15,6 +15,10 @@ def test_invariant_number_initialization():
     assert num.value == 3.14
     assert num.addresses == []
 
+    # The value field is read-only.
+    with pytest.raises(AttributeError, match="'value' attribute is immutable"):
+        num.value = 5
+
     with pytest.raises(TypeError, match="value must be an int or float"):
         InvariantNumber("not_a_number")
 

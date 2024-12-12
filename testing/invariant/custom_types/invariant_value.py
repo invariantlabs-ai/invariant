@@ -22,13 +22,24 @@ class InvariantValue:
         ):
             raise TypeError("addresses must be a list of strings")
 
-        self.value = value
+        self._value = value
         self.addresses = addresses if addresses is not None else []
 
-        if isinstance(self.value, str):
+        if isinstance(self._value, str):
             for i, a in enumerate(self.addresses):
                 if ":" not in a:
-                    self.addresses[i] = a + ":0-" + str(len(self.value))
+                    self.addresses[i] = a + ":0-" + str(len(self._value))
+
+    @property
+    def value(self):
+        """Read-only property for the value field."""
+        return self._value
+
+    def __setattr__(self, name, new_value):
+        """Customize attribute setting to prevent `value` from being modified."""
+        if name == "value":
+            raise AttributeError("The 'value' attribute is immutable and cannot be modified.")
+        super().__setattr__(name, new_value)
 
     @staticmethod
     def of(value: Any, address: list[str]) -> InvariantValue | "InvariantDict" | None:
