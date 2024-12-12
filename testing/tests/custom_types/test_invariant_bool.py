@@ -1,6 +1,7 @@
 """Tests for the InvariantBool class."""
 
 import pytest
+
 from invariant.custom_types.invariant_bool import InvariantBool
 
 
@@ -177,6 +178,10 @@ def test_invariant_bool_with_addresses():
     assert bool1 != False  # noqa: E712 pylint: disable=singleton-comparison
     assert bool1.addresses == ["address1"]
     assert bool3.addresses == ["address2"]
+
+    # The value field is read-only.
+    with pytest.raises(AttributeError, match="'value' attribute cannot be reassigned"):
+        bool1.value = False
 
 
 @pytest.mark.parametrize(

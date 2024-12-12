@@ -64,3 +64,16 @@ def test_ocr_detector():
     assert not inv_img.ocr_contains_all(["agents", "making", "LLM"])
     assert inv_img.ocr_contains_any(["something", "agents", "abc"])
     assert not inv_img.ocr_contains_any(["something", "def", "abc"])
+
+
+def test_invariant_image_value_no_reassignment():
+    """Test that the value of an InvariantImage cannot be reassigned."""
+    with (
+        open("sample_tests/assets/inv_labs.png", "rb") as image_file_1,
+        open("sample_tests/assets/Group_of_cats_resized.jpg", "rb") as image_file_2,
+    ):
+        base64_image_1 = base64.b64encode(image_file_1.read()).decode("utf-8")
+        base64_image_2 = base64.b64encode(image_file_2.read()).decode("utf-8")
+        inv_img = InvariantImage(base64_image_1)
+        with pytest.raises(AttributeError, match="'value' attribute cannot be reassigned"):
+            inv_img.value = base64_image_2
