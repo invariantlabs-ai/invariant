@@ -104,12 +104,7 @@ def released_versions(repository):
 
 
 def github_file(repository, tag, path):
-    """Download a file from a GitHub repository."""
-    # for branches URLs are:
-    # //raw.githubusercontent.com/invariantlabs-ai/explorer-public/refs/heads/v0.1/docker-compose.yml
-    # for tags URLs are:
-    # //raw.githubusercontent.com/invariantlabs-ai/explorer-public/refs/tags/v0.1/docker-compose.yml
-
+    """Download a file from a public GitHub repository."""
     try:
         url = (
             f"https://raw.githubusercontent.com/{repository}/refs/heads/{tag}/{path}"
@@ -136,7 +131,7 @@ def docker_compose_setup(version):
 
     with open(tf.name, "w") as f:
         contents = github_file(
-            "invariantlabs-ai/explorer-public", version, "docker-compose.yml"
+            "invariantlabs-ai/explorer-public", version, "docker-compose.stable.yml"
         )
         f.write(contents)
 
