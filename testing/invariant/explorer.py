@@ -7,12 +7,23 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+import requests
+
 parser = argparse.ArgumentParser(
     prog="invariant explorer",
     description="Launch the Invariant Explorer as a Docker compose application.",
 )
 parser.add_argument(
-    "--port", type=int, default=80, help="The port to expose the Invariant Explorer on."
+    "--port",
+    type=int,
+    default=80,
+    help="The port to expose the Invariant Explorer on.",
+)
+parser.add_argument(
+    "--version",
+    type=str,
+    default="stable",
+    help="Branch or version of the Invariant Explorer to use.",
 )
 
 args = None
@@ -66,148 +77,97 @@ def ensure_has_db_folder():
     Path("./data/database").mkdir(parents=True, exist_ok=True)
 
 
-def latest_docker_compose_setup():
-    s = """
-services:
-  traefik:
-    image: traefik:v2.0
-    container_name: "${APP_NAME}-local-traefik"
-    command:
-      - --providers.docker=true
-      # Enable the API handler in insecure mode,
-      # which means that the Traefik API will be available directly
-      # on the entry point named traefik.
-      - --api.insecure=true
-      # Define Traefik entry points to port [80] for http and port [443] for https.
-      - --entrypoints.web.address=0.0.0.0:80
-      - --log.level=INFO
-    networks:
-      - web
-    ports:
-      - '${PORT_HTTP}:80'
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.traefik-http.entrypoints=web"
+# list active tags of repo
+def released_versions(repository):
+    """List the tags of a GitHub repository."""
+    try:
+        url = f"https://api.github.com/repos/{repository}/tags"
+        r = requests.get(url)
+        r.raise_for_status()
 
-  app-api:
-    image: ghcr.io/invariantlabs-ai/explorer-oss/app-api:latest
-    platform: linux/amd64
-    depends_on:
-      - database
-    working_dir: /srv/app
-    env_file:
-      - .env
-    environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - MODAL_TOKEN_ID=${MODAL_TOKEN_ID}
-      - MODAL_TOKEN_SECRET=${MODAL_TOKEN_SECRET}
-      - PROJECTS_DIR=/srv/projects
-      - KEYCLOAK_CLIENT_ID_SECRET=${KEYCLOAK_CLIENT_ID_SECRET}
-      - TZ=Europe/Berlin
-      - DEV_MODE=${DEV_MODE}
-      - APP_NAME=${APP_NAME}
-      - CONFIG_FILE=/config/explorer.config.yml
-    networks:
-      - web
-      - internal
-    volumes:
-      - $CONFIG_FILE_NAME:/config/explorer.config.yml
-      - ./data/images:/srv/images
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.$APP_NAME-api.rule=(Host(`localhost`) && PathPrefix(`/api/`)) || (Host(`127.0.0.1`) && PathPrefix(`/api/`))"
-      - "traefik.http.routers.$APP_NAME-api.entrypoints=web"
-      - "traefik.http.services.$APP_NAME-api.loadbalancer.server.port=8000"
-      - "traefik.docker.network=invariant_web"
+        releases = []
 
-  app-ui:
-    image: ghcr.io/invariantlabs-ai/explorer-oss/app-ui:latest
-    platform: linux/amd64
-    networks:
-      - web
-    volumes:
-      - $CONFIG_FILE_NAME:/config/explorer.config.yml
-    environment:
-      - APP_NAME=${APP_NAME}
-      - VITE_CONFIG_FILE=/config/explorer.config.yml
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.$APP_NAME-ui.rule=Host(`localhost`)||Host(`127.0.0.1`)"
-      - "traefik.http.routers.$APP_NAME-ui.entrypoints=web"
-      - "traefik.http.services.$APP_NAME-ui.loadbalancer.server.port=8000"
-      - "traefik.docker.network=invariant_web"
+        for tag in r.json():
+            # if it starts with 'v'
+            if tag["name"].startswith("v"):
+                releases.append(tag)
+        # sort by version number
+        releases.sort(key=lambda x: x["name"], reverse=True)
+        return releases
 
-  database:
-    image: postgres:16
-    env_file:
-      - .env
-    networks:
-      - internal
-    volumes:
-      - type: bind
-        source: ./data/database
-        target: /var/lib/postgresql/data
+    # not connected to the internet
+    except requests.exceptions.ConnectionError:
+        print(
+            "Failed to connect to the internet. Please check your connection and try again. `invariant explorer` requires an internet connection to download and update the necessary Docker images."
+        )
+        exit(1)
 
-networks:
-  web:
-  internal:"""
 
+def github_file(repository, tag, path):
+    """Download a file from a GitHub repository."""
+    # for branches URLs are:
+    # //raw.githubusercontent.com/invariantlabs-ai/explorer-public/refs/heads/v0.1/docker-compose.yml
+    # for tags URLs are:
+    # //raw.githubusercontent.com/invariantlabs-ai/explorer-public/refs/tags/v0.1/docker-compose.yml
+
+    try:
+        url = (
+            f"https://raw.githubusercontent.com/{repository}/refs/heads/{tag}/{path}"
+            if tag == "main"
+            else f"https://raw.githubusercontent.com/{repository}/refs/tags/{tag}/{path}"
+        )
+        print("[Updating]", url)
+        r = requests.get(url)
+        r.raise_for_status()
+        return r.text
+    # not connected to the internet
+    except requests.exceptions.ConnectionError:
+        print(
+            "Failed to connect to the internet. Please check your connection and try again. `invariant explorer` requires an internet connection to download and update the necessary Docker images."
+        )
+        exit(1)
+
+
+def docker_compose_setup(version):
+    """Download the latest Docker Compose setup for the Invariant Explorer."""
     tf = tempfile.NamedTemporaryFile(
         delete=False, prefix="docker-compose-", suffix=".yml"
     )
 
     with open(tf.name, "w") as f:
-        f.write(s)
+        contents = github_file(
+            "invariantlabs-ai/explorer-public", version, "docker-compose.yml"
+        )
+        f.write(contents)
 
     return tf.name
 
 
-def config_file():
-    s = """# this configuration file is available both in the frontend and the backend
-# WARNING: never put any sensitive information in this file, as it is exposed to the client
-
-# limit at which the content of a message will be truncated (UI and on the API)
-truncation_limit: 10000
-server_truncation_limit: 100000
-
-# the name of this deployment instance (e.g. prod, local, preview, <custom name>)
-instance_name: local
-
-## authentication setup (Keycloak)
-
-# realm name for authentication
-authentication_realm: invariant-dev
-# prefix of the client ID used to identify the authentication client (e.g. invariant- will be expanded to invariant-$APP_NAME)
-authentication_client_id_prefix: invariant-dev
-
-# whether this is a private instance or not (private instances do not offer a public homepage or any form of anonymous access)
-private: false
-
-# whether telemetry is enabled for this instance
-telemetry: true"""
-
+def config_file(version):
+    """Download the latest configuration file for the Invariant Explorer."""
     tf = tempfile.NamedTemporaryFile(
         delete=False, prefix="explorer.config-", suffix=".yml"
     )
 
     with open(tf.name, "w") as f:
-        f.write(s)
+        contents = github_file(
+            "invariantlabs-ai/explorer-public",
+            version,
+            "configs/explorer.local.yml",
+        )
+        f.write(contents)
 
     return tf.name
 
 
 def ensure_dot_env_exists():
+    """Ensure that the user has a `.env` file for the Invariant Explorer."""
     if not os.path.exists(".env"):
         with open(".env", "w") as f:
             f.write("""POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
 POSTGRES_DB=invariantmonitor
-POSTGRES_HOST=database
-
-PGADMIN_DEFAULT_EMAIL=admin@mail.com
-PGADMIN_DEFAULT_PASSWORD=admin""")
+POSTGRES_HOST=database""")
 
 
 def launch_explorer(args=None):
@@ -219,11 +179,22 @@ def launch_explorer(args=None):
     else:
         args = parser.parse_args(args)
 
-    compose_file = latest_docker_compose_setup()
-    cf = config_file()
+    # gets the config and docker compose files for the specified version or branch
+    version = args.version
+    if version == "stable":
+        versions = released_versions("invariantlabs-ai/explorer-public")
+        if len(versions) == 0:
+            print(
+                "No published versions of Explorer found. Please specify a specific version using --version=vX.Y.Z."
+            )
+            exit(1)
+        version = versions[0]["name"]
 
-    print(compose_file)
+    # download the files for the specified version
+    compose_file = docker_compose_setup(version)
+    cf = config_file(version)
 
+    # sets up environment
     ensure_has_docker_compose()
     ensure_has_docker_network()
     ensure_has_db_folder()
@@ -238,7 +209,11 @@ def launch_explorer(args=None):
         "PORT_HTTP": str(args.port),
         "PORT_API": "8000",
         "KEYCLOAK_CLIENT_ID_SECRET": "local-does-not-use-keycloak",
+        # for 'main' we pull the latest image
+        "VERSION": version if version != "main" else "latest",
     }
+
+    print("[version]", env["VERSION"])
 
     p = subprocess.Popen(
         # make sure paths are relative to the current directory

@@ -203,6 +203,7 @@ def main():
     """Entry point for the Invariant Runner."""
     actions = {
         "test": "Runs a specified test (folder) with Invariant test (pytest compatible arguments)",
+        "explorer": "Launch the Invariant Explorer as a local Docker compose application (requires Docker)",
         "help": "Shows this help message",
     }
 
