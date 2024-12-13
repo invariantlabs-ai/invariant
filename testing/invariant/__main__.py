@@ -20,6 +20,7 @@ from invariant.constants import (
     INVARIANT_TEST_RUNNER_CONFIG_ENV_VAR,
     INVARIANT_TEST_RUNNER_TERMINAL_WIDTH_ENV_VAR,
 )
+from invariant.explorer import launch_explorer
 from invariant.utils import utils
 
 # Configure logging
@@ -68,9 +69,11 @@ def create_config(args: argparse.Namespace) -> Config:
     """Create and return a Config instance based on parsed arguments and environment variables.
 
     Args:
+    ----
         args (argparse.Namespace): Parsed command-line arguments.
 
     Returns:
+    -------
         Config: Config instance with dataset name, push status, and API key.
 
     """
@@ -203,7 +206,7 @@ def main():
         "help": "Shows this help message",
     }
 
-    if len(sys.argv) < 2 or sys.argv[1] not in actions or sys.argv[1] == "help":
+    if len(sys.argv) < 2:
         print("Usage: invariant <command> [<args>]")
         print("\nSupported Commands:\n")
         for verb, description in actions.items():
@@ -214,6 +217,8 @@ def main():
     verb = sys.argv[1]
     if verb == "test":
         return test(sys.argv[2:])
+    elif verb == "explorer":
+        return launch_explorer(sys.argv[2:])
     else:
         print(f"Unknown action: {verb}")
         return 1
