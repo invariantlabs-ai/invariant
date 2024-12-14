@@ -6,8 +6,8 @@ import os
 import subprocess
 import tempfile
 from pathlib import Path
-
 import requests
+import time
 
 parser = argparse.ArgumentParser(
     prog="invariant explorer",
@@ -75,6 +75,10 @@ def ensure_has_docker_network():
 def ensure_has_db_folder():
     """Ensure that the user has the database folder that the Invariant Explorer uses."""
     Path("./data/database").mkdir(parents=True, exist_ok=True)
+    
+def is_db_initialized():
+    db_folders = list(Path("./data/database").iterdir())
+    return len(db_folders) > 0
 
 
 # list active tags of repo
@@ -194,6 +198,8 @@ def launch_explorer(args=None):
     ensure_has_docker_network()
     ensure_has_db_folder()
     ensure_dot_env_exists()
+    
+    first_run = not is_db_initialized()
 
     env = {
         **dict(os.environ),
@@ -209,6 +215,53 @@ def launch_explorer(args=None):
     }
 
     print("[version]", env["VERSION"])
+   
+    if first_run: 
+        print("First run: initializing database")
+        p = subprocess.Popen(
+            # make sure paths are relative to the current directory
+            [
+                "docker",
+                "compose",
+                "-f",
+                compose_file,
+                "--project-directory",
+                ".",
+                "up",
+                "-d",
+                "database",
+                "--build",
+            ],
+            env=env,
+        )
+        p.communicate()
+        if p.returncode != 0:
+            raise Exception(
+                "Failed to launch the Invariant Explorer. Please check the logs for more information."
+            )
+
+        # wait for the database to be ready and then close the process
+        time.sleep(3)
+        p = subprocess.Popen(
+            # make sure paths are relative to the current directory
+            [
+                "docker",
+                "compose",
+                "-f",
+                compose_file,
+                "--project-directory",
+                ".",
+                "down",
+                "database",
+            ],
+            env=env,
+        )
+        p.communicate()
+        if p.returncode != 0:
+            raise Exception(
+                "Failed to launch the Invariant Explorer. Please check the logs for more information."
+            )
+
 
     p = subprocess.Popen(
         # make sure paths are relative to the current directory
