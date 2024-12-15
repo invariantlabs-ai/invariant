@@ -99,7 +99,8 @@ def released_versions(repository):
         r = requests.get(
             url,
             headers={
-                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Safari/605.1.15"
+                # make sure to not get cached versions
+                "Cache-Control": "no-cache",
             },
         )
         r.raise_for_status()
@@ -119,7 +120,6 @@ def released_versions(repository):
         # check for rate limits
         if e.response.status_code == 403:
             print("GitHub API rate limit reached, please try again later.")
-            return [{"name": "v0.0.2"}]
             exit(1)
     except requests.exceptions.ConnectionError:
         print(
@@ -140,7 +140,8 @@ def github_file(repository, tag, path):
         r = requests.get(
             url,
             headers={
-                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Safari/605.1.15"
+                # make sure to not get cached versions
+                "Cache-Control": "no-cache",
             },
         )
         r.raise_for_status()
