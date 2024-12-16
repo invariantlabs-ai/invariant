@@ -27,3 +27,4 @@ test.py
 
 # Custom directory
 .invariant/
+data
