@@ -162,7 +162,7 @@ def docker_compose_setup(version):
 
     with open(tf.name, "w") as f:
         contents = github_file(
-            "invariantlabs-ai/explorer-public", version, "docker-compose.stable.yml"
+            "invariantlabs-ai/explorer", version, "docker-compose.stable.yml"
         )
         f.write(contents)
 
@@ -177,7 +177,7 @@ def config_file(version):
 
     with open(tf.name, "w") as f:
         contents = github_file(
-            "invariantlabs-ai/explorer-public",
+            "invariantlabs-ai/explorer",
             version,
             "configs/explorer.local.yml",
         )
@@ -195,7 +195,7 @@ class ExplorerLauncher:
         # gets the config and docker compose files for the specified version or branch
         version = args.version
         if version == "stable":
-            versions = released_versions("invariantlabs-ai/explorer-public")
+            versions = released_versions("invariantlabs-ai/explorer")
             if len(versions) == 0:
                 print(
                     "No published versions of Explorer found. Please specify a specific version using --version=vX.Y.Z."
