@@ -37,60 +37,6 @@ parser.add_argument("flags", nargs=argparse.REMAINDER)
 
 args = None
 
-
-def ensure_has_docker_compose():
-    """Ensure that the user has Docker Compose installed."""
-    try:
-        p = subprocess.Popen(
-            ["docker", "compose", "--version"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        p.communicate()
-
-        if p.returncode != 0:
-            raise Exception(
-                "Docker Compose is not installed. Please go to https://docs.docker.com/compose/install/ to install it and then re-run this command."
-            )
-    except FileNotFoundError:
-        raise Exception(
-            "Docker Compose is not installed. Please go to https://docs.docker.com/compose/install/ to install it and then re-run this command."
-        )
-
-
-def ensure_has_docker_network():
-    """Ensure that the user has the Docker network that the Invariant Explorer uses `invariant-explorer-web`."""
-    p = subprocess.Popen(
-        ["docker", "network", "ls", "--filter", "name=invariant-explorer-web"],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    p.communicate()
-
-    if p.returncode != 0:
-        p = subprocess.Popen(
-            ["docker", "network", "create", "invariant-explorer-web"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        p.communicate()
-
-        if p.returncode != 0:
-            raise Exception(
-                "Failed to create the Docker network that the Invariant Explorer uses. Please check the logs for more information."
-            )
-
-
-def ensure_has_db_folder():
-    """Ensure that the user has the database folder that the Invariant Explorer uses."""
-    Path("./data/database").mkdir(parents=True, exist_ok=True)
-
-
-def is_db_initialized():
-    db_folders = list(Path("./data/database").iterdir())
-    return len(db_folders) > 0
-
-
 # list active tags of repo
 def released_versions(repository):
     """List the tags of a GitHub repository."""
@@ -230,25 +176,35 @@ class ExplorerLauncher:
 
     def ensure_has_docker_network(self):
         """Ensure that the user has the Docker network that the Invariant Explorer uses `invariant-explorer-web`."""
+        
+        # check if the network exists
         p = subprocess.Popen(
-            ["docker", "network", "ls", "--filter", "name=invariant-explorer-web"],
+            ["docker", "network", "ls", "--format", "{{.Name}}"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
-        p.communicate()
-
+        out, _ = p.communicate()
         if p.returncode != 0:
+            raise Exception(
+                "Failed to check for Docker networks. Please make sure Docker is installed and running."
+            )
+        out = out.decode("utf-8")
+        network_names = out.split("\n")
+        if "invariant-explorer-web" not in network_names:
+            print("[Creating network] invariant-explorer-web")
+            # create the network
             p = subprocess.Popen(
                 ["docker", "network", "create", "invariant-explorer-web"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
             p.communicate()
-
             if p.returncode != 0:
                 raise Exception(
-                    "Failed to create the Docker network that the Invariant Explorer uses. Please check the logs for more information."
+                    "Failed to create the Docker network `invariant-explorer-web`. Please make sure Docker is installed and running."
                 )
+        else:
+            print("[Network exists] invariant-explorer-web")
 
     def ensure_has_db_folder(self):
         """Ensure that the user has the database folder that the Invariant Explorer uses."""
