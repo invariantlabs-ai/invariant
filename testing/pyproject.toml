@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "invariant-ai"
-version = "0.0.4"
+version = "0.1.0"
 description = "Testing library for AI Agents by InvariantLabs"
 authors = ["InvariantLabs <hello@invariantlabs.ai>"]
 readme = "README.md"
