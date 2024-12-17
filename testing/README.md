@@ -25,7 +25,7 @@ Using localized assertions, testing always points you to the exact part of the a
 
 <div align="center">
   
-<img src="https://github.com/user-attachments/assets/7b568167-7746-4a42-8ebf-6b101e910236" width="70%"/>
+<img src="https://explorer.invariantlabs.ai/docs/testing/assets/overview.png" width="70%"/>
 </div>
 
 ## Installation
@@ -110,7 +110,7 @@ As an alternative to the command line, you can also [visualize test results](htt
 $ invariant test --push
 ```
 
-![image](https://github.com/user-attachments/assets/8305e202-0d63-435c-9e71-0988a6f9d24a)
+![image](https://explorer.invariantlabs.ai/docs/testing/assets/explorer.png)
 
 
 Like the terminal output, the Explorer highlights the relevant ranges, but does so even more precisely, marking the exact words that caused the assertion to fail.
