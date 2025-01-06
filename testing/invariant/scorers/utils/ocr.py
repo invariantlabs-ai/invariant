@@ -38,7 +38,7 @@ class OCRDetector:
         text: str,
         case_sensitive: bool = False,
         bbox: Optional[dict] = None,
-    ) -> bool:
+    ) -> tuple[bool, list[dict[str, int]]]:
         """Detect if the expected text appears in the image using Tesseract OCR.
 
         Args:
@@ -50,8 +50,10 @@ class OCRDetector:
 
         Retruns:
             bool: True if the text is found in the image, False otherwise.
+            list: List of bounding box coordinates (scaled by image size) of the text in the image.
 
         """
+        image_width, image_height = image.size
         if not is_program_installed("tesseract"):
             raise RuntimeError(
                 "Please install tesseract to use the contains function for images."
@@ -76,26 +78,49 @@ class OCRDetector:
                     check=True,
                 )
                 self.last_hocr = result.stdout  # disable=attribute-defined-outside-init
-                extracted_text = self._extract_text_from_hocr(result.stdout)
+
             except subprocess.CalledProcessError as e:
                 raise RuntimeError(f"Tesseract OCR failed: {e.stderr}") from e
 
-        if not case_sensitive:
-            text = text.lower()
+        # Extract text from HOCR content
+        json_res = self.hocr_to_json(self.last_hocr)
 
-        if bbox is not None:
-            json_res = self.hocr_to_json(self.last_hocr)
-            for word in json_res["words"]:
-                word_text = word["text"]
-                if not case_sensitive:
-                    word_text = word_text.lower()
-                if self._is_in_bbox(bbox, word["bbox"]) and text in word_text:
-                    return True
-            return False
+        found = False
+        bounding_boxes = []
 
-        if not case_sensitive:
-            extracted_text = extracted_text.lower()
-        return text in extracted_text
+        # Iterate over words in the OCR result
+        for word in json_res["words"]:
+            word_text = word["text"]
+
+            # If case_sensitive is False, convert both text and word to lowercase
+            if not case_sensitive:
+                word_text = word_text.lower()
+                text = text.lower()
+
+            # If the text is not in the word, skip
+            if not (text in word_text):
+                continue
+
+            # If bbox is set and the word is not in the bbox, skip
+            if bbox and not self._is_in_bbox(bbox, word["bbox"]):
+                continue
+
+            # Otherwise, add the bounding box to the list
+            found = True
+            bounding_boxes.append(
+                self._scale_bbox(word["bbox"], image_width, image_height)
+            )
+
+        return found, bounding_boxes
+
+    def _scale_bbox(self, bbox: dict, image_width: int, image_height: int) -> dict:
+        """Scale bounding box to be relative to image size."""
+        return {
+            "x1": float(bbox["x1"] / image_width),
+            "y1": float(bbox["y1"] / image_height),
+            "x2": float(bbox["x2"] / image_width),
+            "y2": float(bbox["y2"] / image_height),
+        }
 
     def _extract_text_from_hocr(self, hocr: str) -> str:
         """Extract plain text from HOCR content."""
