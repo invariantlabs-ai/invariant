@@ -2,6 +2,7 @@
 
 import base64
 import io
+import logging
 from typing import Optional
 
 from PIL import Image
@@ -11,6 +12,9 @@ from invariant.scorers.utils.ocr import OCRDetector
 
 from .invariant_bool import InvariantBool
 from .invariant_string import InvariantString
+
+logging.basicConfig(level=logging.WARNING)
+logger = logging.getLogger(__name__)
 
 
 class InvariantImage(InvariantString):
@@ -87,12 +91,19 @@ class InvariantImage(InvariantString):
 
         # This assumes that the first address (if any) contains the message index!
         if addresses and bboxes:
-            message_index = addresses[0].split(":")[0]
+            print(addresses)
+            try:
+                message_index = addresses[0].split(":")[0]
 
-            # Add the bounding box coordinates to the addresses.
-            for bbox_coords in bboxes:
-                x1, y1, x2, y2 = bbox_coords.values()
-                addresses.append(f"{message_index}:bbox-{x1},{y1},{x2},{y2}")
+                # Add the bounding box coordinates to the addresses.
+                for bbox_coords in bboxes:
+                    x1, y1, x2, y2 = bbox_coords.values()
+                    addresses.append(f"{message_index}:bbox-{x1},{y1},{x2},{y2}")
+
+            except IndexError:
+                logger.warning(
+                    "Failed to extract message index for bounding box construction"
+                )
 
         return InvariantBool(res, addresses)
 
