@@ -2,52 +2,44 @@
 name = "invariant"
 version = "0.1.0"
 description = "Invariant policy language"
-dependencies = [
-    "lark>=1.1.9",
-    "termcolor>=2.4.0",
-    "pydantic>=2.7.3",
-    "pip>=24.0",
-    "semgrep>=1.78.0",
-    "pydantic>=2.9.2",
-    "requests>=2.32.3",
-    "nltk>=3.9.1",
-    "pytest>=8.3.3",
-    "openai>=1.54.4",
-    "Pillow>=10.0.0",
-    "beautifulsoup4>=4.12.3",
-    "invariant-sdk>=0.0.4",
-    "diskcache>=5.6.3",
-    "pexpect>=4.9.0",
-]
 readme = "README.md"
-requires-python = ">= 3.10"
+requires-python = ">= 3.10,<4"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[tool.rye]
-managed = true
-dev-dependencies = [
-    "pytest>=8.2.1",
-    # we declare extra dependencies as dev dependencies, so they are available when running tests
-    # for use, these have to be installed via the CLI tool 'invariant-cli add' or manually
-    "presidio-analyzer>=2.2.354",
-    "spacy>=3.7.5",
-    "langchain>=0.2.1",
-    "langchain-openai>=0.1.7",
-    "langchainhub>=0.1.16",
-    "presidio-analyzer>=2.2.354",
-    "transformers>=4.41.1",
-    "torch>=2.3.0",
-    "python-dotenv>=1.0.1",
-    "pytest-cov>=5.0.0",
-    "openai-swarm>=0.1.1",
-    "langgraph>=0.2.53",
-    "langchain-openai>=0.2.10",
-    "langchain-community>=0.3.9",
-    "anthropic>=0.40.0",
-]
+[tool.poetry.dependencies]
+python = ">= 3.10, <4.0"
+pydantic = ">=2.9.2, <3.0.0"
+requests = "^2.32.3"
+nltk = "^3.9.1"
+openai = "^1.54.4"
+Pillow = "^10.0.0"
+beautifulsoup4 = "^4.12.3"
+invariant-sdk = "^0.0.4"
+diskcache = "^5.6.3"
+pexpect = "^4.9.0"
+lark = ">=1.1.9"
+termcolor = ">=2.4.0"
+pip = ">=24.0"
+semgrep = ">=1.78.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=8.2.1"
+pytest-cov = "^5.0.0"
+openai-swarm = "^0.1.1"
+langgraph = "^0.2.53"
+langchain-openai = ">=0.2.10"
+langchain-community = "^0.3.9"
+anthropic = "^0.40.0"
+presidio-analyzer = ">=2.2.354"
+spacy = ">=3.7.5"
+langchain = ">=0.2.1"
+langchainhub = ">=0.1.16"
+transformers = ">=4.41.1"
+torch = ">=2.3.0"
+python-dotenv = ">=1.0.1"
 
 [project.scripts]
 invariant = "invariant.__main__:main"
