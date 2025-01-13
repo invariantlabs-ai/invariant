@@ -1,8 +1,8 @@
 import unittest
-from invariant.analyzer import ast
-from invariant.analyzer.language.ast import PolicyError
-from invariant.analyzer import Policy, RuleSet, Monitor
-from invariant.analyzer.traces import user, assistant, tool_call, tool, system
+
+from invariant.analyzer import Policy
+from invariant.analyzer.traces import assistant, tool, tool_call
+
 
 class TestQuantifiers(unittest.TestCase):
     def test_quantifier_with_args(self):
@@ -132,7 +132,7 @@ raise "found result" if:
         call -> output
         "django" in output.content
     """)
-        
+
         trace = [
             assistant("1", tool_call("1", "scroll_down", {})),
             tool("1", "django"),
@@ -159,13 +159,13 @@ raise "found result" if:
         call -> output
         "django" in output.content
     """)
-        
+
         trace = [
             assistant("1", tool_call("1", "scroll_down", {})),
             tool("1", "django"),
             tool("1", "django"),
             tool("1", "django"),
-            tool("1", "django")
+            tool("1", "django"),
         ]
 
         errors = policy.analyze(trace).errors

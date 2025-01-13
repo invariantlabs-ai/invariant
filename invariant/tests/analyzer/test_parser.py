@@ -1,6 +1,7 @@
 import unittest
-from invariant.analyzer import parse, ast
-from invariant.analyzer.language.ast import PolicyError
+
+from invariant.analyzer import ast, parse
+
 
 class TestParser(unittest.TestCase):
     def test_import(self):
@@ -90,9 +91,7 @@ class TestParser(unittest.TestCase):
         raise_ = policy.statements[2]
         assert type(raise_) is ast.RaisePolicy
         assert type(raise_.exception_or_constructor) is ast.StringLiteral
-        assert (
-            raise_.exception_or_constructor.value == "You must not give medical advice"
-        )
+        assert raise_.exception_or_constructor.value == "You must not give medical advice"
 
     def test_variable(self):
         policy = parse("""
@@ -155,7 +154,7 @@ class TestParser(unittest.TestCase):
 
     def test_three_messages(self):
         policy = parse(
-        """
+            """
         from invariant import Message, PolicyViolation, match
 
         raise PolicyViolation("Cannot send assistant message:", msg) if:
@@ -166,7 +165,8 @@ class TestParser(unittest.TestCase):
             match(r".*X.*", msg.content)
             msg2.role == "assistant"
             msg2.role == msg3.role
-        """)
+        """
+        )
         self.assertIsInstance(policy.statements[1].body[0], ast.TypedIdentifier)
         self.assertIsInstance(policy.statements[1].body[1], ast.TypedIdentifier)
         self.assertIsInstance(policy.statements[1].body[2], ast.TypedIdentifier)
@@ -175,10 +175,9 @@ class TestParser(unittest.TestCase):
         self.assertIsInstance(policy.statements[1].body[5], ast.BinaryExpr)
         self.assertIsInstance(policy.statements[1].body[6], ast.BinaryExpr)
 
-
     def test_tool_reference(self):
         policy = parse(
-        """
+            """
         from invariant import ToolCall, PolicyViolation
 
         raise PolicyViolation("Cannot send assistant message:", call) if:
@@ -187,7 +186,8 @@ class TestParser(unittest.TestCase):
             call is tool:something({
                 "x": 2.5
             })
-        """)
+        """
+        )
         self.assertIsInstance(policy.statements[1].body[1], ast.BinaryExpr)
         self.assertIsInstance(policy.statements[1].body[1].right, ast.ToolReference)
         self.assertEqual(policy.statements[1].body[1].right.name, "assistant")
@@ -196,9 +196,10 @@ class TestParser(unittest.TestCase):
         self.assertIsInstance(policy.statements[1].body[2].right, ast.SemanticPattern)
         self.assertEqual(policy.statements[1].body[2].right.tool_ref.name, "something")
         self.assertEqual(policy.statements[1].body[2].right.args[0].entries[0].key, "x")
-        self.assertIsInstance(policy.statements[1].body[2].right.args[0].entries[0].value, ast.NumberLiteral)
+        self.assertIsInstance(
+            policy.statements[1].body[2].right.args[0].entries[0].value, ast.NumberLiteral
+        )
         self.assertEqual(policy.statements[1].body[2].right.args[0].entries[0].value.value, 2.5)
-        
 
     def test_string_ops(self):
         policy_str = """
@@ -210,7 +211,7 @@ class TestParser(unittest.TestCase):
             (m2: Message)
             second_more_words(m1, m2)
         """
-        policy = parse(policy_str.format(placeholder='5'))
+        policy = parse(policy_str.format(placeholder="5"))
         self.assertIsInstance(policy.statements[0].value[0], ast.BinaryExpr)
 
         policy2 = parse(policy_str.format(placeholder='len(m2.content.split(" "))'))
@@ -230,13 +231,27 @@ class TestParser(unittest.TestCase):
         """)
 
         assert policy.statements[0].value[0].value == "hello"
-        assert policy.statements[1].value[0].value == "world\"", "Expected world\" but got " + policy.statements[1].value[0].value
-        assert policy.statements[2].value[0].value == "world'", "Expected world' but got " + policy.statements[2].value[0].value
-        assert policy.statements[3].value[0].value == "world\"d\"e\"", "Expected world\"d\"e\" but got " + policy.statements[3].value[0].value
-        assert policy.statements[4].value[0].value == "world", "Expected world but got " + policy.statements[4].value[0].value
-        assert policy.statements[5].value[0].value == "world'", "Expected world' but got " + policy.statements[5].value[0].value
-        assert policy.statements[6].value[0].value == "world\"", "Expected world\" but got " + policy.statements[6].value[0].value
-        assert policy.statements[7].value[0].value == "world'd'e'", "Expected world'd'e' but got " + policy.statements[7].value[0].value
+        assert policy.statements[1].value[0].value == 'world"', (
+            'Expected world" but got ' + policy.statements[1].value[0].value
+        )
+        assert policy.statements[2].value[0].value == "world'", (
+            "Expected world' but got " + policy.statements[2].value[0].value
+        )
+        assert policy.statements[3].value[0].value == 'world"d"e"', (
+            'Expected world"d"e" but got ' + policy.statements[3].value[0].value
+        )
+        assert policy.statements[4].value[0].value == "world", (
+            "Expected world but got " + policy.statements[4].value[0].value
+        )
+        assert policy.statements[5].value[0].value == "world'", (
+            "Expected world' but got " + policy.statements[5].value[0].value
+        )
+        assert policy.statements[6].value[0].value == 'world"', (
+            'Expected world" but got ' + policy.statements[6].value[0].value
+        )
+        assert policy.statements[7].value[0].value == "world'd'e'", (
+            "Expected world'd'e' but got " + policy.statements[7].value[0].value
+        )
 
     def test_modified_strings(self):
         policy = parse("""
@@ -288,7 +303,7 @@ class TestParser(unittest.TestCase):
         assert policy.statements[1].value[0].modifier == "r"
         assert policy.statements[2].value[0].value == "\nabc\n"
         assert policy.statements[2].value[0].modifier == "f"
-        
+
         assert policy.statements[3].value[0].value == "\nabc\n"
         assert policy.statements[4].value[0].value == "\nabc\n"
         assert policy.statements[4].value[0].modifier == "r"
@@ -336,7 +351,7 @@ class TestParser(unittest.TestCase):
 
         self.assertIsInstance(policy.statements[0].body[1], ast.BinaryExpr)
         self.assertIsInstance(policy.statements[0].body[1].left, ast.BinaryExpr)
-        
+
         self.assertIsInstance(policy.statements[0].body[1].left.left, ast.StringLiteral)
         self.assertIsInstance(policy.statements[0].body[1].left.right, ast.StringLiteral)
 
@@ -374,17 +389,25 @@ class TestParser(unittest.TestCase):
         self.assertIsInstance(policy.statements[0].body[1], ast.BinaryExpr)
         self.assertIsInstance(policy.statements[0].body[1].left, ast.BinaryExpr)
         self.assertIsInstance(policy.statements[0].body[1].left.left, ast.BinaryExpr)
-        
+
         self.assertIsInstance(policy.statements[0].body[1].left.left.left, ast.StringLiteral)
         self.assertIsInstance(policy.statements[0].body[1].left.left.right, ast.FunctionCall)
 
         self.assertIsInstance(policy.statements[0].body[1].left.left.right.name, ast.MemberAccess)
-        self.assertIsInstance(policy.statements[0].body[1].left.left.right.name.expr, ast.MemberAccess)
+        self.assertIsInstance(
+            policy.statements[0].body[1].left.left.right.name.expr, ast.MemberAccess
+        )
         self.assertEqual(policy.statements[0].body[1].left.left.right.name.member, "strip")
         self.assertEqual(policy.statements[0].body[1].left.left.right.name.expr.member, "arg")
-        self.assertEqual(policy.statements[0].body[1].left.left.right.name.expr.expr.member, "arguments")
-        self.assertEqual(policy.statements[0].body[1].left.left.right.name.expr.expr.expr.member, "function")
-        self.assertIsInstance(policy.statements[0].body[1].left.left.right.name.expr.expr.expr.expr, ast.Identifier)
+        self.assertEqual(
+            policy.statements[0].body[1].left.left.right.name.expr.expr.member, "arguments"
+        )
+        self.assertEqual(
+            policy.statements[0].body[1].left.left.right.name.expr.expr.expr.member, "function"
+        )
+        self.assertIsInstance(
+            policy.statements[0].body[1].left.left.right.name.expr.expr.expr.expr, ast.Identifier
+        )
 
     def test_assign_in(self):
         policy = parse("""
@@ -443,6 +466,7 @@ raise "found result" if:
         self.assertIsInstance(policy.statements[1].body[0], ast.UnaryExpr)
         self.assertIsInstance(policy.statements[1].body[0].expr, ast.Quantifier)
         self.assertIsInstance(policy.statements[1].body[0].expr.body[0], ast.TypedIdentifier)
+
 
 if __name__ == "__main__":
     unittest.main()

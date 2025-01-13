@@ -1,16 +1,29 @@
 """
 Semantic matching patterns as accessible in the IPA, e.g. (call is tool:func({x: "[0-9]+"})).
 """
-import re
-from typing import Optional, List
-from dataclasses import dataclass
-from typing import List, Dict, Any
-from invariant.analyzer.language.ast import ArrayLiteral, Node, NumberLiteral, ObjectLiteral, PolicyRoot, SemanticPattern, StringLiteral, Transformation, Node, ToolReference, ValueReference, Wildcard
 
+import re
 from abc import ABC, abstractmethod
-from invariant.analyzer.runtime.utils.pii import PII_Analyzer
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
+
+from invariant.analyzer.language.ast import (
+    ArrayLiteral,
+    Node,
+    NumberLiteral,
+    ObjectLiteral,
+    PolicyRoot,
+    SemanticPattern,
+    StringLiteral,
+    ToolReference,
+    Transformation,
+    ValueReference,
+    Wildcard,
+)
 from invariant.analyzer.runtime.utils.moderation import ModerationAnalyzer
-from invariant.analyzer.stdlib.invariant.nodes import Message, ToolCall, ToolOutput
+from invariant.analyzer.runtime.utils.pii import PII_Analyzer
+from invariant.analyzer.stdlib.invariant.nodes import ToolCall, ToolOutput
+
 
 class SemanticPatternMatcher(ABC):
     """Matches a variable that is the result of a function call, where the function name matches the given pattern."""
@@ -27,18 +40,17 @@ class SemanticPatternMatcher(ABC):
     def match(self, obj) -> bool:
         raise NotImplementedError
 
+
 class MatcherFactory(Transformation):
     """
     Creates the matcher object from a given semantic pattern (AST node).
     """
+
     def transform(self, pattern: SemanticPattern):
         return self.visit(pattern)
-    
+
     def visit_SemanticPattern(self, node: SemanticPattern):
-        return ToolCallMatcher(
-            node.tool_ref.name,
-            [self.visit(arg) for arg in node.args]
-        )
+        return ToolCallMatcher(node.tool_ref.name, [self.visit(arg) for arg in node.args])
 
     def visit_ObjectLiteral(self, node: ObjectLiteral):
         return DictMatcher({entry.key: self.visit(entry.value) for entry in node.entries})
@@ -47,7 +59,7 @@ class MatcherFactory(Transformation):
         return ListMatcher([self.visit(arg) for arg in node.elements])
 
     def visit_ValueReference(self, node: ValueReference):
-        if not node.value_type in VALUE_MATCHERS:
+        if node.value_type not in VALUE_MATCHERS:
             raise ValueError(f"Unsupported value type: {node.value_type}")
         return VALUE_MATCHERS[node.value_type](node.value_type)
 
@@ -56,7 +68,7 @@ class MatcherFactory(Transformation):
 
     def visit_StringLiteral(self, node: StringLiteral):
         return ConstantMatcher(node.value)
-    
+
     def visit_NumberLiteral(self, node: NumberLiteral):
         return ConstantMatcher(node.value)
 
@@ -65,14 +77,16 @@ class MatcherFactory(Transformation):
 
         if isinstance(result, Node):
             raise ValueError(f"Unsupported semantic pattern: {node}")
-        
+
         return result
+
 
 @dataclass
 class ConstantMatcher(SemanticPatternMatcher):
     """
     Matches constant values.
     """
+
     value: Any
 
     def __repr__(self):
@@ -90,11 +104,13 @@ class ConstantMatcher(SemanticPatternMatcher):
             return False
         return self.value == value or self.match_regex(value)
 
+
 @dataclass
 class DictMatcher(SemanticPatternMatcher):
     """
     Matches dictionary values.
     """
+
     entries: Dict[str, Any]
 
     def __repr__(self):
@@ -105,8 +121,8 @@ class DictMatcher(SemanticPatternMatcher):
             return False
 
         for key, matcher in self.entries.items():
-            try: 
-                if not type(value) is dict:
+            try:
+                if type(value) is not dict:
                     return False
                 key_var = value[key]
                 if not matcher.match(key_var):
@@ -115,39 +131,43 @@ class DictMatcher(SemanticPatternMatcher):
                 return False
         return True
 
+
 @dataclass
 class ListMatcher(SemanticPatternMatcher):
     """
     Matches list values.
     """
+
     elements: List[Any]
 
     def __repr__(self):
         return f"[{', '.join(map(str, self.elements))}]"
-    
+
     def match(self, value) -> bool:
-        if not type(value) is list:
+        if type(value) is not list:
             return False
         if len(value) != len(self.elements):
             return False
         return all(matcher.match(var) for matcher, var in zip(self.elements, value))
+
 
 @dataclass
 class ToolCallMatcher(SemanticPatternMatcher):
     """
     Matches tool calls.
     """
+
     tool_pattern: str
     args: Optional[List[Any]]
 
     def match(self, value) -> bool:
         if type(value) is ToolOutput and value._tool_call is not None:
             value = value._tool_call
-        if not type(value) is ToolCall:
+        if type(value) is not ToolCall:
             return
         if not re.match(self.tool_pattern + "$", value.function.name):
             return False
-        
+
         # for now, we only support keyword-based arguments (first positional argument is object of key-value pairs)
         if len(self.args) == 0:
             return True
@@ -159,20 +179,24 @@ class ToolCallMatcher(SemanticPatternMatcher):
     def __repr__(self):
         return f"ToolCallMatcher({self.tool_pattern}, {self.args})"
 
+
 @dataclass
 class WildcardMatcher(SemanticPatternMatcher):
     """
     Matches any value.
     """
+
     pass
 
     def __repr__(self):
         return "*"
-    
+
     def match(self, value) -> bool:
         return True
 
+
 VALUE_MATCHERS = {}
+
 
 def value_matcher(cls):
     """
@@ -184,17 +208,18 @@ def value_matcher(cls):
         VALUE_MATCHERS[value_type] = cls
     return cls
 
+
 @value_matcher
 @dataclass
 class PIIMatcher(SemanticPatternMatcher):
     SUPPORTED_TYPES = ["EMAIL_ADDRESS", "LOCATION", "PHONE_NUMBER", "PERSON"]
-    
+
     def __init__(self, entity: str):
         self.entity = entity
 
     def __repr__(self):
         return f"PIIMatcher({self.entity})"
-    
+
     def match(self, value) -> bool:
         if not PIIMatcher.pii_analyzer:
             PIIMatcher.pii_analyzer = PII_Analyzer()
@@ -205,7 +230,9 @@ class PIIMatcher(SemanticPatternMatcher):
 
         return self.entity in res
 
+
 PIIMatcher.pii_analyzer = None
+
 
 @value_matcher
 @dataclass
@@ -219,18 +246,20 @@ class ModerationMatcher(SemanticPatternMatcher):
 
     def __repr__(self):
         return f"ModerationMatcher({self.category})"
-    
+
     def match(self, value) -> bool:
         if not ModerationMatcher.moderation_analyzer:
             ModerationMatcher.moderation_analyzer = ModerationAnalyzer()
         moderation_analyzer = ModerationMatcher.moderation_analyzer
 
-        if not type(value) is str:
+        if type(value) is not str:
             return False
 
         return moderation_analyzer.detect(value)
-    
+
+
 ModerationMatcher.moderation_analyzer = None
+
 
 @value_matcher
 @dataclass
@@ -241,6 +270,7 @@ class ValueMatcherDummyMatcher(SemanticPatternMatcher):
     Only used in testing, to test the integration of custom value matchers,
     without having to rely on external libraries.
     """
+
     SUPPORTED_TYPES = ["DUMMY"]
 
     def __init__(self, entity: str):
@@ -248,7 +278,6 @@ class ValueMatcherDummyMatcher(SemanticPatternMatcher):
 
     def __repr__(self):
         return f"ValueMatcherDummyMatcher({self.entity})"
-    
+
     def match(self, value) -> bool:
         return value == "__DUMMY__"
-        

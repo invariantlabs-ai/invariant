@@ -1,18 +1,32 @@
 """
 Invariant Policy Language scoping.
 """
-from invariant.analyzer.language.types import *
+
 import inspect
-from dataclasses import dataclass
+
+from invariant.analyzer.language.types import *
 
 IPL_BUILTINS = [
-    "LLM", "Message", "ToolCall", "Function", "ToolOutput", "Input",
-    "PolicyViolation", "UpdateMessage", "UpdateMessageHandler",
-    "any", "empty",
-    "match", "len", "find",
-    "min", "max", "sum",
-    "print"
+    "LLM",
+    "Message",
+    "ToolCall",
+    "Function",
+    "ToolOutput",
+    "Input",
+    "PolicyViolation",
+    "UpdateMessage",
+    "UpdateMessageHandler",
+    "any",
+    "empty",
+    "match",
+    "len",
+    "find",
+    "min",
+    "max",
+    "sum",
+    "print",
 ]
+
 
 class ExternalReference:
     def __init__(self, module, obj=None):
@@ -54,9 +68,9 @@ class VariableDeclaration:
     def from_signature(cls, signature: "FunctionSignature | Identifier", value=None):
         from invariant.analyzer.language.ast import FunctionSignature, Identifier
 
-        if isinstance(signature, FunctionSignature): # predicate declaration
+        if isinstance(signature, FunctionSignature):  # predicate declaration
             return cls(signature.name.name, value=value)
-        elif isinstance(signature, Identifier): # constant declaration
+        elif isinstance(signature, Identifier):  # constant declaration
             return cls(signature.name, value=value)
         else:
             raise ValueError(f"Invalid signature: {signature}")
@@ -77,7 +91,7 @@ class Scope:
             return self.declarations[name]
         if self.parent:
             return self.parent.resolve(name)
-        
+
         return self.resolve_builtin(name)
 
     def resolve_type(self, name):
@@ -107,7 +121,9 @@ class Scope:
             name = self.name + " "
 
         if self.parent:
-            return f"Scope({name}declarations: {self.declarations}, parent: {self.parent.__str__()})"
+            return (
+                f"Scope({name}declarations: {self.declarations}, parent: {self.parent.__str__()})"
+            )
         return f"Scope({name}declarations: {self.declarations})"
 
     def __repr__(self):
@@ -119,7 +135,7 @@ class Scope:
 
         if self.parent is None:
             return
-        
+
         for name, decl in self.parent.all():
             yield name, decl
 
@@ -128,7 +144,9 @@ class BuiltInScope(Scope):
     def __init__(self):
         super().__init__()
         for name in IPL_BUILTINS:
-            self.declarations[name] = VariableDeclaration(name, UnknownType(), ExternalReference("invariant.builtins", name))
+            self.declarations[name] = VariableDeclaration(
+                name, UnknownType(), ExternalReference("invariant.builtins", name)
+            )
 
     def register(self, name):
         def decorator(fn):
@@ -147,9 +165,7 @@ class BuiltInScope(Scope):
                 if signature.return_annotation != inspect._empty
                 else UnknownType()
             )
-            return FunctionType(
-                return_type, [UnknownType() for _ in signature.parameters]
-            )
+            return FunctionType(return_type, [UnknownType() for _ in signature.parameters])
 
 
 GlobalScope = BuiltInScope()
@@ -163,6 +179,7 @@ rule evaluation and not known ahead of time.
 """
 InputData = object()
 GlobalScope.register("input")(InputData)
+
 
 @GlobalScope.register("AccessDenied")
 class AccessDenied(Exception):
