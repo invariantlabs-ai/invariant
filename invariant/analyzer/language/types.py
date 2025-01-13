@@ -1,8 +1,6 @@
 """
 Invariant Policy Language types.
 """
-
-
 class UnknownType:
     def __str__(self):
         return "<unknown type>"

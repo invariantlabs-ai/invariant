@@ -1,5 +1,4 @@
 import unittest
-
 from invariant.analyzer import Policy
 from invariant.analyzer.extras import extras_available, presidio_extra
 from invariant.analyzer.runtime.input import mask_json_paths
@@ -16,7 +15,7 @@ def get_all_json_ranges(result):
 class TestBasicRanges(unittest.TestCase):
     def test_simple(self):
         policy = Policy.from_string(
-            """
+        """
         from invariant import Message, PolicyViolation, match
         
         INVALID_PATTERN := "X"
@@ -25,9 +24,11 @@ class TestBasicRanges(unittest.TestCase):
             (msg: Message)
             msg.role == "assistant"
             INVALID_PATTERN in msg.content
-        """
-        )
-        input = [{"role": "assistant", "content": "Hello, X"}]
+        """)
+        input = [{
+            "role": "assistant",
+            "content": "Hello, X"
+        }]
         result = policy.analyze(input, [])
         all_json_ranges = get_all_json_ranges(result)
 
@@ -37,7 +38,7 @@ class TestBasicRanges(unittest.TestCase):
 
     def test_masking(self):
         policy = Policy.from_string(
-            """
+        """
         raise "found match with the pattern" if:
             (msg: Message)
             "ABC" in msg.content
@@ -45,44 +46,28 @@ class TestBasicRanges(unittest.TestCase):
         raise "found match with the pattern (2)" if:
             (call: ToolCall)
             "DEFGH" in call.function.arguments.text
-        """
-        )
+        """)
         messages = [
             {"role": "user", "content": "Test test ABC, here is another ABC, end"},
-            {
-                "role": "assistant",
-                "content": "How are you doing",
-                "tool_calls": [
-                    {
-                        "type": "function",
-                        "id": "1",
-                        "function": {
-                            "name": "send",
-                            "arguments": {"text": "Check out DEFGH, they are great!"},
-                        },
-                    }
-                ],
-            },
+            {"role": "assistant", "content": "How are you doing", "tool_calls": [
+                {"type": "function", "id": "1", "function": {"name": "send", "arguments": {
+                    "text": "Check out DEFGH, they are great!"
+                }}}
+            ]},
         ]
         result = policy.analyze(messages)
         all_json_paths = get_all_json_ranges(result)
         moderated_messages = mask_json_paths(messages, all_json_paths, lambda x: "*" * len(x))
-        self.assertEqual(
-            moderated_messages[0]["content"], "Test test ***, here is another ***, end"
-        )
-        self.assertEqual(
-            moderated_messages[1]["tool_calls"][0]["function"]["arguments"]["text"],
-            "Check out *****, they are great!",
-        )
+        self.assertEqual(moderated_messages[0]["content"], "Test test ***, here is another ***, end")
+        self.assertEqual(moderated_messages[1]["tool_calls"][0]["function"]["arguments"]["text"], "Check out *****, they are great!")
 
     def test_match(self):
         policy = Policy.from_string(
-            """
+        """
         raise "found match with the pattern" if:
             (msg: Message)
             any(find("X\\d+Y", msg.content))
-        """
-        )
+        """)
         messages = [user("My name is X123Y, and my username is X456Y...")]
         result = policy.analyze(messages)
         all_json_ranges = get_all_json_ranges(result)
@@ -92,14 +77,13 @@ class TestBasicRanges(unittest.TestCase):
     @unittest.skipUnless(extras_available(presidio_extra), "presidio-analyzer is not installed")
     def test_pii(self):
         policy = Policy.from_string(
-            """
+        """
         from invariant.detectors import pii
 
         raise "found personal information in the trace" if:
             (msg: Message)
             any(pii(msg.content))
-        """
-        )
+        """)
         messages = [
             user("You are a helpful assistant. Your user is signed in as bob@mail.com"),
             user("Please message alice@gmail.com as soon as you can..."),
@@ -111,7 +95,7 @@ class TestBasicRanges(unittest.TestCase):
 
     def test_tool_call_name(self):
         policy = Policy.from_string(
-            """
+        """
         from invariant import Message, PolicyViolation, match
         
         INVALID_PATTERN := "X"
@@ -119,24 +103,27 @@ class TestBasicRanges(unittest.TestCase):
         raise PolicyViolation("Cannot send assistant message:", call) if:
             (call: ToolCall)
             "sen" in call.function.name
-        """
-        )
-        input = [
-            {
-                "role": "assistant",
-                "content": "Hello, X",
-                "tool_calls": [
-                    {"type": "function", "id": "1", "function": {"name": "send", "arguments": {}}}
-                ],
-            }
-        ]
+        """)
+        input = [{
+            "role": "assistant",
+            "content": "Hello, X",
+            "tool_calls": [
+                {
+                    "type": "function",
+                    "id": "1",
+                    "function": {
+                        "name": "send",
+                        "arguments": {}
+                    }
+                }
+            ]
+        }]
         result = policy.analyze(input, [])
         all_json_ranges = get_all_json_ranges(result)
 
         assert "0.tool_calls.0" in all_json_ranges
         assert "0.tool_calls.0.function.name:0-3" in all_json_ranges
         assert len(all_json_ranges) == 2
-
 
 if __name__ == "__main__":
     unittest.main()

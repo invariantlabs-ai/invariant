@@ -1,20 +1,21 @@
 """
 Optional dependency management for Invariant.
 """
-
+import traceback
 import sys
-
+import os
+import ast
+import warnings
 
 class ExtrasImport:
     """
-    An extras import is a dynamic import that comes with information about the
-    required package and corresponding version constraint.
+    An extras import is a dynamic import that comes with information about the 
+    required package and corresponding version constraint. 
 
     If the package is installed, the module is imported as usual. If the package
     is not installed, the wrapping 'Extra' feature group, can take the necessary
     steps to install the additional dependencies, if the user agrees.
     """
-
     def __init__(self, import_name, package_name, version_constraint):
         """Creates a new ExtrasImport object.
 
@@ -33,7 +34,7 @@ class ExtrasImport:
 
     def import_names(self, *specifiers):
         """
-        Import specific names from the module, e.g.
+        Import specific names from the module, e.g. 
 
         ```[<spec1>, <spec2>] = ExtrasImport(<package_name>, ...).import_names(<spec1>, <spec2>)```
 
@@ -70,10 +71,9 @@ class ExtrasImport:
         else:
             sites_str = ""
         return f"ExtrasImport('{self.name}', '{self.package_name}', '{self.version_constraint}'{sites_str})"
-
+    
     def __repr__(self):
         return str(self)
-
 
 class Extra:
     """
@@ -83,7 +83,6 @@ class Extra:
 
     For a list of available extras, see `Extra.find_all()` and below.
     """
-
     def __init__(self, name, description, packages):
         self.name = name
         self.description = description
@@ -103,7 +102,7 @@ class Extra:
             except ImportError:
                 self._is_available = False
                 return False
-
+        
         self._is_available = True
         return True
 
@@ -117,9 +116,7 @@ class Extra:
     def install(self):
         """Installs all required packages for this extra (using pip if available)."""
         # like for imports, but all in one go
-        msg = "warning: you are trying to use a feature that relies on the extra dependency '{}', which requires the following packages to be installed:\n".format(
-            self.name
-        )
+        msg = "warning: you are trying to use a feature that relies on the extra dependency '{}', which requires the following packages to be installed:\n".format(self.name)
         for imp in self.packages.values():
             msg += "   - " + imp.package_name + imp.version_constraint + "\n"
 
@@ -129,81 +126,52 @@ class Extra:
         if sys.stdin.isatty():
             sys.stderr.write("Press (y/enter) to install the packages or Ctrl+C to exit: ")
             answer = input()
-            if answer == "y" or len(answer) == 0:
+            if answer == 'y' or len(answer) == 0:
                 import subprocess
-
                 # check if 'pip' is installed
-                result = subprocess.run(
-                    [sys.executable, "-m", "pip", "--version"], capture_output=True
-                )
+                result = subprocess.run([sys.executable, "-m", "pip", "--version"], capture_output=True)
                 if result.returncode != 0:
-                    sys.stderr.write(
-                        "error: 'pip' is not installed. Please install the above mentioned packages manually.\n"
-                    )
+                    sys.stderr.write("error: 'pip' is not installed. Please install the above mentioned packages manually.\n")
                     sys.exit(1)
                 for imp in self.packages.values():
-                    subprocess.call(
-                        [
-                            sys.executable,
-                            "-m",
-                            "pip",
-                            "install",
-                            f"{imp.package_name}{imp.version_constraint}",
-                        ]
-                    )
+                    subprocess.call([sys.executable, "-m", "pip", "install", f"{imp.package_name}{imp.version_constraint}"])
             else:
                 sys.exit(1)
         else:
             sys.exit(1)
-
+    
     @staticmethod
     def find_all() -> list["Extra"]:
         return list(Extra.extras.values())
 
-
 Extra.extras = {}
 
 """Extra for features that rely on the `transformers` library."""
-transformers_extra = Extra(
-    "Transformers",
-    "Enables the use of 🤗 `transformer`-based models and classifiers in the analyzer",
-    {
-        "transformers": ExtrasImport("transformers", "transformers", ">=4.41.1"),
-        "torch": ExtrasImport("torch", "torch", ">=2.3.0"),
-    },
-)
+transformers_extra = Extra("Transformers", "Enables the use of 🤗 `transformer`-based models and classifiers in the analyzer", {
+    "transformers": ExtrasImport("transformers", "transformers", ">=4.41.1"),
+    "torch": ExtrasImport("torch", "torch", ">=2.3.0"),
+})
 
 """Extra for features that rely on the `openai` library."""
-openai_extra = Extra(
-    "OpenAI",
-    "Enables the use of OpenAI's GPT-3 API for text analysis",
-    {"openai": ExtrasImport("openai", "openai", ">=1.33.0")},
-)
+openai_extra = Extra("OpenAI", "Enables the use of OpenAI's GPT-3 API for text analysis", {
+    "openai": ExtrasImport("openai", "openai", ">=1.33.0")
+})
 
 """Extra for features that rely on the `presidio_analyzer` library."""
-presidio_extra = Extra(
-    "PII and Secrets Scanning (using Presidio)",
-    "Enables the detection of personally identifiable information (PII) and secret scanning in text",
-    {
-        "presidio_analyzer": ExtrasImport("presidio_analyzer", "presidio-analyzer", ">=2.2.354"),
-        "spacy": ExtrasImport("spacy", "spacy", ">=3.7.5"),
-    },
-)
+presidio_extra = Extra("PII and Secrets Scanning (using Presidio)", "Enables the detection of personally identifiable information (PII) and secret scanning in text", {
+    "presidio_analyzer": ExtrasImport("presidio_analyzer", "presidio-analyzer", ">=2.2.354"),
+    "spacy": ExtrasImport("spacy", "spacy", ">=3.7.5")
+})
 
 """Extra for features that rely on the `semgrep` library."""
-semgrep_extra = Extra(
-    "Code Scanning with Semgrep",
-    "Enables the use of Semgrep for code scanning",
-    {"semgrep": ExtrasImport("semgrep", "semgrep", ">=1.78.0")},
-)
+semgrep_extra = Extra("Code Scanning with Semgrep", "Enables the use of Semgrep for code scanning", {
+    "semgrep": ExtrasImport("semgrep", "semgrep", ">=1.78.0")
+})
 
 """Extra for features that rely on the `langchain` library."""
-langchain_extra = Extra(
-    "langchain Integration",
-    "Enables the use of Invariant's langchain integration",
-    {"langchain": ExtrasImport("langchain", "langchain", ">=0.2.1")},
-)
-
+langchain_extra = Extra("langchain Integration", "Enables the use of Invariant's langchain integration", {
+    "langchain": ExtrasImport("langchain", "langchain", ">=0.2.1")
+})
 
 def extras_available(*extras: list[Extra]) -> bool:
     """Returns true if and only if all given extras are available."""

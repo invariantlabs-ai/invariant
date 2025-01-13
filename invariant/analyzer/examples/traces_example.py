@@ -4,13 +4,14 @@ to detect potential policy violations.
 """
 
 import json
-import unittest
-from dataclasses import dataclass
-
-from invariant import Policy
-from invariant.analyzer.stdlib.invariant import ToolCall
+from invariant import parse, Policy, Input, ValidatedOperation
 from invariant.traces import *
 
+from invariant.analyzer.stdlib.invariant.errors import UpdateMessage, UpdateMessageHandler, PolicyViolation
+from invariant.analyzer.stdlib.invariant import ToolCall
+from dataclasses import dataclass
+import unittest
+from invariant import Input
 
 @dataclass
 class CallToSomething(Exception):
@@ -19,11 +20,10 @@ class CallToSomething(Exception):
     def __str__(self):
         return f"CallToSomething: {super().__str__()}"
 
-
 def main():
     # define some policy
     policy = Policy.from_string(
-        r"""
+    r"""
     # if the user asks about 'X', raise a violation exception
     raise PolicyViolation("Do not leak the user's email address", call=call) if:
         (call: ToolCall)
@@ -36,31 +36,27 @@ def main():
         (result: ToolOutput)
         result is tool:search_web
         "France" in result.content
-    """
-    )
+    """)
 
     # given some message trace (user(...), etc. help you create these quickly)
     messages = [
         system("You are a helpful assistant. Your user is signed in as bob@mail.com"),
         user("Please do some research on Paris."),
-        assistant(
-            None, tool_call("1", "search_web", {"q": "bob@mail.com want's to know about Paris"})
-        ),
-        tool("1", "Paris is the capital of France."),
+        assistant(None, tool_call("1", "search_web", {"q": "bob@mail.com want's to know about Paris"})),
+        tool("1", "Paris is the capital of France.")
     ]
 
     print(json.dumps(messages, indent=2))
-
+    
     analysis_result = policy.analyze(messages)
     print(analysis_result)
     assert len(analysis_result.errors) == 2
-
+    
 
 # run 'main' as a test
 class TestTraceAnalysisExample(unittest.TestCase):
     def test_trace_analysis_example(self):
         main()
-
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,12 +1,10 @@
 import unittest
-
-from invariant.analyzer import ast, parse
-
+from invariant.analyzer import parse, ast
 
 class TestParser(unittest.TestCase):
     def test_semantic_patterns(self):
         policy = parse(
-            """
+        """
         from invariant import ToolCall
         
         raise "You must not give medical advice" if:
@@ -20,7 +18,7 @@ class TestParser(unittest.TestCase):
 
     def test_wildcards_disallowed(self):
         policy = parse(
-            """
+        """
         from invariant import ToolCall
         
         raise "You must not give medical advice" if:
@@ -29,34 +27,30 @@ class TestParser(unittest.TestCase):
             m := 1 * 2
             # this is not okay
             n := *
-        """,
-            verbose=False,
+        """, verbose=False
         )
 
         assert len(policy.errors) == 1
         assert "You cannot use wildcards outside of semantic patterns" in str(policy.errors[0])
-
+    
     def test_value_references_disallowed(self):
         policy = parse(
-            """
+        """
         from invariant import ToolCall
         
         raise "You must not give medical advice" if:
             (call: ToolCall)
             # this is not okay
             m := <EMAIL_ADDRESS>
-        """,
-            verbose=False,
+        """, verbose=False
         )
 
         assert len(policy.errors) == 1
-        assert "You cannot use value references outside of semantic patterns" in str(
-            policy.errors[0]
-        ), str(policy.errors[0])
+        assert "You cannot use value references outside of semantic patterns" in str(policy.errors[0]), str(policy.errors[0])
 
     def test_value_references(self):
         policy = parse(
-            """
+        """
         from invariant import ToolCall
         
         raise "You must not give medical advice" if:
@@ -68,7 +62,7 @@ class TestParser(unittest.TestCase):
         """
         )
         assert len(policy.errors) == 0
-
+        
         raise_policy = policy.statements[1]
         assert isinstance(raise_policy, ast.RaisePolicy)
 

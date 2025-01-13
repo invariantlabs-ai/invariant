@@ -1,26 +1,22 @@
 """
 Invariant Policy Language AST nodes.
 """
-
-import contextvars
-import io
 import re
+import io
 import sys
+import contextvars
 import textwrap
+import termcolor
 from typing import Any
 
-import termcolor
-
-from invariant.analyzer.language.scope import Scope
+from invariant.analyzer.language.scope import Scope, GlobalScope, VariableDeclaration
 from invariant.analyzer.language.types import NoneType, UnknownType
-
 
 class PolicyError(ValueError):
     """
     If PolicyError is raised as part of a AST visitor, the resulting error message will be
     formatted as an issue with a policy file at the currently examined AST node (if available).
     """
-
     def __init__(self, message, node=None):
         super().__init__(message)
         # the associated AST node
@@ -34,13 +30,16 @@ class PolicyError(ValueError):
             "column": self.node.location.column,
             "path": self.node.location.code.path,
         }
-
+    
     @staticmethod
     def to_dict(e: Exception):
         if isinstance(e, PolicyError):
             return e.as_dict()
-        return {"message": str(e), "type": type(e).__name__}
-
+        return {
+            "message": str(e),
+            "type": type(e).__name__
+        }
+    
     @staticmethod
     def error_report(errors: list[Exception]):
         output = io.StringIO()
@@ -50,14 +49,13 @@ class PolicyError(ValueError):
             if hasattr(error, "node") and error.node is not None:
                 node: Node = error.node
                 node.location.print_error(error, margin=1, output=output)
-                output.write("\n")
+                output.write(f"\n")
             # handle other, e.g. lark parsing errors
             else:
                 # Location.UNKNOWN.print_error(error, margin=1, output=output)
                 output.write(str(error) + "\n")
-
+        
         return output.getvalue()
-
 
 class SourceCode:
     def __init__(self, code, path=None, verbose=False):
@@ -68,33 +66,33 @@ class SourceCode:
     def print_error(self, e, error_line, error_column, window=3, margin=0, output=None):
         if not self.verbose:
             return
-
+        
         # by default, we print to stderr
         output = output or sys.stderr
 
         lines = self.code.split("\n")
         print("\n" * margin, end="", file=output)
         if self.path:
-            print(termcolor.colored(f"File {self.path}:{error_line + 1}", "green"), file=output)
+            print(termcolor.colored(f"File {self.path}:{error_line+1}", "green"), file=output)
         for i in range(error_line - window, error_line + window + 1):
             if i == error_line:
                 print(
                     termcolor.colored(
-                        f"{i + 1:3}{'*' if i == error_line else ' '} | {lines[i]}", "red"
+                        f"{i+1:3}{'*' if i == error_line else ' '} | {lines[i]}", "red"
                     ),
                     file=output,
                 )
                 termcolor.cprint("     | " + " " * (error_column - 1) + "^", "yellow", file=output)
                 termcolor.cprint(
-                    "     | " + "\n".join(str(e).split("\n")[0:]), "yellow", file=output
+                    "     | " + "\n".join(str(e).split("\n")[0:]), "yellow",
+                    file=output
                 )
             elif i >= 0 and i < len(lines):
-                print(f"{i + 1:3}  | {lines[i]}", file=output)
+                print(f"{i+1:3}  | {lines[i]}", file=output)
         print("\n" * margin, end="", file=output)
 
     def get_line(self, location):
-        return self.code.split("\n")[location.line][location.column - 1 :]
-
+        return self.code.split("\n")[location.line][location.column-1:]
 
 class Location:
     def __init__(self, line, column, code):
@@ -112,9 +110,7 @@ class Location:
         if not self.code:
             print(str(e), "(cannot localize error, no source document set)")
             return
-        self.code.print_error(
-            e, self.line, self.column, window=window, margin=margin, output=output
-        )
+        self.code.print_error(e, self.line, self.column, window=window, margin=margin, output=output)
 
     @classmethod
     def from_items(cls, items, mappings, code):
@@ -127,7 +123,6 @@ class Location:
             return cls(item_line, item_column, code)
         except AttributeError:
             return cls.UNKNOWN
-
 
 Location.UNKNOWN = Location(-1, -1, None)
 
@@ -176,7 +171,6 @@ class LexicalScopeNode(Node):
     def __init__(self):
         self.scope = Scope()
 
-
 class RaisePolicy(LexicalScopeNode):
     def __init__(self, exception_or_constructor, body):
         super().__init__()
@@ -185,7 +179,7 @@ class RaisePolicy(LexicalScopeNode):
 
     def __str__(self):
         return (
-            "RaisePolicy(\n"
+            f"RaisePolicy(\n"
             + textwrap.indent(
                 f"exception_or_constructor: {self.exception_or_constructor}\nbody:\n"
                 + "\n".join("  " + str(stmt) for stmt in self.body),
@@ -225,7 +219,7 @@ class PolicyRoot(LexicalScopeNode):
     def __init__(self, statements):
         super().__init__()
         self.statements = statements
-
+        
         # errors that occurred during typing or validation
         self.errors = []
         # source code document for error localization
@@ -233,7 +227,7 @@ class PolicyRoot(LexicalScopeNode):
 
     def __str__(self):
         return (
-            "Policy(\n"
+            f"Policy(\n"
             + textwrap.indent("\n".join(str(stmt) for stmt in self.statements), "  ")
             + "\n)"
         )
@@ -250,7 +244,7 @@ class FunctionDefinition(Node):
 
     def __str__(self):
         return (
-            "FunctionDefinition(\n"
+            f"FunctionDefinition(\n"
             + textwrap.indent(
                 f"name: {self.name}\nparams: {self.params}\nbody:\n"
                 + "\n".join("  " + str(stmt) for stmt in self.body),
@@ -262,60 +256,55 @@ class FunctionDefinition(Node):
     def __repr__(self):
         return str(self)
 
-
 class Quantifier(Node):
     """
     Quantifiers like 'forall:\n    <expr>' or 'count(min=5):\n    <expr>'.
     """
-
     def __init__(self, quantifier_call, body):
         self.quantifier_call = quantifier_call
         self.body = body
 
     def __str__(self):
         return (
-            "Quantifier(\n"
+            f"Quantifier(\n"
             + textwrap.indent(
                 f"quantifier_call: {self.quantifier_call}\nbody:\n"
-                + "\n".join(
-                    "  " + str(stmt)
-                    for stmt in (self.body if type(self.body) is list else [self.body])
-                ),
+                + "\n".join("  " + str(stmt) for stmt in (self.body if type(self.body) is list else [self.body])),
                 "  ",
             )
             + "\n)"
         )
-
+    
     def __repr__(self):
         return str(self)
-
 
 class Expression(Node):
     def dependencies(self):
         return FreeVarAnalysis.get_free_vars(self)
 
-
 class SomeExpr(Expression):
     """
-    Non-deterministically chooses one of the elements of the list-like
+    Non-deterministically chooses one of the elements of the list-like 
     'candidates' expression. Used to represent the value of 'var' in the
     following snippet:
-
+    
     ```
     raise "Invalid value" if:
         (var: type) in candidates
     ```
     """
-
     def __init__(self, candidates):
         self.candidates = candidates
 
     def __str__(self):
-        return "SomeExpr(\n" + textwrap.indent(f"candidates: {self.candidates}", "  ") + "\n)"
-
+        return (
+            f"SomeExpr(\n"
+            + textwrap.indent(f"candidates: {self.candidates}", "  ")
+            + "\n)"
+        )
+    
     def __repr__(self):
         return str(self)
-
 
 class BinaryExpr(Expression):
     def __init__(self, left, op, right):
@@ -325,8 +314,10 @@ class BinaryExpr(Expression):
 
     def __str__(self):
         return (
-            "BinaryExpr(\n"
-            + textwrap.indent(f"  left: {self.left}\n  op: {self.op}\n  right: {self.right}", "  ")
+            f"BinaryExpr(\n"
+            + textwrap.indent(
+                f"  left: {self.left}\n  op: {self.op}\n  right: {self.right}", "  "
+            )
             + "\n)"
         )
 
@@ -340,7 +331,11 @@ class UnaryExpr(Expression):
         self.expr = expr
 
     def __str__(self):
-        return "UnaryExpr(\n" + textwrap.indent(f"op: {self.op}\nexpr: {self.expr}", "  ") + ")"
+        return (
+            f"UnaryExpr(\n"
+            + textwrap.indent(f"op: {self.op}\nexpr: {self.expr}", "  ")
+            + ")"
+        )
 
     def __repr__(self):
         return str(self)
@@ -353,7 +348,7 @@ class MemberAccess(Expression):
 
     def __str__(self):
         return (
-            "MemberAccess(\n"
+            f"MemberAccess(\n"
             + textwrap.indent(f"expr: {self.expr}\nmember: {self.member}", "  ")
             + ")"
         )
@@ -361,18 +356,20 @@ class MemberAccess(Expression):
     def __repr__(self):
         return str(self)
 
-
 class KeyAccess(Expression):
     def __init__(self, expr, key):
         self.expr = expr
         self.key = key
 
     def __str__(self):
-        return "KeyAccess(\n" + textwrap.indent(f"expr: {self.expr}\nkey: {self.key}", "  ") + ")"
+        return (
+            f"KeyAccess(\n"
+            + textwrap.indent(f"expr: {self.expr}\nkey: {self.key}", "  ")
+            + ")"
+        )
 
     def __repr__(self):
         return str(self)
-
 
 class FunctionCall(Expression):
     def __init__(self, name, args):
@@ -382,7 +379,7 @@ class FunctionCall(Expression):
 
     def __str__(self):
         return (
-            "FunctionCall(\n"
+            f"FunctionCall(\n"
             + textwrap.indent(f"name: {self.name}\nargs: {self.args}", "  ")
             + textwrap.indent(f"\nkwargs: {self.kwargs}", "  ")
             + ")"
@@ -399,7 +396,7 @@ class FunctionSignature(Expression):
 
     def __str__(self):
         return (
-            "FunctionSignature(\n"
+            f"FunctionSignature(\n"
             + textwrap.indent(f"name: {self.name}\nparams: {self.params}", "  ")
             + ")"
         )
@@ -415,7 +412,7 @@ class ParameterDeclaration(Expression):
 
     def __str__(self):
         return (
-            "ParameterDeclaration(\n"
+            f"ParameterDeclaration(\n"
             + textwrap.indent(f"name: {self.name}\ntype: {self.type}", "  ")
             + ")"
         )
@@ -428,17 +425,18 @@ class StringLiteral(Expression):
     def __init__(self, value, multi_line=False, quote_type='"', modifier=None):
         self.type = str
         # for regex and format strings
-        self.modifier = modifier  # e.g. 'r' or 'f'
+        self.modifier = modifier # e.g. 'r' or 'f'
         self.value = value
-
+        
         if multi_line:
             self.value = textwrap.dedent(self.value)
         elif quote_type == '"':
             # replace '\"' with '"'
-            self.value = re.sub(r"\\\"", '"', self.value)
+            self.value = re.sub(r'\\\"', '"', self.value)
         elif quote_type == "'":
             # replace "\'" with "'"
             self.value = re.sub(r"\\'", "'", self.value)
+            
 
     def __str__(self):
         return f'StringLiteral("{self.value}")'
@@ -470,22 +468,21 @@ class BooleanLiteral(Expression):
     def __repr__(self):
         return str(self)
 
-
 class ObjectLiteral(Expression):
     def __init__(self, entries):
         self.entries = entries
 
     def __str__(self):
         return (
-            "ObjectLiteral(\n"
-            + textwrap.indent("\n".join(str(entry) for entry in self.entries), "  ")
+            f"ObjectLiteral(\n"
+            + textwrap.indent(
+                "\n".join(str(entry) for entry in self.entries), "  "
+            )
             + ")"
         )
 
     def __repr__(self):
         return str(self)
-
-
 class ObjectEntry(Expression):
     def __init__(self, key, value):
         self.key = key
@@ -496,22 +493,20 @@ class ObjectEntry(Expression):
 
     def __repr__(self):
         return str(self)
-
-
+    
 class ArrayLiteral(Expression):
     def __init__(self, elements):
         self.elements = elements
 
     def __str__(self):
         return (
-            "ArrayLiteral(\n"
+            f"ArrayLiteral(\n"
             + textwrap.indent("\n".join(str(elem) for elem in self.elements), "  ")
             + ")"
         )
 
     def __repr__(self):
         return str(self)
-
 
 class Identifier(Expression):
     def __init__(self, name, namespace=None):
@@ -526,7 +521,7 @@ class Identifier(Expression):
         if self.id is not None:
             suffix += f" (id: {self.id})"
         else:
-            suffix += " (id: unresolved)"
+            suffix += f" (id: unresolved)"
 
         if self.namespace:
             return f"Identifier({self.namespace}:{self.name})" + suffix
@@ -546,7 +541,6 @@ class NoneLiteral(Expression):
     def __repr__(self):
         return str(self)
 
-
 class Wildcard(Expression):
     def __init__(self):
         self.type = UnknownType()
@@ -556,7 +550,6 @@ class Wildcard(Expression):
 
     def __repr__(self):
         return str(self)
-
 
 class TypedIdentifier(Identifier):
     def __init__(self, type, name):
@@ -568,7 +561,6 @@ class TypedIdentifier(Identifier):
 
     def __repr__(self):
         return str(self)
-
 
 class ToolReference(Expression):
     def __init__(self, name):
@@ -588,21 +580,21 @@ class SemanticPattern(Expression):
 
     def __str__(self):
         return (
-            "SemanticPattern(\n"
-            + textwrap.indent(f"tool_ref: {self.tool_ref}\nargs: {self.args}", "  ")
+            f"SemanticPattern(\n"
+            + textwrap.indent(
+                f"tool_ref: {self.tool_ref}\nargs: {self.args}", "  "
+            )
             + ")"
         )
-
+    
     def __repr__(self):
         return str(self)
-
-
+    
 class ValueReference(Expression):
     """
-    A reference to a specific kind of value, e.g. <EMAIL_ADDRESS> or
+    A reference to a specific kind of value, e.g. <EMAIL_ADDRESS> or 
     <PII>, as used in semantic patterns.
     """
-
     def __init__(self, value_type):
         self.value_type = value_type
 
@@ -612,9 +604,9 @@ class ValueReference(Expression):
     def __repr__(self):
         return str(self)
 
-
-TRANSFORMATION_CONTEXT_VAR = contextvars.ContextVar("transformation_context", default=[])
-
+TRANSFORMATION_CONTEXT_VAR = contextvars.ContextVar(
+    "transformation_context", default=[]
+)
 
 class TransformationContext:
     def __init__(self, value):
@@ -638,10 +630,10 @@ class Transformation:
     @property
     def context(self) -> Node | Any | LexicalScopeNode:
         return TransformationContext.current()
-
+    
     def context_stack(self):
         return TRANSFORMATION_CONTEXT_VAR.get()
-
+    
     def has_context(self, condition):
         for ctx in self.context_stack():
             if condition(ctx):
@@ -686,7 +678,7 @@ class Transformation:
 
     def visit_RaisePolicy(self, node: RaisePolicy):
         return self.generic_visit(node)
-
+    
     def visit_Quantifier(self, node: Quantifier):
         return self.generic_visit(node)
 
@@ -737,39 +729,38 @@ class Transformation:
 
     def visit_BooleanLiteral(self, node: BooleanLiteral):
         return self.generic_visit(node)
-
+    
     def visit_Wildcard(self, node: Wildcard):
         return self.generic_visit(node)
-
+    
     def visit_SemanticPattern(self, node: SemanticPattern):
         return self.generic_visit(node)
-
+    
     def visit_ObjectLiteral(self, node: ObjectLiteral):
         return self.generic_visit(node)
-
+    
     def visit_ObjectEntry(self, node: ObjectEntry):
         return self.generic_visit(node)
-
+    
     def visit_ArrayLiteral(self, node: ArrayLiteral):
         return self.generic_visit(node)
-
+    
     def visit_KeyAccess(self, node: KeyAccess):
         return self.generic_visit(node)
-
+    
     def visit_ValueReference(self, node: ValueReference):
         return self.generic_visit(node)
 
 
 class RaisingTransformation(Transformation):
     """
-    Transformation that prints source locations of PolicyErrors that occur
+    Transformation that prints source locations of PolicyErrors that occur 
     during any visit method.
 
     Args:
-        rereaise (bool, optional): If True, rereaises all PolicyErrors that occur during
+        rereaise (bool, optional): If True, rereaises all PolicyErrors that occur during 
             the transformation instead of re-raising them. Defaults to True.
     """
-
     def __init__(self, reraise=False, printing=True):
         super().__init__()
         self.errors = []
@@ -820,14 +811,12 @@ class FreeVarAnalysis(Visitor):
         visitor.visit(node)
         return visitor.free_vars
 
-
 class CapturedVariableCollector(Visitor):
     """
     Collects all variables that are captured in a provided block or expression. More specifically, it collects all variables that are used but not declared in the provided block or expression, i.e. they are captured from the surrounding scope.
 
     Use .captured_variables() to get the set of captured variables.
     """
-
     def __init__(self):
         self.used_variables = set()
         self.declared_variables = set()

@@ -1,7 +1,6 @@
 """
 Invariant Policy Language type system.
 """
-
 from invariant.analyzer.language.ast import *
 from invariant.analyzer.language.ast import (
     BinaryExpr,
@@ -14,8 +13,10 @@ from invariant.analyzer.language.ast import (
     ValueReference,
     Wildcard,
 )
-from invariant.analyzer.language.scope import ExternalReference, GlobalScope, VariableDeclaration
+from invariant.analyzer.language.scope import GlobalScope, VariableDeclaration, ExternalReference
 from invariant.analyzer.language.types import *
+import inspect
+from dataclasses import dataclass
 
 
 class CollectVariableDeclarations(RaisingTransformation):
@@ -37,7 +38,9 @@ class CollectVariableDeclarations(RaisingTransformation):
 
     def visit_BinaryExpr(self, node: BinaryExpr):
         if node.op == ":=":
-            self.declarations.append(VariableDeclaration(node.left.name, None, node.right))
+            self.declarations.append(
+                VariableDeclaration(node.left.name, None, node.right)
+            )
         elif node.op == "in" and type(node.left) is TypedIdentifier:
             self.visit(node.right)
             type_ref = node.left.type_ref
@@ -49,7 +52,7 @@ class CollectVariableDeclarations(RaisingTransformation):
             self.declarations.append(decl)
             node.left.id = decl
             return node
-
+            
         return super().visit_BinaryExpr(node)
 
 
@@ -103,9 +106,13 @@ class Scoping(RaisingTransformation):
         top_level_declarations = []
         for stmt in node.statements:
             if isinstance(stmt, Declaration):
-                top_level_declarations.append(VariableDeclaration.from_signature(stmt.name, stmt))
+                top_level_declarations.append(
+                    VariableDeclaration.from_signature(stmt.name, stmt)
+                )
             elif isinstance(stmt, FunctionDefinition):
-                top_level_declarations.append(VariableDeclaration.from_signature(stmt.name, stmt))
+                top_level_declarations.append(
+                    VariableDeclaration.from_signature(stmt.name, stmt)
+                )
         node.scope.declarations = declarations_to_dict(top_level_declarations)
         node.scope.parent = self.global_scope
         node.scope.name = "policy"
@@ -121,22 +128,21 @@ class Scoping(RaisingTransformation):
         return node
 
     def visit_Declaration(self, node: Declaration):
+
         # check for predicate definition (with parameters as compared to constants)
         if isinstance(node.name, FunctionSignature):
-            parameter_scope = Scope(
-                parent=self.context.scope, name="parameters(" + str(node.name.name.name) + ")"
-            )
-            local_scope = Scope(
-                parent=parameter_scope, name="locals(" + str(node.name.name.name) + ")"
-            )
+            parameter_scope = Scope(parent=self.context.scope, name="parameters(" + str(node.name.name.name) + ")")
+            local_scope = Scope(parent=parameter_scope, name="locals(" + str(node.name.name.name) + ")")
             node.scope = local_scope
             for p in node.name.params:
-                decl = VariableDeclaration(p.name.name, parameter_scope.resolve_type(p.type))
+                decl = VariableDeclaration(
+                    p.name.name, parameter_scope.resolve_type(p.type)
+                )
                 p.name.id = decl
                 parameter_scope.declarations[p.name.name] = decl
         else:
             node.scope.parent = self.context.scope
-
+        
         with TransformationContext(node):
             node.value, node.scope.declarations = self.visit_RuleBody(node.value)
 
@@ -176,43 +182,39 @@ class TypingTransformation(RaisingTransformation):
             return False
 
         if not has_member(node.expr.type, node.member):
-            raise PolicyError(f"Type {node.expr}: {node.expr.type} has no member {node.member}")
+            raise PolicyError(
+                f"Type {node.expr}: {node.expr.type} has no member {node.member}"
+            )
 
         node.type = UnknownType()
 
         return node
-
+    
     def visit_SemanticPattern(self, node: SemanticPattern):
         with TransformationContext(node):
             return super().visit_SemanticPattern(node)
 
     def visit_Wildcard(self, node: Wildcard):
         if not self.has_context(lambda c: isinstance(c, SemanticPattern)):
-            raise PolicyError(
-                "You cannot use wildcards outside of semantic patterns (e.g. tool:abc(*, 12))"
-            )
+            raise PolicyError("You cannot use wildcards outside of semantic patterns (e.g. tool:abc(*, 12))")
         return node
 
     def visit_ValueReference(self, node: ValueReference):
         from invariant.analyzer.runtime.patterns import VALUE_MATCHERS
-
+        
         if not self.has_context(lambda c: isinstance(c, SemanticPattern)):
-            raise PolicyError(
-                "You cannot use value references outside of semantic patterns (e.g. tool:abc(<VALUE>, 12))"
-            )
+            raise PolicyError("You cannot use value references outside of semantic patterns (e.g. tool:abc(<VALUE>, 12))")
         if node.value_type not in VALUE_MATCHERS:
-            raise PolicyError(
-                f"Unsupported value type: {node.value_type}. Available types: {' '.join(VALUE_MATCHERS.keys())}"
-            )
-
+            raise PolicyError(f"Unsupported value type: {node.value_type}. Available types: {' '.join(VALUE_MATCHERS.keys())}")
+    
         return node
 
     def visit_KeyAccess(self, node: KeyAccess):
         node.key = self.visit(node.key)
         node.expr = self.visit(node.expr)
-
+        
         node.type = UnknownType()
-
+        
         return node
 
     def visit_Import(self, node: Import):
@@ -251,7 +253,6 @@ class TypingTransformation(RaisingTransformation):
     def visit_BinaryExpr(self, node: BinaryExpr):
         result = super().visit_BinaryExpr(node)
         return result
-
 
 def typing(policy: PolicyRoot):
     # fresh scope for all imports in this policy file

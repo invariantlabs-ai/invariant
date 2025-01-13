@@ -1,23 +1,26 @@
 import os
-import textwrap
-
 import invariant.analyzer.language.ast as ast
+from invariant.analyzer.runtime.evaluation import Interpreter, EvaluationContext, VariableDomain, Unknown, Range, EvaluationResult
 from invariant.analyzer.language.linking import link
-from invariant.analyzer.runtime.evaluation import (
-    EvaluationContext,
-    EvaluationResult,
-    Interpreter,
-    Unknown,
-)
-from invariant.analyzer.runtime.input import Input
+import invariant.analyzer.language.types as types
+from invariant.analyzer.language.parser import parse_file
+import invariant.analyzer.language.ast as ast
+from dataclasses import dataclass
+from itertools import product
+import textwrap
+import termcolor
+import invariant.analyzer.language.ast as ast
+from itertools import product
+from invariant.analyzer.language.linking import link
+from invariant.analyzer.runtime.input import Selectable, Input
+from invariant.analyzer.runtime.evaluation import Interpreter, EvaluationContext, VariableDomain, Unknown
 from invariant.analyzer.stdlib.invariant.errors import ErrorInformation
 from invariant.analyzer.stdlib.invariant.nodes import Event
-
+from typing import Any
 
 class PolicyAction:
     def __call__(self, input_dict):
         raise NotImplementedError()
-
 
 class RaiseAction(PolicyAction):
     def __init__(self, exception_or_constructor, globals):
@@ -25,13 +28,7 @@ class RaiseAction(PolicyAction):
         self.globals = globals
 
     def can_eval(self, input_dict, evaluation_context):
-        res = Interpreter.eval(
-            self.exception_or_constructor,
-            input_dict,
-            self.globals,
-            partial=True,
-            evaluation_context=evaluation_context,
-        )
+        res = Interpreter.eval(self.exception_or_constructor, input_dict, self.globals, partial=True, evaluation_context=evaluation_context)
         return res is not Unknown
 
     def __call__(self, model: EvaluationResult, evaluation_context=None):
@@ -40,30 +37,22 @@ class RaiseAction(PolicyAction):
         if type(self.exception_or_constructor) is ast.StringLiteral:
             return PolicyViolation(self.exception_or_constructor.value, ranges=model.ranges)
         elif isinstance(self.exception_or_constructor, ast.Expression):
-            exception = Interpreter.eval(
-                self.exception_or_constructor,
-                model.variable_assignments,
-                self.globals,
-                partial=False,
-                evaluation_context=evaluation_context,
-            )
-
+            exception = Interpreter.eval(self.exception_or_constructor, model.variable_assignments, self.globals, partial=False, evaluation_context=evaluation_context)
+            
             if isinstance(exception, ErrorInformation):
                 exception.ranges = model.ranges
             elif not isinstance(exception, BaseException):
                 exception = PolicyViolation(str(exception), ranges=model.ranges)
-
+            
             return exception
         else:
             print("raising", self.exception_or_constructor, "not implemented")
             return None
-
-
+        
 class RuleApplication:
     """
     Represents the output of applying a rule to a set of input data.
     """
-
     rule: "Rule"
 
     def __init__(self, rule, models):
@@ -80,8 +69,6 @@ class RuleApplication:
             if exc is not None:
                 errors.append((model, exc))
         return errors
-
-
 class Rule:
     def __init__(
         self,
@@ -108,25 +95,19 @@ class Rule:
         return self.action.can_eval(input_dict, ctx)
 
     def apply(self, input_data: Input, evaluation_context=None) -> RuleApplication:
-        models = [
-            m
-            for m in Interpreter.assignments(
-                self.condition,
-                input_data,
-                globals=self.globals,
-                verbose=self.verbose,
-                extra_check=self.action_can_eval,
-                evaluation_context=evaluation_context,
-            )
-            if m.result is True
-        ]
+        models = [m for m in Interpreter.assignments(self.condition, 
+                                                     input_data, 
+                                                     globals=self.globals, 
+                                                     verbose=self.verbose, 
+                                                     extra_check=self.action_can_eval, 
+                                                     evaluation_context=evaluation_context) if m.result is True]
 
         # locate ranges in input
         for m in models:
             m.ranges = input_data.locate(m.ranges)
 
         return RuleApplication(self, models)
-
+    
     @classmethod
     def from_raise_policy(cls, policy: ast.RaisePolicy, globals):
         # return Rule object
@@ -136,7 +117,6 @@ class Rule:
             globals,
             "<Rule raise '" + policy.location.code.get_line(policy.location) + "'>",
         )
-
 
 class FunctionCache:
     def __init__(self):
@@ -154,7 +134,7 @@ class FunctionCache:
             return tuple(self.arg_key(a) for a in arg)
         # cache dictionaries by id
         elif type(arg) is dict:
-            return tuple((k, self.arg_key(v)) for k, v in sorted(arg.items(), key=lambda x: x[0]))
+            return tuple((k, self.arg_key(v)) for k,v in sorted(arg.items(), key=lambda x: x[0]))
         # cache all other objects by id
         return id(arg)
 
@@ -165,7 +145,7 @@ class FunctionCache:
 
     def contains(self, function, args, kwargs):
         return self.call_key(function, args, kwargs) in self.cache
-
+    
     def call(self, function, args, **kwargs):
         # if function is not marked with @cache we just call it directly (see ./functions.py module)
         if not hasattr(function, "__invariant_cache__"):
@@ -173,7 +153,6 @@ class FunctionCache:
         if not self.contains(function, args, kwargs):
             self.cache[self.call_key(function, args, kwargs)] = function(*args, **kwargs)
         return self.cache[self.call_key(function, args, kwargs)]
-
 
 class InputEvaluationContext(EvaluationContext):
     def __init__(self, input, rule_set, policy_parameters):
@@ -183,19 +162,18 @@ class InputEvaluationContext(EvaluationContext):
 
     def call_function(self, function, args, **kwargs):
         return self.rule_set.call_function(function, args, **kwargs)
-
+    
     def has_flow(self, a, b):
         return self.input.has_flow(a, b)
-
+    
     def get_policy_parameter(self, name):
         return self.policy_parameters.get(name)
-
+    
     def has_policy_parameter(self, name):
         return name in self.policy_parameters
-
+    
     def get_input(self) -> Input:
         return self.input
-
 
 class RuleSet:
     rules: list[Rule]
@@ -211,22 +189,18 @@ class RuleSet:
         return self.function_cache.call(function, args, **kwargs)
 
     def non_executed(self, rule, model):
-        if not self.cached:
+        if not self.cached: 
             return True
         return self.instance_key(rule, model) not in self.executed_rules
 
     def instance_key(self, rule, model):
         model_keys = []
-
-        for k, v in model.variable_assignments.items():
+        
+        for k,v in model.variable_assignments.items():
             if type(v) is dict and "key" in v:
                 model_keys.append((k.name, v["key"]))
             else:
-                idx = (
-                    v.metadata["trace_idx"]
-                    if isinstance(v, Event) and "trace_idx" in v.metadata
-                    else -1
-                )
+                idx = v.metadata["trace_idx"] if isinstance(v, Event) and "trace_idx" in v.metadata else -1
                 model_keys.append((k.name, idx))
         return (id(rule), *(vkey for k, vkey in sorted(model_keys, key=lambda x: x[0])))
 
@@ -242,15 +216,14 @@ class RuleSet:
 
     def apply(self, input_data: Input, policy_parameters):
         exceptions = []
-
+        
         self.input = input_data
         # make sure to clear the function cache if we are not caching
-        if not self.cached:
-            self.function_cache.clear()
+        if not self.cached: self.function_cache.clear()
 
         for rule in self.rules:
             evaluation_context = InputEvaluationContext(input_data, self, policy_parameters)
-
+            
             result: RuleApplication = rule.apply(input_data, evaluation_context=evaluation_context)
             result.models = [m for m in result.models if self.non_executed(rule, m)]
             for model in result.models:
@@ -258,13 +231,13 @@ class RuleSet:
                     self.executed_rules.add(self.instance_key(rule, model))
                 self.log_apply(rule, model)
             exceptions.extend(result.execute(evaluation_context))
-
+        
         self.input = None
         return exceptions
 
     def __str__(self):
         return f"<RuleSet {len(self.rules)} rules>"
-
+    
     def __repr__(self):
         return str(self)
 
@@ -284,34 +257,33 @@ class RuleSet:
 
         return cls(rules, cached=cached)
 
-
 class frozen_dict:
     def __init__(self, base_dict):
         self.base_dict = base_dict
 
     def __iter__(self):
         return iter(self.base_dict)
-
+    
     def __len__(self):
         return len(self.base_dict)
-
+    
     def keys(self):
         return self.base_dict.keys()
-
+    
     def values(self):
         return self.base_dict.values()
-
+    
     def items(self):
         return self.base_dict.items()
 
     def __getitem__(self, key):
         return self.base_dict[key]
-
+    
     def __setitem__(self, key, value):
         assert False, "cannot modify frozen dictionary"
 
     def __repr__(self):
         return "frozen " + repr(self.base_dict)
-
+    
     def __str__(self):
         return "frozen " + str(self.base_dict)

@@ -1,12 +1,11 @@
 import unittest
-
-from invariant.analyzer import Monitor, Policy
-
+import json
+from invariant.analyzer import Policy, RuleSet, Monitor
 
 class TestConstants(unittest.TestCase):
     def test_simple(self):
         monitor = Monitor.from_string(
-            """
+        """
         from invariant import Message, PolicyViolation, match
         
         INVALID_PATTERN := "X"
@@ -15,8 +14,7 @@ class TestConstants(unittest.TestCase):
             (msg: Message)
             msg.role == "assistant"
             INVALID_PATTERN in msg.content
-        """
-        )
+        """)
         input = []
         monitor.check(input, [])
 
@@ -25,10 +23,7 @@ class TestConstants(unittest.TestCase):
         input.extend(pending_input)
 
         assert len(errors) == 1, "Expected one error, but got: " + str(errors)
-        assert "Cannot send assistant message" in str(errors[0]), (
-            "Expected to find 'Cannot send assistant message' in error message, but got: "
-            + str(errors)
-        )
+        assert "Cannot send assistant message" in str(errors[0]), "Expected to find 'Cannot send assistant message' in error message, but got: " + str(e)
 
         pending_input = [{"role": "assistant", "content": "Hello, Y"}]
         errors = monitor.check(input, pending_input)
@@ -38,7 +33,7 @@ class TestConstants(unittest.TestCase):
 
     def test_ref(self):
         policy = Policy.from_string(
-            """
+        """
         from invariant import Message, PolicyViolation, match
 
         INVALID_PATTERN1 := "X"
@@ -49,10 +44,12 @@ class TestConstants(unittest.TestCase):
             (msg: Message)
             msg.role == "assistant"
             INVALID_PATTERN in msg.content
-        """
-        )
+        """)
 
-        input = [{"role": "assistant", "content": "Hello, XY"}]
+        input = [{
+            "role": "assistant",
+            "content": "Hello, XY"
+        }]
         with self.assertRaises(Exception) as context:
             analysis_result = policy.analyze(input, raise_unhandled=True)
 
