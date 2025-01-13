@@ -1,10 +1,9 @@
 import json
 from unittest.mock import MagicMock
 
+import invariant.testing.testing.functional as F
 import openai
-
-import invariant.testing.functional as F
-from invariant.testing import TraceFactory, assert_true, expect_equals
+from invariant.testing.testing import TraceFactory, assert_true, expect_equals
 
 
 def run_python(code):
@@ -57,7 +56,6 @@ class PythonAgent:
                     """
 
     def get_response(self, user_input: str):
-
         messages = [
             {"role": "system", "content": self.prompt},
             {"role": "user", "content": user_input},
