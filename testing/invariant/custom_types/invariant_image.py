@@ -91,7 +91,6 @@ class InvariantImage(InvariantString):
 
         # This assumes that the first address (if any) contains the message index!
         if addresses and bboxes:
-            print(addresses)
             try:
                 message_index = addresses[0].split(":")[0]
 
