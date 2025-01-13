@@ -1,12 +1,15 @@
-from html.parser import HTMLParser
-from dataclasses import dataclass
 import re
-from invariant.analyzer.stdlib.invariant.nodes import Message, ToolCall, ToolOutput
+from dataclasses import dataclass
+from html.parser import HTMLParser
+
+from invariant.analyzer.stdlib.invariant.nodes import ToolCall
+
 
 @dataclass
 class HiddenHTMLData:
     alt_texts: list[str]
     links: list[str]
+
 
 class HiddenDataParser(HTMLParser):
     def __init__(self):
@@ -35,7 +38,7 @@ class HiddenDataParser(HTMLParser):
     def get_links_regex(data: str) -> list[str]:
         """
         Extracts links from a string of HTML code.
-        
+
         Returns:
             - list[str]: A list of links.
         """
@@ -43,18 +46,20 @@ class HiddenDataParser(HTMLParser):
         # link including path etc.
         pattern = r"https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+" + r"(?:/[^ \n\"]+)*"
         return list(set(re.findall(pattern, data)))
-    
+
 
 def html_code(data: str | list | dict, **config: dict) -> HiddenHTMLData:
     """
     Parse the HTML code and extract the alt texts and links.
-    
+
     Returns:
         - HiddenHTMLData: A dataclass containing the alt texts and links.
     """
 
-    chat = data if isinstance(data, list) else ([{"content": data}] if type(data) == str else [data])
-    
+    chat = (
+        data if isinstance(data, list) else ([{"content": data}] if type(data) == str else [data])
+    )
+
     res = HiddenHTMLData([], [])
     for message in chat:
         if message is None:
@@ -67,22 +72,25 @@ def html_code(data: str | list | dict, **config: dict) -> HiddenHTMLData:
             content = message.content
         parser = HiddenDataParser()
         parser.parse(content)
-        
+
         res.alt_texts.extend(parser.alt_texts)
         res.links.extend(list(parser.links))
 
     return res
 
+
 def links(data: str | list | dict, **config: dict) -> list[str]:
     """
     Extracts links from a string of HTML code or text.
-    
+
     Returns:
         - list[str]: A list of links.
     """
 
-    chat = data if isinstance(data, list) else ([{"content": data}] if type(data) == str else [data])
-    
+    chat = (
+        data if isinstance(data, list) else ([{"content": data}] if type(data) == str else [data])
+    )
+
     res = []
     for message in chat:
         if message is None:

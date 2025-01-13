@@ -1,12 +1,13 @@
 """
 Invariant Policy Language parser.
 """
-from invariant.analyzer.language.ast import BinaryExpr, FunctionCall, Identifier, ValueReference
-import lark
-import re
-import termcolor
+
 import textwrap
+
+import lark
+
 from invariant.analyzer.language.ast import *
+from invariant.analyzer.language.ast import BinaryExpr, FunctionCall, Identifier, ValueReference
 from invariant.analyzer.language.typing import typing
 
 """
@@ -101,6 +102,7 @@ def indent_level(line, unit=1):
     # count the number of leading spaces
     return (len(line) - len(line.lstrip())) // unit
 
+
 def derive_indentation_units(text):
     # derive the indentation unit from the first non-empty line
     lines = text.split("\n")
@@ -111,6 +113,7 @@ def derive_indentation_units(text):
     if len(indents) == 0:
         return 1
     return min(indents)
+
 
 def parse_indents(text):
     """
@@ -147,17 +150,13 @@ def parse_indents(text):
         if line.lstrip() == "":
             continue
 
-        if n > indent and (
-            result.rstrip().endswith(":") or result.rstrip().endswith(":=")
-        ):
+        if n > indent and (result.rstrip().endswith(":") or result.rstrip().endswith(":=")):
             result_stripped = (
-                result.rstrip()[:-1]
-                if result.rstrip().endswith(":")
-                else result.rstrip()[:-2]
+                result.rstrip()[:-1] if result.rstrip().endswith(":") else result.rstrip()[:-2]
             )
             result = result_stripped + (" |INDENT|" * (n - indent))
             indent = n
-            line = line #[n * indent_unit :]
+            line = line  # [n * indent_unit :]
 
         dedents = ""
         while n < indent:
@@ -184,6 +183,7 @@ class IPLTransformer(lark.Transformer):
     """
     Constructs the AST, given some IPL parse tree.
     """
+
     def __init__(self, line_mappings=None, source_code=None):
         self.line_mappings = line_mappings or {}
         self.source_code = source_code
@@ -208,6 +208,7 @@ class IPLTransformer(lark.Transformer):
 
     def full_import(self, items):
         return Import(items[0].name, [], alias=items[0].alias).with_location(self.loc(items))
+
     def from_import(self, items):
         return Import(items[0], self.filter(items[1:])).with_location(self.loc(items))
 
@@ -224,9 +225,9 @@ class IPLTransformer(lark.Transformer):
         # filter hidden body tokens
         body = self.filter(body)
         # flatten exprs
-        while type(body) is list and len(body) == 1: 
+        while type(body) is list and len(body) == 1:
             body = body[0]
-        if not type(body) is list:
+        if type(body) is not list:
             body = [body]
 
         return RaisePolicy(items[0], body).with_location(self.loc(items))
@@ -235,7 +236,7 @@ class IPLTransformer(lark.Transformer):
         quantifier_call = items[0]
         body = self.filter(items[1:])
         # unpack body if it's a indented block
-        while type(body) is list and len(body) == 1: 
+        while type(body) is list and len(body) == 1:
             body = body[0]
         return Quantifier(quantifier_call, body).with_location(self.loc(items))
 
@@ -298,9 +299,7 @@ class IPLTransformer(lark.Transformer):
         return UnaryExpr(items[0].strip(), items[1]).with_location(self.loc(items))
 
     def typed_identifier(self, items):
-        return TypedIdentifier(items[1].name, items[0].name).with_location(
-            self.loc(items)
-        )
+        return TypedIdentifier(items[1].name, items[0].name).with_location(self.loc(items))
 
     def func_call(self, items):
         return FunctionCall(items[0], items[1:]).with_location(self.loc(items))
@@ -313,7 +312,7 @@ class IPLTransformer(lark.Transformer):
 
     def object_literal(self, items):
         return ObjectLiteral(items).with_location(self.loc(items))
-    
+
     def object_entry(self, items):
         key = items[0]
         if type(key) is Identifier:
@@ -326,10 +325,10 @@ class IPLTransformer(lark.Transformer):
 
     def list_literal(self, items):
         return ArrayLiteral(items).with_location(self.loc(items))
-    
+
     def STAR(self, items):
         return Wildcard().with_location(self.loc(items))
-    
+
     def value_ref(self, items):
         return ValueReference(str(items[0])[1:-1]).with_location(self.loc(items[0]))
 
@@ -338,7 +337,7 @@ class IPLTransformer(lark.Transformer):
 
     def member_access(self, items):
         return MemberAccess(items[0], items[1].name).with_location(self.loc(items))
-    
+
     def key_access(self, items):
         return KeyAccess(items[0], items[1]).with_location(self.loc(items))
 
@@ -350,7 +349,9 @@ class IPLTransformer(lark.Transformer):
             modifier = str(items)[0]
             offset = 2
             quote_type = str(items)[1]
-        return StringLiteral(items[offset:-1], quote_type=quote_type, modifier=modifier).with_location(self.loc(items))
+        return StringLiteral(
+            items[offset:-1], quote_type=quote_type, modifier=modifier
+        ).with_location(self.loc(items))
 
     def multiline_string(self, items):
         return items[0]
@@ -364,9 +365,9 @@ class IPLTransformer(lark.Transformer):
             offset = 4
             quote_type = str(items)[2]
         value = items[offset:-3]
-        return StringLiteral(value, multi_line=True, quote_type=quote_type, modifier=modifier).with_location(
-            self.loc(items)
-        )
+        return StringLiteral(
+            value, multi_line=True, quote_type=quote_type, modifier=modifier
+        ).with_location(self.loc(items))
 
     def SINGLE_ML_STRING(self, items):
         offset = 3
@@ -377,9 +378,9 @@ class IPLTransformer(lark.Transformer):
             offset = 4
             quote_type = str(items)[2]
         value = items[offset:-3]
-        return StringLiteral(value, multi_line=True, quote_type=quote_type, modifier=modifier).with_location(
-            self.loc(items)
-        )
+        return StringLiteral(
+            value, multi_line=True, quote_type=quote_type, modifier=modifier
+        ).with_location(self.loc(items))
 
     def ID(self, items):
         if str(items) == "None":
@@ -399,16 +400,16 @@ class IPLTransformer(lark.Transformer):
     def loc(self, items):
         return Location.from_items(items, self.line_mappings, self.source_code)
 
+
 def transform(policy):
     """
     Basic transformations to simplify the AST
     """
+
     class PostParsingTransformations(Transformation):
         # transforms FunctionCall with a ToolReference target into a SemanticPattern
         def visit_FunctionCall(self, node: FunctionCall):
-            if (
-                type(node.name) is ToolReference
-            ):  
+            if type(node.name) is ToolReference:
                 return SemanticPattern(
                     node.name,
                     node.args,
@@ -430,15 +431,15 @@ def parse(text, path=None, verbose=True):
     3. AST construction: The Lark parse tree is transformed into an AST.
     4. AST post-processing: The AST is simplified and transformed.
     5. Type checking: The AST is type-checked.
-    
+
     """
 
     # removes common leading indent (e.g. when parsing from an indented multiline string)
     text = textwrap.dedent(text)
     # creates source code handle
     source_code = SourceCode(text, path=path, verbose=verbose)
-    
-    # translates an indent-based code into code in which indented 
+
+    # translates an indent-based code into code in which indented
     # blocks are marked with |INDENT| and |DEDENT| tokens
     # mapping contains the line number and character offset of the original code, which allows
     # us to translate lark errors back to the actual code
@@ -479,6 +480,7 @@ def parse(text, path=None, verbose=True):
         # source_code.print_error(e, error_line, error_column, 2)
 
         return policy
+
 
 def parse_file(file):
     with open(file) as f:

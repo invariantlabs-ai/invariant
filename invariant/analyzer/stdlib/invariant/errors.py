@@ -1,8 +1,11 @@
 from dataclasses import dataclass
-from pydantic import BaseModel
 from typing import Union
-from invariant.analyzer.stdlib.invariant.nodes import Event
+
+from pydantic import BaseModel
+
 from invariant.analyzer.runtime.input import Range
+from invariant.analyzer.stdlib.invariant.nodes import Event
+
 
 class AccessDenied:
     pass
@@ -17,25 +20,34 @@ class ErrorInformation(BaseModel):
     ranges: list[Range]
 
     def __str__(self):
-        kvs = ", ".join([f"{k}={v}" if k != 'ranges' else f'ranges=[<{len(self.ranges)} ranges>]' for k, v in self.kwargs.items()])
-        if len(kvs) > 0: kvs = ", " + kvs
+        kvs = ", ".join(
+            [
+                f"{k}={v}" if k != "ranges" else f"ranges=[<{len(self.ranges)} ranges>]"
+                for k, v in self.kwargs.items()
+            ]
+        )
+        if len(kvs) > 0:
+            kvs = ", " + kvs
         return f"{type(self).__name__}({' '.join([str(a) for a in self.args])}{kvs})"
-    
+
     def __repr__(self):
         return str(self)
+
 
 def PolicyViolation(*args, **kwargs):
     args = list(args)
     ranges = kwargs.get("ranges", [])
-    kwargs = {k: v for k, v in kwargs.items() if k != 'ranges'}
+    kwargs = {k: v for k, v in kwargs.items() if k != "ranges"}
     return ErrorInformation(args=args, kwargs=kwargs, ranges=ranges)
+
 
 @dataclass
 class UpdateMessage(Exception):
     msg: dict
     content: str
-    mode: str = "a" # p = prepend, a = append, replace = replace
-    
+    mode: str = "a"  # p = prepend, a = append, replace = replace
+
+
 class UpdateMessageHandler:
     def __init__(self, update_message: UpdateMessage):
         self.update_message = update_message

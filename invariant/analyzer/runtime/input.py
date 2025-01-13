@@ -3,27 +3,29 @@ Models input data passed to the Invariant Agent Analyzer.
 
 Creates dataflow graphs and derived data from the input data.
 """
+
 import copy
 import inspect
 import json
 import re
 import warnings
-from collections.abc import KeysView, ValuesView, ItemsView
+from collections.abc import ItemsView, KeysView, ValuesView
 from copy import deepcopy
 from typing import Callable, Optional
-from invariant.analyzer.stdlib.invariant.nodes import Message, ToolCall, ToolOutput, Event
-from rich.pretty import pprint as rich_print
 
 from pydantic import BaseModel
+from rich.pretty import pprint as rich_print
 
 import invariant.analyzer.language.types as types
+from invariant.analyzer.stdlib.invariant.nodes import Event, Message, ToolCall, ToolOutput
 
 
 class InputProcessor:
     """
-    Simple visitor to traverse input data and process it in some way 
+    Simple visitor to traverse input data and process it in some way
     (to build a dataflow graph or to change the input data in some way).
     """
+
     def process(self, input_dict):
         # determine all top-level lists in the input
         top_level_lists = []
@@ -36,7 +38,7 @@ class InputProcessor:
 
         for l in top_level_lists:
             self.visit_top_level(l)
-    
+
     def visit_top_level(self, value_list, name=None):
         pass
 
@@ -48,7 +50,7 @@ class InputProcessor:
 
 
 class Dataflow(InputProcessor):
-    """Stores the dataflow within a given input. 
+    """Stores the dataflow within a given input.
 
     For now, this constructs a sequential graph per top-level list in the input, or
     for the input itself, if the input is a list.
@@ -58,6 +60,7 @@ class Dataflow(InputProcessor):
 
     Important: All objects are identified by their id() in the graph.
     """
+
     def __init__(self, edges=None):
         self.edges = edges or {}
 
@@ -87,7 +90,7 @@ class Dataflow(InputProcessor):
             True if there is a flow from a to b, False otherwise.
         """
         if id(a) not in self.edges or id(b) not in self.edges:
-            raise KeyError(f"Object with given id not in dataflow graph!")
+            raise KeyError("Object with given id not in dataflow graph!")
         return id(a) in self.edges.get(id(b), set())
 
 
@@ -129,23 +132,29 @@ class Selectable:
             return [data]
 
         if type(data) is Message:
-            return self.merge([
-                self.select(type_name, data.content),
-                self.select(type_name, data.role),
-                self.select(type_name, data.tool_calls),
-            ])
+            return self.merge(
+                [
+                    self.select(type_name, data.content),
+                    self.select(type_name, data.role),
+                    self.select(type_name, data.tool_calls),
+                ]
+            )
         elif type(data) is ToolCall:
-            return self.merge([
-                self.select(type_name, data.id),
-                self.select(type_name, data.type),
-                self.select(type_name, data.function),
-            ])
+            return self.merge(
+                [
+                    self.select(type_name, data.id),
+                    self.select(type_name, data.type),
+                    self.select(type_name, data.function),
+                ]
+            )
         elif type(data) is ToolOutput:
-            return self.merge([
-                self.select(type_name, data.role),
-                self.select(type_name, data.content),
-                self.select(type_name, data.tool_call_id),
-            ])
+            return self.merge(
+                [
+                    self.select(type_name, data.role),
+                    self.select(type_name, data.content),
+                    self.select(type_name, data.tool_call_id),
+                ]
+            )
         elif type(data) is list:
             return self.merge([self.select(type_name, item) for item in data])
         elif type(data) is dict:
@@ -155,12 +164,13 @@ class Selectable:
         else:
             # print("cannot sub-select type", type(data))
             return []
-        
+
     def type_name(self, selector):
         if type(selector) is types.NamedUnknownType:
             return selector.name
         else:
             return selector
+
 
 def inputcopy(opj):
     # recursively copy, dict, list and tuple, and delegate to deepcopy for leaf objects
@@ -178,17 +188,18 @@ def inputcopy(opj):
 
 class Range(BaseModel):
     """
-    Represents a range in the input object that is relevant for 
+    Represents a range in the input object that is relevant for
     the currently evaluated expression.
 
     A range can be an entire object (start and end are None) or a
     substring (start and end are integers, and object_id refers to
     the object that the range is part of).
     """
+
     object_id: str
     start: Optional[int]
     end: Optional[int]
-    
+
     # json path to this range in the input object (not always directly available)
     # Use Input.locate to generate the JSON paths
     json_path: Optional[str] = None
@@ -198,16 +209,17 @@ class Range(BaseModel):
         if type(obj) is dict and "__origin__" in obj:
             obj = obj["__origin__"]
         return cls(object_id=str(id(obj)), start=start, end=end)
-    
+
     def match(self, obj):
         return str(id(obj)) == self.object_id
+
 
 class InputVisitor:
     def __init__(self, data):
         self.data = data
         self.visited = set()
 
-    def visit(self, object = None, path = None):
+    def visit(self, object=None, path=None):
         # root call defaults
         if object is None:
             object = self.data
@@ -231,12 +243,13 @@ class InputVisitor:
             for field in fields:
                 self.visit(getattr(object, field), path + [field])
         else:
-            return # nop
-        
+            return  # nop
+
+
 class RangeLocator(InputVisitor):
     def __init__(self, ranges, data):
         super().__init__(data)
-        
+
         self.ranges_by_object_id = {}
         for r in ranges:
             self.ranges_by_object_id.setdefault(r.object_id, []).append(r)
@@ -247,19 +260,22 @@ class RangeLocator(InputVisitor):
             object = self.data
         if path is None:
             path = []
-        
+
         if str(id(object)) in self.ranges_by_object_id:
             for r in self.ranges_by_object_id[str(id(object))]:
                 rpath = ".".join(map(str, path))
                 if r.start is not None and r.end is not None:
                     rpath += ":" + str(r.start) + "-" + str(r.end)
-                self.results.append((r,rpath))
-        
+                self.results.append((r, rpath))
+
         super().visit(object, path)
+
 
 def mask_json_paths(input: list[dict], json_paths: list[str], mask_fn: Callable):
     def find_next(rpath: str) -> list[str]:
-        return [json_path[len(rpath)+1:] for json_path in json_paths if json_path.startswith(rpath)]
+        return [
+            json_path[len(rpath) + 1 :] for json_path in json_paths if json_path.startswith(rpath)
+        ]
 
     def visit(object=None, path=None):
         if path is None:
@@ -273,10 +289,12 @@ def mask_json_paths(input: list[dict], json_paths: list[str], mask_fn: Callable)
         if type(object) is str:
             new_object = copy.deepcopy(object)
             for next_path in next_paths:
-                match = re.match(r'^(\d+)-(\d+)$', next_path)
+                match = re.match(r"^(\d+)-(\d+)$", next_path)
                 if match:
                     start, end = map(int, match.groups())
-                    new_object = new_object[:start] + mask_fn(new_object[start:end]) + new_object[end:]
+                    new_object = (
+                        new_object[:start] + mask_fn(new_object[start:end]) + new_object[end:]
+                    )
             return new_object
         elif type(object) is dict:
             return {k: visit(object[k], path + [k]) for k in object}
@@ -284,6 +302,7 @@ def mask_json_paths(input: list[dict], json_paths: list[str], mask_fn: Callable)
             return [visit(v, path + [i]) for i, v in enumerate(object)]
         else:
             raise ValueError(f"Cannot mask object of type {type(object)}")
+
     return visit(input, [])
 
 
@@ -295,6 +314,7 @@ class Input(Selectable):
         data: List of events observed in the input where each event is one of Message, ToolCall or ToolOutput.
         dataflow: Dataflow graph of the events in the input.
     """
+
     data: list[Event]
     dataflow: Dataflow
 
@@ -303,12 +323,15 @@ class Input(Selectable):
         # creates a dataflow graph from the input
         self.dataflow = Dataflow.from_input(self.data)
 
-    def locate(self, ranges: list[Range], object = None, path = None, results=None):
+    def locate(self, ranges: list[Range], object=None, path=None, results=None):
         locator = RangeLocator(ranges, self.data)
         locator.visit(object, path)
         # return new ranges, where the json path is set
         ranges_with_paths = locator.results
-        return [Range(object_id=r.object_id, start=r.start, end=r.end, json_path=path) for r, path in ranges_with_paths]
+        return [
+            Range(object_id=r.object_id, start=r.start, end=r.end, json_path=path)
+            for r, path in ranges_with_paths
+        ]
 
     def to_json(self):
         return json.dumps([event.model_dump_json() for event in self.data])
@@ -334,7 +357,9 @@ class Input(Selectable):
                         # If arguments are given as string convert them into dict using json.loads(...)
                         for call in event.get("tool_calls", []):
                             if type(call["function"]["arguments"]) == str:
-                                call["function"]["arguments"] = json.loads(call["function"]["arguments"])
+                                call["function"]["arguments"] = json.loads(
+                                    call["function"]["arguments"]
+                                )
                         msg = Message(**event)
                         parsed_data.append(msg)
                         if msg.tool_calls is not None:
@@ -354,7 +379,10 @@ class Input(Selectable):
                     tool_calls[call.id] = call
                     parsed_data.append(call)
                 else:
-                    raise ValueError("Could not parse event in the trace as any of the event types (Message, ToolCall, ToolOutput): " + str(event))
+                    raise ValueError(
+                        "Could not parse event in the trace as any of the event types (Message, ToolCall, ToolOutput): "
+                        + str(event)
+                    )
             except Exception as e:
                 warnings.warn(f"Could not parse event in the trace: {event}!")
                 raise e
@@ -362,7 +390,7 @@ class Input(Selectable):
         for trace_idx, event in enumerate(parsed_data):
             event.metadata["trace_idx"] = trace_idx
         return parsed_data
-    
+
     def has_flow(self, a, b):
         return self.dataflow.has_flow(a, b)
 
@@ -373,13 +401,12 @@ class Input(Selectable):
 
     def __str__(self):
         return f"<Input {self.data}>"
-    
+
     def __repr__(self):
         return str(self)
-    
+
     def validate(self):
         """
         Validates whether the provided input conforms to a schema that
         can be handled by the analyzer.
         """
-        

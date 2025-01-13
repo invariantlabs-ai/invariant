@@ -1,5 +1,3 @@
-from dataclasses import dataclass
-
 # @dataclass
 # class UserMessage(Exception):
 #     """To be raised each time a user message is found."""
@@ -11,4 +9,3 @@ from dataclasses import dataclass
 #     msg: dict
 
 # class AppendContentHandler:
-    

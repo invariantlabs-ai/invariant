@@ -2,7 +2,6 @@ from invariant.analyzer.runtime.evaluation_context import EvaluationContext
 from invariant.analyzer.runtime.input import Input
 from invariant.analyzer.runtime.quantifier import Quantifier
 
-from invariant.analyzer.language.ast import RaisingTransformation, TypedIdentifier, Identifier
 
 class forall(Quantifier):
     """
@@ -19,20 +18,25 @@ class forall(Quantifier):
     This expression only evaluates to True if all `ToolCall` events in the trace are `tool:send_mail` events.
 
     """
+
     def eval(self, input_data: Input, body, globals: dict, evaluation_context: EvaluationContext):
         from invariant.analyzer.runtime.evaluation import Interpreter
 
-        for m in Interpreter.assignments(body, input_data, globals, evaluation_context=evaluation_context):
-            if not m.result: 
+        for m in Interpreter.assignments(
+            body, input_data, globals, evaluation_context=evaluation_context
+        ):
+            if not m.result:
                 return False
         return True
+
 
 # class looping(Quantifier):
 #     def __init__(self, n: int):
 #         self.n = n
-    
+
 #     def eval(self, input_data: Input, body, globals: dict, evaluation_context: EvaluationContext):
 #         print("check", self, "with", globals)
+
 
 class count(Quantifier):
     """
@@ -52,10 +56,11 @@ class count(Quantifier):
 
     This expression only evaluates to True if there are between 2 and 4 `ToolCall` events in the trace that are `tool:get_inbox` events.
     """
+
     def __init__(self, min: int = None, max: int = None):
         self.min = min
         self.max = max
-    
+
     def eval(self, input_data: Input, body, globals: dict, evaluation_context: EvaluationContext):
         from invariant.analyzer.runtime.evaluation import Interpreter
 
@@ -63,17 +68,22 @@ class count(Quantifier):
         bad_models = 0
         interpreter: Interpreter = Interpreter.current()
 
-        for m in Interpreter.assignments(body, input_data, globals, evaluation_context=evaluation_context):
-            if m.result: 
+        for m in Interpreter.assignments(
+            body, input_data, globals, evaluation_context=evaluation_context
+        ):
+            if m.result:
                 n_matches += 1
                 interpreter.ranges.extend(m.ranges)
             else:
                 bad_models += 1
             # if we have an upper bound and we have already reached it, we can return False
-            if self.max is not None and n_matches > self.max: return False
+            if self.max is not None and n_matches > self.max:
+                return False
             # if only lower bound and we have already reached it, we can return True
-            if self.min is not None and self.max is None and n_matches >= self.min: return True
-        
-        if self.min is not None and n_matches < self.min: return False
-        
+            if self.min is not None and self.max is None and n_matches >= self.min:
+                return True
+
+        if self.min is not None and n_matches < self.min:
+            return False
+
         return True

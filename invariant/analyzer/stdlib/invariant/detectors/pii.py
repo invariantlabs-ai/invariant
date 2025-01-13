@@ -1,8 +1,10 @@
 from dataclasses import dataclass
-from invariant.analyzer.stdlib.invariant.nodes import LLM
+
 from invariant.analyzer.runtime.functions import cache
+from invariant.analyzer.stdlib.invariant.nodes import LLM
 
 PII_ANALYZER = None
+
 
 @dataclass
 class PIIException(Exception):
@@ -22,7 +24,7 @@ def get_entities(results: list):
 @cache
 def pii(data: str | list, entities: list[str] | None = None) -> list[str]:
     """Predicate which detects PII in the given data.
-    
+
     Returns the list of PII detected in the data.
 
     Supported data types:
@@ -31,9 +33,11 @@ def pii(data: str | list, entities: list[str] | None = None) -> list[str]:
     global PII_ANALYZER
     if PII_ANALYZER is None:
         from invariant.analyzer.runtime.utils.pii import PII_Analyzer
+
         PII_ANALYZER = PII_Analyzer()
 
     from invariant.analyzer.runtime.evaluation import Interpreter
+
     interpreter = Interpreter.current()
 
     if type(data) is str:
@@ -43,7 +47,7 @@ def pii(data: str | list, entities: list[str] | None = None) -> list[str]:
 
     if type(data) is not list:
         data = [data]
-    
+
     all_pii = []
     for message in data:
         if message.content is None:

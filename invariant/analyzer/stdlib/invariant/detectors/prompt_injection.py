@@ -1,9 +1,13 @@
-from invariant.analyzer.runtime.utils.prompt_injections import PromptInjectionAnalyzer, UnicodeDetector
-from invariant.analyzer.runtime.utils.base import DetectorResult
 from invariant.analyzer.runtime.functions import cache
+from invariant.analyzer.runtime.utils.base import DetectorResult
+from invariant.analyzer.runtime.utils.prompt_injections import (
+    PromptInjectionAnalyzer,
+    UnicodeDetector,
+)
 
 PROMPT_INJECTION_ANALYZER = None
 UNICODE_ANALYZER = None
+
 
 @cache
 def prompt_injection(data: str | list | dict, **config: dict) -> bool:
@@ -47,6 +51,7 @@ def unicode(data: str | list | dict, categories: list[str] | None = None) -> boo
         UNICODE_ANALYZER = UnicodeDetector()
 
     from invariant.analyzer.runtime.evaluation import Interpreter
+
     interpreter = Interpreter.current()
 
     if type(data) is str:
