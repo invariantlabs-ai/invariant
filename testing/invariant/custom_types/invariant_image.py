@@ -2,14 +2,19 @@
 
 import base64
 import io
+import logging
 from typing import Optional
+
+from PIL import Image
 
 from invariant.scorers.llm.classifier import Classifier
 from invariant.scorers.utils.ocr import OCRDetector
-from PIL import Image
 
 from .invariant_bool import InvariantBool
 from .invariant_string import InvariantString
+
+logging.basicConfig(level=logging.WARNING)
+logger = logging.getLogger(__name__)
 
 
 class InvariantImage(InvariantString):
@@ -40,13 +45,19 @@ class InvariantImage(InvariantString):
             prompt (str): The prompt to use for the LLM.
             options (list[str]): The options to use for the LLM.
             model (str): The model to use for the LLM.
-            client (invariant.scorers.llm.clients.client.SupportedClients): The
-                client to use for the LLM.
+            client (invariant.scorers.llm.clients.client.SupportedClients): The client to use for the LLM.
             use_cached_result (bool): Whether to use a cached result if available.
+
+        Returns:
+            InvariantString: The result of the LLM classification
 
         """
         llm_clf = Classifier(
-            prompt=prompt, options=options, model=model, client=client, vision=True,
+            prompt=prompt,
+            options=options,
+            model=model,
+            client=client,
+            vision=True,
         )
         res = llm_clf.classify_vision(
             self.value, image_type=self.image_type, use_cached_result=use_cached_result
@@ -59,12 +70,40 @@ class InvariantImage(InvariantString):
         case_sensitive: bool = False,
         bbox: Optional[dict] = None,
     ) -> InvariantBool:
-        """Check if the value contains the given text using OCR."""
+        """Check if the value contains the given text using OCR.
+
+        Args:
+            text (str | InvariantString): The text to search for within the image.
+            case_sensitive (bool, optional): Whether the text search should be case-sensitive. Defaults to False.
+            bbox (Optional[dict], optional): A bounding box to limit the search area within the image.
+                                             The dictionary should contain keys 'x1', 'x2', 'y1', and 'y2'. Defaults to None.
+
+        Returns:
+            InvariantBool: True if the text is found in the image, False otherwise.
+
+        """
         addresses = self.addresses
         if isinstance(text, InvariantString):
             addresses.extend(text.addresses)
             text = text.value
-        res = OCRDetector().contains(self.image, text, case_sensitive, bbox)
+
+        res, bboxes = OCRDetector().contains(self.image, text, case_sensitive, bbox)
+
+        # This assumes that the first address (if any) contains the message index!
+        if addresses and bboxes:
+            try:
+                message_index = addresses[0].split(":")[0]
+
+                # Add the bounding box coordinates to the addresses.
+                for bbox_coords in bboxes:
+                    x1, y1, x2, y2 = bbox_coords.values()
+                    addresses.append(f"{message_index}:bbox-{x1},{y1},{x2},{y2}")
+
+            except IndexError:
+                logger.warning(
+                    "Failed to extract message index for bounding box construction"
+                )
+
         return InvariantBool(res, addresses)
 
     def ocr_contains_any(
@@ -73,9 +112,22 @@ class InvariantImage(InvariantString):
         case_sensitive: bool = False,
         bbox: Optional[dict] = None,
     ) -> InvariantBool:
+        """Check if the value contains any of the given pieces of text in `texts` using OCR.
+
+        Args:
+            texts (list[str | InvariantString]): The texts to search for within the image.
+            case_sensitive (bool, optional): Whether the text search should be case-sensitive. Defaults to False.
+            bbox (Optional[dict], optional): A bounding box to limit the search area within the image.
+                                             The dictionary should contain keys 'x1', 'x2', 'y1', and 'y2'. Defaults to None.
+
+        Returns:
+            InvariantBool: True if any of the texts are found in the image, False otherwise.
+
+        """
         for text in texts:
             if res := self.ocr_contains(text, case_sensitive, bbox):
                 return res
+
         return InvariantBool(False, self.addresses)
 
     def ocr_contains_all(
@@ -84,6 +136,18 @@ class InvariantImage(InvariantString):
         case_sensitive: bool = False,
         bbox: Optional[dict] = None,
     ) -> InvariantBool:
+        """Check if the value contains all of the given pieces of text in `texts` using OCR.
+
+        Args:
+            texts (list[str | InvariantString]): The texts to search for within the image.
+            case_sensitive (bool, optional): Whether the text search should be case-sensitive. Defaults to False.
+            bbox (Optional[dict], optional): A bounding box to limit the search area within the image.
+                                             The dictionary should contain keys 'x1', 'x2', 'y1', and 'y2'. Defaults to None.
+
+        Returns:
+            InvariantBool: True if all of the texts are found in the image, False otherwise.
+
+        """
         for text in texts:
             if not (res := self.ocr_contains(text, case_sensitive, bbox)):
                 return res
