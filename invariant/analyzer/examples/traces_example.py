@@ -9,7 +9,7 @@ from dataclasses import dataclass
 
 from invariant import Policy
 from invariant.analyzer.stdlib.invariant import ToolCall
-from invariant.traces import *
+from invariant.analyzer.traces import *
 
 
 @dataclass

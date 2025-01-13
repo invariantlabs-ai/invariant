@@ -1,9 +1,8 @@
 import openai
 import pytest
-
-from invariant.custom_types.trace_factory import TraceFactory
 from invariant.testing import Trace, assert_true, get_agent_param
 from invariant.testing import functional as F
+from invariant.testing.custom_types.trace_factory import TraceFactory
 
 
 def run_agent(prompt: str) -> Trace:

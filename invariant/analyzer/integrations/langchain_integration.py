@@ -10,7 +10,7 @@ import termcolor
 
 from invariant import Monitor
 from invariant.analyzer.extras import langchain_extra
-from invariant.monitor import stack, wrappers
+from invariant.analyzer.monitor import stack, wrappers
 
 langchain = langchain_extra.package("langchain").import_module()
 

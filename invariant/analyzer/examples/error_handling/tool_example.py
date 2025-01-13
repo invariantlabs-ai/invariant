@@ -8,9 +8,9 @@ import unittest
 from dataclasses import dataclass
 
 from invariant import Monitor
+from invariant.analyzer.monitor import stack, wrappers
 from invariant.analyzer.stdlib.invariant import ToolCall
 from invariant.analyzer.stdlib.invariant.errors import PolicyViolation
-from invariant.monitor import stack, wrappers
 
 
 @dataclass

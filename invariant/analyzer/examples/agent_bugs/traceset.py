@@ -208,7 +208,7 @@ class OpenDevinLoader(TraceSet):
     def parse_trace(trajectory):
         import re
 
-        from invariant.traces import assistant, tool, tool_call, user
+        from invariant.analyzer.traces import assistant, tool, tool_call, user
 
         regex = {
             "bash": r"<execute_bash>(.*?)</execute_bash>",
@@ -255,7 +255,7 @@ class OpenDevinLoader(TraceSet):
 class SWEAgentTraceSet(TraceSet):
     @staticmethod
     def parse_trace(trajectory):
-        from invariant.traces import assistant, tool, tool_call
+        from invariant.analyzer.traces import assistant, tool, tool_call
 
         inv_traj = []
         for idx, el in enumerate(trajectory):

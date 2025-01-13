@@ -1,8 +1,6 @@
 import re
 
 import urllib3
-from invariant.custom_types.invariant_image import InvariantImage
-
 from invariant.testing import (
     Trace,
     TraceFactory,
@@ -10,6 +8,7 @@ from invariant.testing import (
     assert_true,
     expect_true,
 )
+from invariant.testing.custom_types.invariant_image import InvariantImage
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 

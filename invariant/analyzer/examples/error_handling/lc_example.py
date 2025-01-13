@@ -14,12 +14,12 @@ from langchain_core.agents import AgentAction
 from langchain_openai import ChatOpenAI
 
 from invariant import Monitor
-from invariant.analyzer.stdlib.invariant import ToolCall
-from invariant.analyzer.stdlib.invariant.errors import PolicyViolation
-from invariant.integrations.langchain_integration import (
+from invariant.analyzer.integrations.langchain_integration import (
     MonitoringAgentExecutor,
     MutableAgentActionTuple,
 )
+from invariant.analyzer.stdlib.invariant import ToolCall
+from invariant.analyzer.stdlib.invariant.errors import PolicyViolation
 
 
 @dataclass

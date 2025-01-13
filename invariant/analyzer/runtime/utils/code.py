@@ -1,11 +1,12 @@
 import ast
-import asyncio
 import json
 import subprocess
 import tempfile
 from enum import Enum
+
+from pydantic.dataclasses import Field, dataclass
+
 from invariant.analyzer.runtime.utils.base import BaseDetector, DetectorResult
-from pydantic.dataclasses import dataclass, Field
 
 
 class CodeSeverity(str, Enum):
@@ -28,7 +29,7 @@ class PythonDetectorResult:
     Usage in IPL:
 
     ```
-    from invariant.detectors.code import python_code
+    from invariant.analyzer.detectors.code import python_code
 
     raise ... if:
         program := python_code(...)
@@ -39,12 +40,21 @@ class PythonDetectorResult:
     # imported modules
     imports: list[str] = Field(default_factory=list, description="List of imported modules.")
     # built-in functions used
-    builtins: list[str] = Field(default_factory=list, description="List of built-in functions used.")
+    builtins: list[str] = Field(
+        default_factory=list, description="List of built-in functions used."
+    )
     # whether code has syntax errors
-    syntax_error: bool = Field(default=False, description="Flag which is true if code has syntax errors.")
-    syntax_error_exception: str|None = Field(default=None, description="Exception message if syntax error occurred.")
+    syntax_error: bool = Field(
+        default=False, description="Flag which is true if code has syntax errors."
+    )
+    syntax_error_exception: str | None = Field(
+        default=None, description="Exception message if syntax error occurred."
+    )
     # function call identifier names
-    function_calls: set[str] = Field(default_factory=set, description="Set of function call targets as returned by 'ast.unparse(node.func).strip()'")
+    function_calls: set[str] = Field(
+        default_factory=set,
+        description="Set of function call targets as returned by 'ast.unparse(node.func).strip()'",
+    )
 
     def add_import(self, module: str):
         self.imports.append(module)
@@ -66,7 +76,6 @@ class PythonDetectorResult:
 
 
 class ASTDetectionVisitor(ast.NodeVisitor):
-
     def __init__(self, code: str):
         self.code = code
         self.res = PythonDetectorResult()
@@ -79,11 +88,11 @@ class ASTDetectionVisitor(ast.NodeVisitor):
 
         while source_seg in text:
             loc = str.find(text, source_seg)
-            res.append(DetectorResult(type, loc, loc+len(source_seg), 0.5))
-            text = text[loc+len(source_seg):]
+            res.append(DetectorResult(type, loc, loc + len(source_seg), 0.5))
+            text = text[loc + len(source_seg) :]
 
         return res
-    
+
     def visit_Name(self, node):
         if node.id in self._builtins:
             self.res.add_builtin(node.id)
@@ -98,6 +107,7 @@ class ASTDetectionVisitor(ast.NodeVisitor):
     def visit_Call(self, node):
         self.res.add_function_call(ast.unparse(node.func).strip())
         self.generic_visit(node)
+
 
 class PythonCodeDetector(BaseDetector):
     """Detector which extracts entities from Python code.
@@ -117,6 +127,7 @@ class PythonCodeDetector(BaseDetector):
         cell magic commands, etc.).
         """
         from IPython.core.inputtransformer2 import TransformerManager
+
         transformer_manager = TransformerManager()
         return transformer_manager.transform_cell(text)
 
@@ -140,7 +151,7 @@ class SemgrepDetector(BaseDetector):
         "bash": ".sh",
     }
 
-    def write_to_temp_file(self, code:str, lang: str) -> str:
+    def write_to_temp_file(self, code: str, lang: str) -> str:
         suffix = self.CODE_SUFFIXES.get(lang, ".txt")
         temp_file = tempfile.NamedTemporaryFile(mode="w", suffix=suffix, delete=False)
         with open(temp_file.name, "w") as fou:
@@ -163,7 +174,19 @@ class SemgrepDetector(BaseDetector):
         else:
             raise ValueError(f"Unsupported language: {lang}")
 
-        cmd = ["rye", "run", "semgrep", "scan", "--json", "--config", config, "--metrics", "off", "--quiet", temp_file]
+        cmd = [
+            "rye",
+            "run",
+            "semgrep",
+            "scan",
+            "--json",
+            "--config",
+            config,
+            "--metrics",
+            "off",
+            "--quiet",
+            temp_file,
+        ]
         try:
             out = subprocess.run(cmd, capture_output=True)
             semgrep_res = json.loads(out.stdout.decode("utf-8"))

@@ -177,7 +177,7 @@ For example, this policy rule detects if an agent made a request to an untrusted
 
 ```python
 # in Policy.from_string:
-from invariant.detectors.code import python_code
+from invariant.analyzer.detectors.code import python_code
 
 raise "tried to execute unsafe code, after visiting an untrusted URL" if:
     # check all flows of 'get_url' to 'run_python'
@@ -206,7 +206,7 @@ To detect and prevent this the analyzer supports the definition of, for instance
 
 ```python
 # in Policy.from_string:
-from invariant.access_control import should_allow_rbac, AccessControlViolation
+from invariant.analyzer.access_control import should_allow_rbac, AccessControlViolation
 
 user_roles := {"alice": ["user"], "bob": ["admin", "user"]}
 
@@ -560,7 +560,7 @@ To get started, make sure your traces are in [the expected format](#trace-format
 
 ```python
 from invariant import Policy
-from invariant.traces import * # for message trace helpers
+from invariant.analyzer.traces import * # for message trace helpers
 
 policy = Policy.from_string(
 """
@@ -672,7 +672,7 @@ To monitor a `langchain`-based agent, you can use a `MonitoringAgentExecutor`, w
 
 ```python
 from invariant import Monitor
-from invariant.integrations.langchain_integration import MonitoringAgentExecutor
+from invariant.analyzer.integrations.langchain_integration import MonitoringAgentExecutor
 
 from langchain_openai import ChatOpenAI
 from langchain.agents import tool, create_openai_functions_agent

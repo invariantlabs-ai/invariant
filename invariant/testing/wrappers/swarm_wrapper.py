@@ -1,7 +1,7 @@
 """Wrapper for the OpenAI Swarm client."""
 
-from invariant.custom_types.trace import Trace
-from invariant.custom_types.trace_factory import TraceFactory
+from invariant.testing.custom_types.trace import Trace
+from invariant.testing.custom_types.trace_factory import TraceFactory
 from swarm import Swarm
 from swarm.types import Response
 

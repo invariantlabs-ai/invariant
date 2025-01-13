@@ -45,7 +45,7 @@ To learn more about all available extras, you can run the `invariant-cli list` c
 **Testing** If you need to write tests that require extra dependencies to be installed, you can declare the relevant `test_*` methods using the following decorator:
 
 ```python
-from invariant.extras import extras_available, presidio_extra
+from invariant.analyzer.extras import extras_available, presidio_extra
 
 class TestSomething:
     @unittest.skipUnless(extras_available(presidio_extra), "presidio-analyzer is not installed")

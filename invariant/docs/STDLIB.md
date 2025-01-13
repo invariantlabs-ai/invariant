@@ -9,7 +9,7 @@ The standard library includes a set of checkers for detecting sensitive data in 
 The available checkers are defined in [`invariant/stdlib/detectors/pii.py`](../invariant/stdlib/invariant/detectors/pii.py). For example, it can be used to analyze agent traces for PII leaks:
 
 ```python
-from invariant.detectors import pii
+from invariant.analyzer.detectors import pii
 
 raise PolicyViolation("found pii", msg) if:
     (msg: Message)
@@ -27,7 +27,7 @@ The standard library also includes checkers for statically detecting prompt inje
 The available checkers are defined in [`invariant/stdlib/detectors/prompt_injection.py`](../invariant/stdlib/invariant/detectors/prompt_injection.py). For example, it can be used to analyze agent traces for prompt injections:
 
 ```python
-from invariant.detectors.prompt_injection import prompt_injection
+from invariant.analyzer.detectors.prompt_injection import prompt_injection
 
 raise PolicyViolation("prompt injection found in tool output", call=out) if:
     (out: ToolOutput)
@@ -43,7 +43,7 @@ Another concern when building AI agents is to ensure that the agent's responses 
 The available checkers are defined in [`invariant/stdlib/detectors/moderated.py`](../invariant/stdlib/invariant/detectors/moderation.py). For example, it can be used to analyze agent traces for moderation violations:
 
 ```python
-from invariant.detectors.moderation import moderated
+from invariant.analyzer.detectors.moderation import moderated
 
 raise PolicyViolation("assistant message triggered moderation layer", msg=msg) if:
     (msg: Message)
@@ -62,7 +62,7 @@ For this, the standard library includes checkers for analyzing code, using metho
 The available checkers are defined in [`invariant/stdlib/detectors/code.py`](../invariant/stdlib/invariant/detectors/code.py). For example, it can be used to analyze agent traces for unsafe code patterns or imports:
 
 ```python
-from invariant.detectors import python_code
+from invariant.analyzer.detectors import python_code
 
 raise PolicyViolation("must not use 'os' module in generated code", out=msg) if:
         (msg: Message)
@@ -79,7 +79,7 @@ If an AI agent interacts with external services or systems, it is important to e
 The available checkers are defined in [`invariant/stdlib/detectors/secrets.py`](../invariant/stdlib/invariant/detectors/secrets.py). For example, it can be used to analyze agent traces for secret leaks:
 
 ```python
-from invariant.detectors import secrets
+from invariant.analyzer.detectors import secrets
 
 raise PolicyViolation("found secrets", msg) if:
     (msg: Message)
