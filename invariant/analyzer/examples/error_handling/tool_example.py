@@ -7,7 +7,7 @@ import json
 import unittest
 from dataclasses import dataclass
 
-from invariant import Monitor
+from invariant.analyzer import Monitor
 from invariant.analyzer.monitor import stack, wrappers
 from invariant.analyzer.stdlib.invariant import ToolCall
 from invariant.analyzer.stdlib.invariant.errors import PolicyViolation
@@ -89,7 +89,7 @@ def main():
     monitor = Monitor.from_string(
         r"""
     from invariant import Message, match, PolicyViolation, ToolCall, ToolOutput
-    from invariant.examples.tool_example import SomethingCall
+    from invariant.analyzer.examples.tool_example import SomethingCall
 
     # if the user asks about 'X', raise a violation exception
     raise SomethingCall(call) if:

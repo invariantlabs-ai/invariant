@@ -73,7 +73,7 @@ pip install git+https://github.com/invariantlabs-ai/invariant.git
 You can then import and use the analyzer in your Python code ([Open example in Playground](https://playground.invariantlabs.ai/#1)):
 
 ```python
-from invariant import Policy
+from invariant.analyzer import Policy
 
 # given some message trace (simple chat format)
 messages = [
@@ -385,7 +385,7 @@ messages = [
 To print a trace input and inspect it with respect to how the analyzer will interpret it, you can use the `input.print()` method (or `input.print(expand_all=True)` for the view with expanded indentation):
 
 ```python
-from invariant import Input
+from invariant.analyzer import Input
 
 messages = [
     { "role": "user", "content": "What's in my inbox?" },
@@ -559,7 +559,7 @@ The simplest way to use the analyzer is to analyze a pre-recorded agent trace. T
 To get started, make sure your traces are in [the expected format](#trace-format) and define a policy that specifies the security properties you want to check for. Then, you can use the `Policy` class to analyze the trace ([Open example in Playground](https://playground.invariantlabs.ai/#10)):
 
 ```python
-from invariant import Policy
+from invariant.analyzer import Policy
 from invariant.analyzer.traces import * # for message trace helpers
 
 policy = Policy.from_string(
@@ -625,7 +625,7 @@ The analyzer can also be used to monitor AI agents in real-time. This allows you
 For instance, consider the following example of an OpenAI agent based on OpenAI tool calling:
 
 ```python
-from invariant import Monitor
+from invariant.analyzer import Monitor
 from openai import OpenAI
 
 # create an Invariant Monitor initialized with a policy
@@ -671,7 +671,7 @@ This way, all tool interactions of the agent are monitored in real-time. As soon
 To monitor a `langchain`-based agent, you can use a `MonitoringAgentExecutor`, which will automatically intercept tool calls and check them against the policy for you, just like in the OpenAI agent example above.
 
 ```python
-from invariant import Monitor
+from invariant.analyzer import Monitor
 from invariant.analyzer.integrations.langchain_integration import MonitoringAgentExecutor
 
 from langchain_openai import ChatOpenAI

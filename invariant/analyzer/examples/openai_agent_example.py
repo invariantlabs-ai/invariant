@@ -12,7 +12,7 @@ import unittest
 
 from openai import OpenAI
 
-from invariant import Monitor
+from invariant.analyzer import Monitor
 
 # define the policy to monitor the trace for security violations
 monitor = Monitor.from_string(

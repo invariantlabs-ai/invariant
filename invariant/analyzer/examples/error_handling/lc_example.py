@@ -13,7 +13,7 @@ from langchain.agents import create_openai_functions_agent, tool
 from langchain_core.agents import AgentAction
 from langchain_openai import ChatOpenAI
 
-from invariant import Monitor
+from invariant.analyzer import Monitor
 from invariant.analyzer.integrations.langchain_integration import (
     MonitoringAgentExecutor,
     MutableAgentActionTuple,
@@ -31,7 +31,7 @@ async def agent(*args, **kwargs):
     monitor = Monitor.from_string(
         """
     from invariant import Message, match, PolicyViolation, ToolCall, ToolOutput
-    from invariant.examples.lc_example import CallToMyTool
+    from invariant.analyzer.examples.error_handling.lc_example import CallToMyTool
 
     # find all calls to 'something' 
     raise CallToMyTool(call) if:

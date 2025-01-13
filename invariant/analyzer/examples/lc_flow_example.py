@@ -11,7 +11,7 @@ from langchain import hub
 from langchain.agents import create_openai_functions_agent, tool
 from langchain_openai import ChatOpenAI
 
-from invariant import Monitor, UnhandledError
+from invariant.analyzer import Monitor, UnhandledError
 from invariant.analyzer.integrations.langchain_integration import MonitoringAgentExecutor
 from invariant.analyzer.stdlib.invariant import ToolCall
 
@@ -28,7 +28,7 @@ async def agent(*args, **kwargs):
     monitor = Monitor.from_string(
         """
     from invariant import Message, match, PolicyViolation, ToolCall, ToolOutput
-    from invariant.examples.lc_flow_example import InvalidFlow
+    from invariant.analyzer.examples.lc_flow_example import InvalidFlow
         
 
     # check result after the operation

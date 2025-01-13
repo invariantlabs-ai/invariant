@@ -156,7 +156,7 @@ class TraceSet:
         return max_items
 
     def prepare_policy(self, invariant_condition: str, prefix: str = None):
-        from invariant import Policy
+        from invariant.analyzer import Policy
 
         # construct makeshift policy
         policy_str = f"""raise "found result" if:

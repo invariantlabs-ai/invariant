@@ -8,7 +8,7 @@ from typing import Any, List, Optional
 
 import termcolor
 
-from invariant import Monitor
+from invariant.analyzer import Monitor
 from invariant.analyzer.extras import langchain_extra
 from invariant.analyzer.monitor import stack, wrappers
 

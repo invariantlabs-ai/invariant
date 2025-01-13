@@ -7,7 +7,7 @@ import json
 import unittest
 from dataclasses import dataclass
 
-from invariant import Policy
+from invariant.analyzer import Policy
 from invariant.analyzer.stdlib.invariant import ToolCall
 from invariant.analyzer.traces import *
 
