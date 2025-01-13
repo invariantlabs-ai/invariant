@@ -44,7 +44,7 @@ testpaths = ["invariant/tests"]
 
 # top-level command 'invariant'
 [tool.poetry.scripts]
-invariant = "invariant.testing.__main__:main"
+invariant = "invariant.__main__:main"
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
