@@ -1,6 +1,6 @@
 import pytest
 
-from invariant.testing.testing import Trace
+from invariant.testing import Trace
 
 
 @pytest.fixture(name="trace_with_tool_calls")

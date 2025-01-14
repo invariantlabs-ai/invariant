@@ -73,7 +73,7 @@ def test_pytest_no_context():
     with WorkspaceHelper(
         {
             "test_file1.py": """
-from invariant.testing.testing import assert_true
+from invariant.testing import assert_true
 
 def test_true():
     assert_true(True)
@@ -141,7 +141,7 @@ def test_pytest_with_context():
     with WorkspaceHelper(
         {
             "test_file1.py": """
-from invariant.testing.testing import assert_false, Trace
+from invariant.testing import assert_false, Trace
 
 
 def test_my_trace():
@@ -197,7 +197,7 @@ def test_pytest_with_context_regular_assertions():
     with WorkspaceHelper(
         {
             "test_file1.py": """
-from invariant.testing.testing import assert_false, Trace
+from invariant.testing import assert_false, Trace
 
 def test_my_trace():
     trace = Trace(
@@ -242,7 +242,7 @@ def test_invariant_no_context():
     with WorkspaceHelper(
         {
             "test_file1.py": """
-from invariant.testing.testing import assert_true
+from invariant.testing import assert_true
 
 def test_true():
     assert_true(True)
@@ -311,7 +311,7 @@ def test_invariant_with_context():
     with WorkspaceHelper(
         {
             "test_file1.py": """
-from invariant.testing.testing import assert_false, Trace
+from invariant.testing import assert_false, Trace
 
 
 def test_my_trace():
@@ -369,7 +369,7 @@ def test_invariant_with_context_regular_assertions():
     with WorkspaceHelper(
         {
             "test_file1.py": """
-from invariant.testing.testing import assert_false, Trace
+from invariant.testing import assert_false, Trace
 
 def test_my_trace():
     trace = Trace(

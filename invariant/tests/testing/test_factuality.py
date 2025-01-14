@@ -1,6 +1,6 @@
 """Test the factuality module."""
 
-from invariant.testing.testing import IsFactuallyEqual, Trace, assert_false, assert_that
+from invariant.testing import IsFactuallyEqual, Trace, assert_false, assert_that
 
 
 def test_is_factually_equal():

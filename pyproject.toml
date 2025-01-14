@@ -41,6 +41,13 @@ transformers = ">=4.41.1"
 torch = ">=2.3.0"
 python-dotenv = ">=1.0.1"
 
+[tool.pytest.ini_options]
+log_cli = true
+log_cli_level = "INFO"
+log_cli_format = "%(asctime)s [%(levelname)s] %(message)s"
+log_cli_date_format = "%Y-%m-%d %H:%M:%S"
+testpaths = ["invariant/tests"]
+
 [project.scripts]
 invariant = "invariant.__main__:main"
 

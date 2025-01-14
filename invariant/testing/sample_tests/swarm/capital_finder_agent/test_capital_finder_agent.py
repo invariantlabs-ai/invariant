@@ -2,7 +2,7 @@
 
 import invariant.testing.testing.functional as F
 import pytest
-from invariant.testing.testing import assert_equals, assert_false, assert_true
+from invariant.testing import assert_equals, assert_false, assert_true
 from invariant.testing.wrappers.swarm_wrapper import SwarmWrapper
 from swarm import Swarm
 

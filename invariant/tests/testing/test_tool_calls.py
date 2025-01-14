@@ -1,7 +1,7 @@
 import pytest
 
 import invariant.testing.testing.functional as F
-from invariant.testing.testing import Trace, assert_true
+from invariant.testing import Trace, assert_true
 
 
 @pytest.fixture(name="trace_with_tool_calls")

@@ -3,10 +3,10 @@
 import pytest
 
 import invariant.testing.testing.functional as F
+from invariant.testing import Trace
 from invariant.testing.custom_types.invariant_bool import InvariantBool
 from invariant.testing.custom_types.invariant_number import InvariantNumber
 from invariant.testing.custom_types.invariant_string import InvariantString
-from invariant.testing.testing import Trace
 
 
 @pytest.fixture(name="message_list")
