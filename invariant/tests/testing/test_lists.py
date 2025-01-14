@@ -2,7 +2,7 @@
 
 import pytest
 
-import invariant.testing.testing.functional as F
+import invariant.testing.functional as F
 from invariant.testing import Trace
 from invariant.testing.custom_types.invariant_bool import InvariantBool
 from invariant.testing.custom_types.invariant_number import InvariantNumber

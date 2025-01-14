@@ -4,7 +4,7 @@ import subprocess
 import tempfile
 from typing import Any, Dict, Optional
 
-from invariant.utils.packages import is_program_installed
+from invariant.testing.utils.packages import is_program_installed
 from PIL import Image
 
 

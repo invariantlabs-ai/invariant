@@ -1,9 +1,10 @@
 # Development
 
-This project uses [`rye`](https://github.com/astral-sh/rye). To setup a development environment, run:
+This project uses [`poetry`](https://python-poetry.org/). To setup a development environment, run:
 
 ```bash
-rye sync
+poetry lock
+poetry install
 ```
 
 ### Testing 
@@ -11,13 +12,13 @@ rye sync
 To run all standard unit tests, run:
 
 ```bash
-rye test
+poetry run pytest
 ```
 
 To run all example snippets in `invariant/examples/` as unit tests, run:
 
 ```bash
-rye run python -m unittest discover -s invariant/examples -p "*_example.py"
+poetry run python -m unittest discover -s invariant/analyzer/examples -p "*_example.py"
 ```
 
 ### Dependency Management and Extras

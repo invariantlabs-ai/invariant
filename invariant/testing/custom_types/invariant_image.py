@@ -5,8 +5,8 @@ import io
 import logging
 from typing import Optional
 
-from invariant.scorers.llm.classifier import Classifier
-from invariant.scorers.utils.ocr import OCRDetector
+from invariant.testing.scorers.llm.classifier import Classifier
+from invariant.testing.scorers.utils.ocr import OCRDetector
 from PIL import Image
 
 from .invariant_bool import InvariantBool

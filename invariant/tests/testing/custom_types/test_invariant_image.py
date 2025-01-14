@@ -6,9 +6,9 @@ from unittest.mock import patch
 
 import pytest
 
-from invariant.custom_types.invariant_image import InvariantImage
-from invariant.custom_types.invariant_string import InvariantString
-from invariant.utils.packages import is_program_installed
+from invariant.testing.custom_types.invariant_image import InvariantImage
+from invariant.testing.custom_types.invariant_string import InvariantString
+from invariant.testing.utils.packages import is_program_installed
 
 
 @pytest.mark.parametrize(
@@ -27,7 +27,9 @@ from invariant.utils.packages import is_program_installed
 )
 def test_vision_classifier(model, client):
     """Test the vision classifier."""
-    with open("sample_tests/assets/Group_of_cats_resized.jpg", "rb") as image_file:
+    with open(
+        "invariant/testing/sample_tests/assets/Group_of_cats_resized.jpg", "rb"
+    ) as image_file:
         base64_image = base64.b64encode(image_file.read()).decode("utf-8")
     img = InvariantImage(base64_image)
     res = img.llm_vision(
@@ -49,7 +51,7 @@ def test_vision_classifier(model, client):
 @pytest.mark.skipif(not is_program_installed("tesseract"), reason="Skip for now, needs tesseract")
 def test_ocr_detector():
     """Test the OCR detector."""
-    with open("sample_tests/assets/inv_labs.png", "rb") as image_file:
+    with open("invariant/testing/sample_tests/assets/inv_labs.png", "rb") as image_file:
         base64_image = base64.b64encode(image_file.read()).decode("utf-8")
 
     inv_img = InvariantImage(base64_image)
@@ -63,10 +65,25 @@ def test_ocr_detector():
     assert not inv_img.ocr_contains_any(["something", "def", "abc"])
 
 
+def test_invariant_image_value_no_reassignment():
+    """Test that the value of an InvariantImage cannot be reassigned."""
+    with (
+        open("invariant/testing/sample_tests/assets/inv_labs.png", "rb") as image_file_1,
+        open(
+            "invariant/testing//sample_tests/assets/Group_of_cats_resized.jpg", "rb"
+        ) as image_file_2,
+    ):
+        base64_image_1 = base64.b64encode(image_file_1.read()).decode("utf-8")
+        base64_image_2 = base64.b64encode(image_file_2.read()).decode("utf-8")
+        inv_img = InvariantImage(base64_image_1)
+        with pytest.raises(AttributeError, match="'value' attribute cannot be reassigned"):
+            inv_img.value = base64_image_2
+
+
 @pytest.fixture
 def ocr_detector_mock():
     with patch(
-        "invariant.custom_types.invariant_image.OCRDetector", autospec=True
+        "invariant.testing.custom_types.invariant_image.OCRDetector", autospec=True
     ) as mock_ocr_detector:
         mock_ocr_detector.return_value.contains.return_value = (
             True,
@@ -75,10 +92,9 @@ def ocr_detector_mock():
         yield mock_ocr_detector
 
 
-# use the ocr_detector_mock fixture to test the ocr_contains method
 def test_ocr_returns_bounding_boxes(ocr_detector_mock):
     """Test that the OCR detector returns bounding boxes."""
-    with open("sample_tests/assets/inv_labs.png", "rb") as image_file:
+    with open("invariant/testing/sample_tests/assets/inv_labs.png", "rb") as image_file:
         base64_image = base64.b64encode(image_file.read()).decode("utf-8")
 
     inv_img = InvariantImage(base64_image, addresses=["1"])
@@ -91,16 +107,3 @@ def test_ocr_returns_bounding_boxes(ocr_detector_mock):
     inv_img = InvariantImage(base64_image)
     res = inv_img.ocr_contains("agents")
     assert not res.addresses
-
-
-def test_invariant_image_value_no_reassignment():
-    """Test that the value of an InvariantImage cannot be reassigned."""
-    with (
-        open("sample_tests/assets/inv_labs.png", "rb") as image_file_1,
-        open("sample_tests/assets/Group_of_cats_resized.jpg", "rb") as image_file_2,
-    ):
-        base64_image_1 = base64.b64encode(image_file_1.read()).decode("utf-8")
-        base64_image_2 = base64.b64encode(image_file_2.read()).decode("utf-8")
-        inv_img = InvariantImage(base64_image_1)
-        with pytest.raises(AttributeError, match="'value' attribute cannot be reassigned"):
-            inv_img.value = base64_image_2

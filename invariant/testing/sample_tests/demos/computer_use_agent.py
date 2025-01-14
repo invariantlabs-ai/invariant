@@ -1,4 +1,4 @@
-import invariant.testing.testing.functional as F
+import invariant.testing.functional as F
 import urllib3
 from invariant.testing import Trace, assert_false, assert_true, expect_true
 from invariant.testing.custom_types.trace_factory import TraceFactory

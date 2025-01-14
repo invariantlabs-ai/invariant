@@ -1,4 +1,4 @@
-import invariant.testing.testing.functional as F
+import invariant.testing.functional as F
 from invariant.testing import Trace, assert_true
 
 
