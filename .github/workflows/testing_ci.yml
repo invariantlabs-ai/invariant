@@ -21,7 +21,7 @@ jobs:
         python-version: "3.12.2"
     - name: Setup dependencies
       run: |
-        cd testing
+        cd invariant
         python -m pip install --upgrade pip
         pip install poetry
         poetry install --with dev
