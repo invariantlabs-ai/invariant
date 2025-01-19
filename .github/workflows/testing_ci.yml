@@ -30,4 +30,4 @@ jobs:
       env:
         OPENAI_API_KEY: ${{ secrets.INVARIANT_TESTING_OPENAI_KEY }}
       run: |
-        poetry run pytest --cov=invariant --cov-report=term --cov-fail-under=60 -s -vv tests
+        poetry run pytest --cov=invariant --cov-report=term --cov-fail-under=60 -s -vv invariant/tests
