@@ -1,6 +1,6 @@
 """Test the weather agent."""
 
-import invariant.testing.testing.functional as F
+import invariant.testing.functional as F
 import pytest
 from invariant.testing import TraceFactory, assert_true
 from langchain_core.messages import HumanMessage

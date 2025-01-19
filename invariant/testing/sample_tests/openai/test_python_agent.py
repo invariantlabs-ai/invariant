@@ -1,7 +1,7 @@
 import json
 from unittest.mock import MagicMock
 
-import invariant.testing.testing.functional as F
+import invariant.testing.functional as F
 import openai
 from invariant.testing import TraceFactory, assert_true, expect_equals
 
