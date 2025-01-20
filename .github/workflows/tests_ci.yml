@@ -2,7 +2,7 @@ name: Invariant testing CI
 
 on:
   push:
-    branches: [ "main", "merge_testing_analyzer" ]
+    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
