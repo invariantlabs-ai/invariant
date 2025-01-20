@@ -84,7 +84,7 @@ def from_explorer(
             )
 
     response = requests.get(
-        url=f"{explorer_endpoint}/api/v1/trace/{identifier_or_id}?annotated=1",
+        url=f"{explorer_endpoint}/api/v1/trace/{identifier_or_id}?include_annotations=true",
         timeout=TIMEOUT,
     )
     messages = response.json()["messages"]
