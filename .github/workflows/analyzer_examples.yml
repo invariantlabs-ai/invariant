@@ -44,5 +44,4 @@ jobs:
         poetry install --without dev
     - name: Run tests
       run: |
-        cd analyzer
         poetry run python -m unittest discover tests
