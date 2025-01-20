@@ -21,20 +21,14 @@ jobs:
       
       - name: Setup dependencies
         run: |
-          cd testing
           python -m pip install --upgrade pip
           pip install poetry
           poetry install
-      
-      - name: Set PYTHONPATH
-        run: echo "PYTHONPATH=$PYTHONPATH:$(pwd)/testing" >> $GITHUB_ENV
 
       - name: Set PyPI credentials
         run: |
-          cd testing
           poetry config pypi-token.pypi ${{ secrets.PYPI_API_TOKEN }}
 
       - name: Publish to PyPI
         run: |
-          cd testing
           poetry publish --build
