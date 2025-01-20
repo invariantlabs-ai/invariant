@@ -45,3 +45,4 @@ jobs:
     - name: Run tests
       run: |
         poetry run python -m unittest discover tests
+        poetry run pytest invariant/tests/analyzer
