@@ -338,6 +338,19 @@ def main():
             return add_extra(*args[1:])
         elif args[0] == "list-extras":
             return list_extras()
+    elif verb == "help":
+        print("Usage: invariant <command> [<args>]")
+        print("\nSupported Commands:\n")
+        for verb, description in actions.items():
+            if isinstance(description, dict):
+                print(f"  {verb}:")
+                for sub_verb, sub_description in description.items():
+                    print(f"    {sub_verb}: {sub_description}")
+                continue
+
+            print(f"  {verb}: {description}")
+        print()
+        return 0
 
     else:
         print(f"Unknown action: {verb}")
