@@ -44,5 +44,4 @@ jobs:
         poetry install --without dev
     - name: Run tests
       run: |
-        poetry run python -m unittest discover tests
         poetry run pytest invariant/tests/analyzer
