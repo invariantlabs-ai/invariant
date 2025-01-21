@@ -1,20 +1,38 @@
 <div align="center">
-  <h1 align="center"><img src="https://invariantlabs.ai/theme/images/logo.svg"/></h1>
-  <h1 align="center">Invariant <code>testing</code></h1>
+  <h1 align="center">Invariant Agent Stack</h1>
 
   <p align="center">
-    Helps you build better AI agents through debuggable unit testing
+    A framwork-less approach to robust and debuggable agent development.
   </p>
   <p align="center">
-    
+<a href="https://discord.gg/dZuZfhKnJ4"><img src="https://img.shields.io/discord/1265409784409231483?style=plastic&logo=discord&color=blueviolet&logoColor=white" height=18/></a>
 
- <a href="https://discord.gg/dZuZfhKnJ4"><img src="https://img.shields.io/discord/1265409784409231483?style=plastic&logo=discord&color=blueviolet&logoColor=white" height=18/></a>
-
-[Documentation](https://explorer.invariantlabs.ai/docs/testing/)
+Go To [Testing](#testing) | [Explorer](#explorer) | [Analyzer](#analyzer)
 
   </p>
 </div>
 <br/>
+
+The Invariant stack for agent building currently consists of three key projects.
+
+* [**Testing:**](#testing) A simple unit-testing library to write trace-based tests for agentic AI system.
+
+* [**Explorer:**](#explorer) A trace viewing tool to debug and inspect your agent's behavior (local or managed).
+
+* [**Analyzer:**](#analyzer) A static analyzer for agent traces to detect insecure and buggy behavior in agents online or offline.
+
+A more in-depth guide to Invariant can be found [in the documentation](https://explorer.invariantlabs.ai/docs/)
+
+# Quickstart
+
+```
+pip install invariant-ai
+```
+
+To continue, choose one 
+
+
+## Testing
 
 Invariant `testing` is a lightweight library to write and run AI agent tests. It provides helpers and assertions that enable you to write robust tests for your agentic applications.
 
@@ -28,11 +46,6 @@ Using localized assertions, testing always points you to the exact part of the a
 <img src="https://github.com/user-attachments/assets/7b568167-7746-4a42-8ebf-6b101e910236" width="70%"/>
 </div>
 
-## Installation
-
-```
-pip install invariant-ai
-```
 
 ## A quick example
 
@@ -48,7 +61,7 @@ Code:
 
 ```python
 # content of tests/test_weather.py
-import invariant.testing.functional as F
+import invariant.testing.testing.functional as F
 from invariant.testing import Trace, assert_equals
 
 def test_weather():
