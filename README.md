@@ -13,15 +13,19 @@
 </div>
 <br/>
 
-The Invariant stack for agent building is a framework-less approach that currently consists of three key projects:
+The Invariant stack for agent building is a framework-less approach that currently consists of three key projects, each of which can be used independently or in combination to build, test, and secure AI agents:
 
 * [**Testing:**](#testing) A simple unit-testing library to write trace-based tests for agentic AI system (LLM-as-a-judge, semantic similarity, etc).
 
-* [**Explorer:**](#explorer) A trace viewing tool to debug and inspect your agent's behavior (local or managed) with a visual interface.
+* [**Explorer:**](#explorer) A trace viewing tool to debug and inspect your agent's behavior (local or managed) in a visual way.
 
 * [**Analyzer:**](#analyzer) A static analyzer for agent traces to detect insecure and buggy behavior in agents online or offline (static analysis, dataflow analysis, security checks).
 
-A more in-depth guide to Invariant can be found [in the documentation](https://explorer.invariantlabs.ai/docs/)
+A more in-depth guide to these projects can be found [in the documentation](https://explorer.invariantlabs.ai/docs/).
+
+All of these tools are designed to be easy to use, flexible, and extensible, allowing developers to bring their own stack i.e. _framework-less_, while helping with a very concrete need each (testing, debugging, security and bug scanning).
+
+Invariant is a project by [Invariant Labs](https://invariantlabs.ai). 
 
 # Quickstart
 
