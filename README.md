@@ -152,7 +152,7 @@ For more information, visit the [explorer repository](https://github.com/invaria
 
 A trace scanner for LLM-based AI agents. 
 
-Go To [Use Cases](#use-cases) | [Documentation](#documentation) | [Development](docs/DEVELOPMENT.md#development) | [Paper](https://invariantlabs.ai/blog/icml2024-agents-formal-security)
+Go To [Use Cases](#use-cases) | [Documentation](#analyzer-documentation) | [Paper](https://invariantlabs.ai/blog/icml2024-agents-formal-security)
 
 
 The Invariant Analyzer is a static analysis based scanning tool that enables developers to find bugs and quirks in AI agents. It enables you to detect vulnerabilities, bugs, and security threats in your agent, helping you to fix security and reliability issues quickly. The analyzer scans an agent's execution traces to identify bugs (e.g., looping behavior) and threats (e.g., data leaks, prompt injections, and unsafe code execution).
