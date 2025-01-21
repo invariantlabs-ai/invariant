@@ -1,0 +1,47 @@
+name: Run Tests
+
+on:
+  push:
+    branches: [ "main", "ci-testing" ]
+
+permissions:
+  contents: read
+
+jobs:
+  test-examples:
+    name: Test invariant.examples
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python 3.12.2
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.12.2"
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install poetry
+        poetry install --with dev
+    - name: Run invariant.examples
+      env:
+        OPENAI_API_KEY: ${{ secrets.CI_OPENAI_API_KEY }}
+      run: |
+        poetry run python -m unittest discover -s invariant/analyzer/examples -p "*_example.py"
+  test-no-extras:
+    name: Test without extra dependencies
+    # (some tests will be skipped, but this is the default setup when users install the package)
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python 3.12.2
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.12.2"
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install poetry
+        poetry install --without dev
+    - name: Run tests
+      run: |
+        poetry run pytest invariant/tests/analyzer

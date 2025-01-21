@@ -1,5 +1,4 @@
 
-exclude = ["analyzer"]
 line-length = 100
 [lint]
 # 1. Enable flake8-bugbear (`B`) rules, in addition to the defaults.
