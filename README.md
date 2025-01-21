@@ -133,6 +133,8 @@ To learn more [read the documentation](https://explorer.invariantlabs.ai/docs/te
 
 A tool for visualizing and exploring agent traces. [Hosted Version](https://explorer.invariantlabs.ai).
 
+<img src="https://private-user-images.githubusercontent.com/17903049/396025575-91829aa5-8385-4c3e-9bff-1d8d7a8202ae.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3Mzc0ODcxMTksIm5iZiI6MTczNzQ4NjgxOSwicGF0aCI6Ii8xNzkwMzA0OS8zOTYwMjU1NzUtOTE4MjlhYTUtODM4NS00YzNlLTliZmYtMWQ4ZDdhODIwMmFlLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTAxMjElMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwMTIxVDE5MTMzOVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTEwMmIxNDkzZjQ1MDZhNzlmM2E1NGM2ZDY5YTM3NWI1NGQ0OGZhODlhMDA3NTg1NmM0NmY1ZTBlZjlmYWJiNjYmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.FRgP88RrIBEomMlVRn1bFfjINUp3NyQNwuP-KnQx4hg" width="600">
+
 After installation of the `invariant-ai` package, you can run the Explorer locally:
 
 ```bash
