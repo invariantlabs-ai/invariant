@@ -2,7 +2,7 @@
   <h1 align="center">Invariant Agent Stack</h1>
 
   <p align="center">
-    A framwork-less approach to robust and debuggable agent development.
+    A framework-less approach to robust and debuggable agent development.
   </p>
   <p align="center">
 <a href="https://discord.gg/dZuZfhKnJ4"><img src="https://img.shields.io/discord/1265409784409231483?style=plastic&logo=discord&color=blueviolet&logoColor=white" height=18/></a>
