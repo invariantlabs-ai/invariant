@@ -38,13 +38,13 @@ After installation, choose one of the subprojects [Testing](#testing), [Explorer
 # Table Of Contents
 
 - [Testing](#testing)
-  - [Example](a-quick-example)
-  - [Testing Features](a-quick-example)
+  - [Example](#a-quick-example)
+  - [Testing Features](#testing-features)
 - [Explorer](#explorer)
 - [Analyzer](#analyzer)
-  - [Why Agent Debugging Matters](why-agent-debugging-matters)
-  - [Why Agent Security Matters](why-agent-security-matters)
-  - [Analyzer Features](analyzer-features)
+  - [Why Agent Debugging Matters](#why-agent-debugging-matters)
+  - [Why Agent Security Matters](#why-agent-security-matters)
+  - [Analyzer Features](#analyzer-features)
 
 ## Testing
 
