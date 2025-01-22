@@ -41,7 +41,7 @@ After installation, choose one of the subprojects [Testing](#testing), [Explorer
   - [Example](#a-quick-example)
   - [Testing Features](#testing-features)
 - [Explorer](#explorer)
-  - [Getting Started)(#explorer)
+  - [Getting Started](#explorer)
   - [Repository](https://github.com/invariantlabs-ai/explorer)
 - [Analyzer](#analyzer)
   - [Why Agent Debugging Matters](#why-agent-debugging-matters)
