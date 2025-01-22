@@ -35,6 +35,20 @@ pip install invariant-ai
 
 After installation, choose one of the subprojects [Testing](#testing), [Explorer](#explorer), or [Analyzer](#analyzer) to get started.
 
+# Table Of Contents
+
+- [Testing](#testing)
+  - [Example](#a-quick-example)
+  - [Testing Features](#testing-features)
+- [Explorer](#explorer)
+  - [Getting Started](#explorer)
+  - [Repository](https://github.com/invariantlabs-ai/explorer)
+- [Analyzer](#analyzer)
+  - [Why Agent Debugging Matters](#why-agent-debugging-matters)
+  - [Why Agent Security Matters](#why-agent-security-matters)
+  - [Analyzer Features](#analyzer-features)
+  - [Getting Started](#getting-started)
+  - [Analyzer Documentation](#Analyzer-Documentation)
 
 ## Testing
 
