@@ -45,6 +45,7 @@ After installation, choose one of the subprojects [Testing](#testing), [Explorer
   - [Why Agent Debugging Matters](#why-agent-debugging-matters)
   - [Why Agent Security Matters](#why-agent-security-matters)
   - [Analyzer Features](#analyzer-features)
+  - [Getting Started)(#getting-started)
 
 ## Testing
 
