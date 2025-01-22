@@ -35,6 +35,16 @@ pip install invariant-ai
 
 After installation, choose one of the subprojects [Testing](#testing), [Explorer](#explorer), or [Analyzer](#analyzer) to get started.
 
+# Table Of Contents
+
+- [Testing](#testing)
+  - [Example](a-quick-example)
+  - [Testing Features](a-quick-example)
+- [Explorer](#explorer)
+- [Analyzer](#analyzer)
+  - [Why Agent Debugging Matters](why-agent-debugging-matters)
+  - [Why Agent Security Matters](why-agent-security-matters)
+  - [Analyzer Features](analyzer-features)
 
 ## Testing
 
