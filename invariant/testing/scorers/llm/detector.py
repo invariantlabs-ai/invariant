@@ -4,10 +4,11 @@ import json
 import logging
 from typing import Any, Tuple
 
-from invariant.testing.cache import CacheManager
-from invariant.testing.custom_types.addresses import Range
 from openai.types.chat.parsed_chat_completion import ParsedChatCompletion
 from pydantic import BaseModel
+
+from invariant.testing.cache import CacheManager
+from invariant.testing.custom_types.addresses import Range
 
 from .clients.anthropic_client import AnthropicClient
 from .clients.client import SupportedClients
@@ -99,6 +100,7 @@ class Detector:
         predicate_rule: str,
         model: str = "gpt-4o",
         client: str = "OpenAI",
+        client_kwargs: dict = {},
     ):
         """Instantiate Detector object.
 
@@ -114,7 +116,7 @@ class Detector:
         """
         self.model = model
         self.prompt = self._get_prompt(predicate_rule, client)
-        self.client = ClientFactory.get(client)
+        self.client = ClientFactory.get(client, client_kwargs)
         self.cache_manager = CacheManager(
             CACHE_DIRECTORY_LLM_DETECTOR, expiry=CACHE_TIMEOUT
         )
