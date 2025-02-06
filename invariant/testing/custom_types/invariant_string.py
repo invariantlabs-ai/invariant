@@ -8,6 +8,7 @@ from operator import ge, gt, le, lt, ne
 from typing import Any, Literal, Union
 
 from _pytest.python_api import ApproxBase
+
 from invariant.testing.scorers.code import execute, is_valid_json, is_valid_python
 from invariant.testing.scorers.llm.classifier import Classifier
 from invariant.testing.scorers.llm.detector import Detector
@@ -308,6 +309,7 @@ class InvariantString(InvariantValue):
         model: str = "gpt-4o",
         client: str = "OpenAI",
         use_cached_result: bool = True,
+        client_kwargs={},
     ) -> list[InvariantString]:
         """Extract values from the underlying string using an LLM.
 
@@ -322,7 +324,12 @@ class InvariantString(InvariantValue):
             use_cached_result (bool): Whether to use a cached result if available.
 
         """
-        llm_detector = Detector(predicate_rule=predicate, model=model, client=client)
+        llm_detector = Detector(
+            predicate_rule=predicate,
+            model=model,
+            client=client,
+            client_kwargs=client_kwargs,
+        )
         detections = llm_detector.detect(self.value, use_cached_result)
         ret = []
         for substr, r in detections:
