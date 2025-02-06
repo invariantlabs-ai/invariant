@@ -29,6 +29,16 @@ Text:
 Detections:
 [("1", "Zurich"), ("2", "Geneva"), ("2", "Bern"), ("3", "Bern")]
 
+You response must be in the following format:
+{{
+    "detections": [
+        {{"line": 1, "substring": "Zurich"}},
+        {{"line": 2, "substring": "Geneva"}},
+        {{"line": 2, "substring": "Bern"}},
+        {{"line": 3, "substring": "Bern"}}
+    ]
+}}
+
 Use the following predicate rule to find the detections in the next user message:
 {predicate_rule}
 """
