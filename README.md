@@ -70,7 +70,7 @@ Code:
 
 ```python
 # content of tests/test_weather.py
-import invariant.testing.testing.functional as F
+import invariant.testing.functional as F
 from invariant.testing import Trace, assert_equals
 
 def test_weather():
@@ -388,31 +388,37 @@ This section provides a detailed overview of the analyzer's components, includin
 
 **Table of Contents**
 
-- [Use Cases](#use-cases)
-- [Why Agent Debugging Matters](#why-agent-debugging-matters)
-- [Why Agent Security Matters](#why-agent-security-matters)
-- [Features](#features)
-  - [Getting Started](#getting-started)
-- [Use Cases](#use-cases-1)
-  - [Debugging Coding Agents](#debugging-coding-agents)
-  - [Prevent Data Leaks In Your Productivity Agent](#prevent-data-leaks-in-your-productivity-agent)
-  - [Detect Vulnerabilities in Your Code Generation Agent](#detect-vulnerabilities-in-your-code-generation-agent)
-  - [Enforce Access Control In Your RAG-based Chat Agent](#enforce-access-control-in-your-rag-based-chat-agent)
-- [Documentation](#documentation)
-  - [Policy Language](#policy-language)
-    - [Example Rule](#example-rule)
-    - [Trace Format](#trace-format)
-      - [Trace Example](#trace-example)
-      - [Debugging and Printing Inputs](#debugging-and-printing-inputs)
-    - [Custom Error Types](#custom-error-types)
-    - [Predicates](#predicates)
-    - [Semantic Tool Call Matching](#semantic-tool-call-matching)
-  - [Integration](#integration)
-    - [Analyzing Agent Traces](#analyzing-agent-traces)
-    - [Real-Time Monitoring of an OpenAI Agent](#real-time-monitoring-of-an-openai-agent)
-    - [Real-Time Monitoring of a `langchain` Agent](#real-time-monitoring-of-a-langchain-agent)
-    - [Automatic Issue Resolution (Handlers)](#automatic-issue-resolution-handlers)
-  - [Roadmap](#roadmap)
+- [Quickstart](#quickstart)
+- [Table Of Contents](#table-of-contents)
+  - [Testing](#testing)
+    - [A quick example](#a-quick-example)
+    - [Testing Features](#testing-features)
+  - [Explorer](#explorer)
+  - [Analyzer](#analyzer)
+    - [Use Cases](#use-cases)
+    - [Why Agent Debugging Matters](#why-agent-debugging-matters)
+    - [Why Agent Security Matters](#why-agent-security-matters)
+    - [Analyzer Features](#analyzer-features)
+    - [Getting Started](#getting-started)
+    - [Use Cases](#use-cases-1)
+      - [Debugging Coding Agents](#debugging-coding-agents)
+      - [Prevent Data Leaks In Your Productivity Agent](#prevent-data-leaks-in-your-productivity-agent)
+      - [Detect Vulnerabilities in Your Code Generation Agent](#detect-vulnerabilities-in-your-code-generation-agent)
+      - [Enforce Access Control In Your RAG-based Chat Agent](#enforce-access-control-in-your-rag-based-chat-agent)
+  - [Analyzer Documentation](#analyzer-documentation)
+    - [Policy Language](#policy-language)
+      - [Example Rule](#example-rule)
+      - [Trace Format](#trace-format)
+        - [Trace Example](#trace-example)
+        - [Debugging and Printing Inputs](#debugging-and-printing-inputs)
+      - [Custom Error Types](#custom-error-types)
+      - [Predicates](#predicates)
+      - [Semantic Tool Call Matching](#semantic-tool-call-matching)
+    - [Integration](#integration)
+      - [Analyzing Agent Traces](#analyzing-agent-traces)
+        - [Error Localization](#error-localization)
+      - [Real-Time Monitoring of an OpenAI Agent](#real-time-monitoring-of-an-openai-agent)
+      - [Real-Time Monitoring of a `langchain` Agent](#real-time-monitoring-of-a-langchain-agent)
 
 ### Policy Language
 
