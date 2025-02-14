@@ -10,9 +10,9 @@ from .client import LLMClient
 class OpenAIClient(LLMClient):
     """Client for interacting with OpenAI."""
 
-    def __init__(self):
+    def __init__(self, client_kwargs: dict):
         # Add OPENAI_API_KEY to your environment variables.
-        self.client = openai.OpenAI()
+        self.client = openai.OpenAI(**client_kwargs)
 
     def get_name(self) -> str:
         return "OpenAI"
