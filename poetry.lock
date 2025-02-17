@@ -1265,17 +1265,18 @@ writer = ["writer-sdk (>=1.2.0,<2.0.0)"]
 
 [[package]]
 name = "invariant-sdk"
-version = "0.0.4"
+version = "0.0.10"
 description = "SDK for Invariant APIs"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "invariant_sdk-0.0.4-py3-none-any.whl", hash = "sha256:f2236ab8d980d0f83a4e9b714e6d1335252e72f9bf62c32713054a36275571a2"},
-    {file = "invariant_sdk-0.0.4.tar.gz", hash = "sha256:e8859418c226231019a283205afd078cdd4c46d06ef5e2595bcfaef7fef79893"},
+    {file = "invariant_sdk-0.0.10-py3-none-any.whl", hash = "sha256:a0a899d5fae49f4959c8a5e31bd0f628f832c3d835ead5a99342fcfb9f132b9d"},
+    {file = "invariant_sdk-0.0.10.tar.gz", hash = "sha256:638cc3fb00a83533198c1318c75531371da748b0a8a552235d22cf80cf1222c9"},
 ]
 
 [package.dependencies]
+httpx = ">=0.28.1,<0.29.0"
 pydantic = ">=2.9.2,<3.0.0"
 requests = ">=2.32.3,<3.0.0"
 
@@ -5003,4 +5004,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">= 3.10, <4.0"
-content-hash = "89479045fb9daf7baf756596f0306d3cdb2dd6b11e61d6b3d205ad9c4b8ecdba"
+content-hash = "bcfdd24f3add29edd8180e9706081bf0073e0caa44e989a8afd861241acc5794"
