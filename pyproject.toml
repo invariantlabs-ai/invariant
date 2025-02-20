@@ -1,5 +1,5 @@
 [project]
-name = "invariant-ai"
+name = "invariant-ai-test"
 version = "0.2.0"
 description = "Invariant policy language"
 readme = "README.md"
