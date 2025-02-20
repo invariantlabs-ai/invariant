@@ -28,24 +28,15 @@ jobs:
       - name: Build package
         run: |
           poetry build
-
-      - name: Store as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist
-          path: dist/
-          retention-days: 7 # Optional: Keep artifacts for 7 days (default is 90)
-
+      
+      # Install invariant package in a virtual environment for testing
       - name: Create virtual environment
         run: |
           python -m venv venv
           source venv/bin/activate
-
-      - name: Install dependencies
-        run: |
-          source venv/bin/activate
           pip install dist/*.whl
-
+        
+      # Make sure the tests pass when the package is built and installed
       - name: Run tests
         env:
           OPENAI_API_KEY: ${{ secrets.INVARIANT_TESTING_OPENAI_KEY }}
