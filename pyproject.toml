@@ -54,11 +54,5 @@ testpaths = ["invariant/tests"]
 invariant = "invariant.__main__:main"
 
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-[tool.hatch.metadata]
-allow-direct-references = true
-
-[tool.hatch.build.targets.wheel]
-packages = ["invariant"]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
