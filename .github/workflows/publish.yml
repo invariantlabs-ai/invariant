@@ -25,9 +25,10 @@ jobs:
           pip install poetry
           poetry install
 
-      - name: Set PyPI credentials
+      # print poetry version
+      - name: Print poetry version
         run: |
-          poetry config pypi-token.pypi ${{ secrets.PYPI_API_TOKEN }}
+          poetry --version
 
       - name: Build package
         run: |
