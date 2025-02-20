@@ -30,7 +30,7 @@ jobs:
           poetry build
       
       # Install invariant package in a virtual environment for testing
-      - name: Create virtual environment
+      - name: Create virtual environment and install package
         run: |
           python -m venv venv
           source venv/bin/activate
@@ -43,3 +43,13 @@ jobs:
         run: |
           source venv/bin/activate
           python -m pytest invariant/tests/
+
+      - name: Set TestPyPI credentials
+        run: |
+          poetry config repositories.testpypi https://test.pypi.org/simple/
+          poetry config pypi-token.testpypi ${{ secrets.TESTPYPI_API_TOKEN }}
+      
+      # Publish to TestPyPI
+      - name: Publish to TestPyPI
+        run: |
+          poetry publish -r testpypi --dist-dir dist
