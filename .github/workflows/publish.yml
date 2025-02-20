@@ -22,7 +22,7 @@ jobs:
       - name: Setup dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install poetry
+          pip install poetry==2.1.1
           poetry install
 
       # print poetry version
@@ -40,3 +40,18 @@ jobs:
           name: dist
           path: dist/
           retention-days: 7 # Optional: Keep artifacts for 7 days (default is 90)
+
+      - name: Create virtual environment
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+
+      - name: Install dependencies
+        run: |
+          source venv/bin/activate
+          pip install dist/*.whl
+
+      - name: Run tests
+        run: |
+          source venv/bin/activate
+          python -m pytest invariant/tests/
