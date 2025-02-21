@@ -2,20 +2,12 @@ name: Publish to PyPI
 
 on:
   workflow_dispatch:
-  workflow_run:
-    workflows:
-      - Invariant testing CI
-    types:
-      - completed
-    branches:
-      - v*
 
 jobs:
   pypi-publish:
     name: Upload release to PyPI
     runs-on: ubuntu-latest
     environment: pypi-package
-    if: ${{ github.event.workflow_run.conclusion == 'success' && github.ref_type == 'tag' }}
 
     steps:
       - uses: actions/checkout@v4
