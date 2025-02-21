@@ -1,34 +1,58 @@
 name: Publish to PyPI
 
 on:
-  push:
-    tags:
-      - 'v*'
+  workflow_run:
+    workflows:
+      - Invariant testing CI
+    types:
+      - completed
+    branches:
+      - v*
 
 jobs:
   pypi-publish:
     name: Upload release to PyPI
-    runs-on: ubuntu-latest    
+    runs-on: ubuntu-latest
     environment: pypi-package
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.ref_type == 'tag' }}
 
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Python 3.12.2
         uses: actions/setup-python@v3
         with:
           python-version: "3.12.2"
-      
+
       - name: Setup dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install poetry
+          pip install poetry==2.1.1
           poetry install
+
+      - name: Build package
+        run: |
+          poetry build
+      
+      # Install invariant package in a virtual environment for testing
+      - name: Create virtual environment and install package
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+          pip install dist/*.whl
+        
+      # Make sure the tests pass when the package is built and installed
+      - name: Run tests
+        env:
+          OPENAI_API_KEY: ${{ secrets.INVARIANT_TESTING_OPENAI_KEY }}
+        run: |
+          source venv/bin/activate
+          python -m pytest invariant/tests/
 
       - name: Set PyPI credentials
         run: |
           poetry config pypi-token.pypi ${{ secrets.PYPI_API_TOKEN }}
-
+      
       - name: Publish to PyPI
         run: |
-          poetry publish --build
+          poetry publish --dist-dir dist
