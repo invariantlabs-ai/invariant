@@ -15,17 +15,17 @@
 
 The Invariant stack for agent building is a framework-less approach that currently consists of three key projects, each of which can be used independently or in combination to build, test, and secure AI agents:
 
-* [**Testing:**](#testing) A simple unit-testing library to write trace-based tests for agentic AI system (LLM-as-a-judge, semantic similarity, etc).
+- [**Testing:**](#testing) A simple unit-testing library to write trace-based tests for agentic AI system (LLM-as-a-judge, semantic similarity, etc).
 
-* [**Explorer:**](#explorer) A trace viewing tool to debug and inspect your agent's behavior (local or managed) in a visual way.
+- [**Explorer:**](#explorer) A trace viewing tool to debug and inspect your agent's behavior (local or managed) in a visual way.
 
-* [**Analyzer:**](#analyzer) A static analyzer for agent traces to detect insecure and buggy behavior in agents online or offline (static analysis, dataflow analysis, security checks).
+- [**Analyzer:**](#analyzer) A static analyzer for agent traces to detect insecure and buggy behavior in agents online or offline (static analysis, dataflow analysis, security checks).
 
 A more in-depth guide to these projects can be found [in the documentation](https://explorer.invariantlabs.ai/docs/).
 
 All of these tools are designed to be easy to use, flexible, and extensible, allowing developers to bring their own stack i.e. _framework-less_, while helping with a very concrete need each (testing, debugging, security and bug scanning).
 
-Invariant is a project by [Invariant Labs](https://invariantlabs.ai). 
+Invariant is a project by [Invariant Labs](https://invariantlabs.ai).
 
 # Quickstart
 
@@ -102,11 +102,11 @@ $ invariant test
 ________________________________ test_weather _________________________________
 ERROR: 1 hard assertions failed:
 
- 
+
     # assert that the agent responded about Paris and only Paris
-    assert_equals(1, locations.len(), 
+    assert_equals(1, locations.len(),
         "The agent should respond about one location only")
-    
+
 >   assert_equals("Paris", locations[0], "The agent should respond about Paris")
 ________________________________________________________________________________
 
@@ -122,6 +122,7 @@ ________________________________________________________________________________
 #     },
 #  ]
 ```
+
 The test result precisely [localizes the failure in the provided agent trace](https://explorer.invariantlabs.ai/docs/testing/Writing_Tests/tests/).
 
 **Visual Test Viewer (Explorer):**
@@ -134,16 +135,15 @@ $ invariant test --push
 
 ![image](https://github.com/user-attachments/assets/8305e202-0d63-435c-9e71-0988a6f9d24a)
 
-
 Like the terminal output, the Explorer highlights the relevant ranges, but does so even more precisely, marking the exact words that caused the assertion to fail.
 
 ### Testing Features
 
-* Comprehensive `Trace` API for easily navigating and checking agent traces.
-* Assertions library to check agent behavior, including fuzzy checkers such as _Levenshtein distance_, _semantic similarity_ and _LLM-as-a-judge_ pipelines.
-* Full `pytest` compatibility for easy integration with existing test and CI/CD pipelines.
-* Parameterized tests for testing multiple scenarios with a single test function.
-* Visual test viewer for exploring large traces and debugging test failures in [Explorer](https://explorer.invariantlabs.ai)
+- Comprehensive `Trace` API for easily navigating and checking agent traces.
+- Assertions library to check agent behavior, including fuzzy checkers such as _Levenshtein distance_, _semantic similarity_ and _LLM-as-a-judge_ pipelines.
+- Full `pytest` compatibility for easy integration with existing test and CI/CD pipelines.
+- Parameterized tests for testing multiple scenarios with a single test function.
+- Visual test viewer for exploring large traces and debugging test failures in [Explorer](https://explorer.invariantlabs.ai)
 
 To learn more [read the documentation](https://explorer.invariantlabs.ai/docs/testing/)
 
@@ -168,34 +168,33 @@ For more information, visit the [explorer repository](https://github.com/invaria
 
 ## Analyzer
 
-A trace scanner for LLM-based AI agents. 
+A trace scanner for LLM-based AI agents.
 
 Go To [Use Cases](#use-cases) | [Documentation](#analyzer-documentation) | [Paper](https://invariantlabs.ai/blog/icml2024-agents-formal-security)
-
 
 The Invariant Analyzer is a static analysis based scanning tool that enables developers to find bugs and quirks in AI agents. It enables you to detect vulnerabilities, bugs, and security threats in your agent, helping you to fix security and reliability issues quickly. The analyzer scans an agent's execution traces to identify bugs (e.g., looping behavior) and threats (e.g., data leaks, prompt injections, and unsafe code execution).
 
 ![Invariant Security Analyzer](https://github.com/invariantlabs-ai/invariant/assets/17903049/709fa811-566b-4623-8601-4cab15bc688c)
 
-
 ### Use Cases
 
-* **Debugging AI agents** by scanning logs for failure patterns and quickly finding relevant locations.
+- **Debugging AI agents** by scanning logs for failure patterns and quickly finding relevant locations.
 
-* **Scanning of agent traces** for security violations and data leaks, including tool use and data flow.
+- **Scanning of agent traces** for security violations and data leaks, including tool use and data flow.
 
-* **Real-Time Monitoring of AI agents** to prevent security issues and data breaches during runtime.
+- **Real-Time Monitoring of AI agents** to prevent security issues and data breaches during runtime.
 
 Concrete examples include [preventing data leaks in AI-based personal assistants](#prevent-data-leaks-in-your-productivity-agent), [ensuring code agent security, e.g. to prevent remote code execution](#detect-vulnerabilities-in-your-code-generation-agent), or [the implementation of access control policies in RAG systems](#enforce-access-control-in-your-rag-based-chat-agent).
 
 ### Why Agent Debugging Matters
+
 Debugging AI agents so far means manually scrolling long collections of logs to find traces that show the relevant error case and then manually inspecting the relevant parts of the trace. This is time-consuming and error-prone.
 
 To alleviate this, the Invariant analyzer can filter for relevant traces and extract their relevant parts only from high-level semantic descriptions.
 
 ### Why Agent Security Matters
 
-As AI agents are becoming a reality, it has already been shown quite clearly that these systems come with [novel types of security risks](https://kai-greshake.de/posts/in-escalating-order-of-stupidity/): Any LLM-based system that performs **critical write operations in the real world** can suffer from **model failure, prompt injections and data breaches**. This can have severe and destructive consequences. Web-browsing agents like Bing can be [compromised using indirect prompt injection attacks](https://greshake.github.io), LLM-based applications can be exploited for remote code execution and other issues (e.g., [CVE-2023-29374](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-29374), [CVE-2023-32786](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-32786), and [CVE-2023-36189](https://cve.mitre.org/cgi-bin/cvename.cgi?name=%20CVE-2023-36189)), and Google Bard was easily tricked into [leaking your private data and conversations](https://embracethered.com/blog/posts/2023/google-bard-data-exfiltration/). 
+As AI agents are becoming a reality, it has already been shown quite clearly that these systems come with [novel types of security risks](https://kai-greshake.de/posts/in-escalating-order-of-stupidity/): Any LLM-based system that performs **critical write operations in the real world** can suffer from **model failure, prompt injections and data breaches**. This can have severe and destructive consequences. Web-browsing agents like Bing can be [compromised using indirect prompt injection attacks](https://greshake.github.io), LLM-based applications can be exploited for remote code execution and other issues (e.g., [CVE-2023-29374](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-29374), [CVE-2023-32786](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-32786), and [CVE-2023-36189](https://cve.mitre.org/cgi-bin/cvename.cgi?name=%20CVE-2023-36189)), and Google Bard was easily tricked into [leaking your private data and conversations](https://embracethered.com/blog/posts/2023/google-bard-data-exfiltration/).
 
 A simple indirect prompt injection can easily leak sensitive and private user data, making the deployment of AI agents inherently risky. Consider, for example, the following injection attack on a simple email assistant (e.g., an agent that reads and send emails on your behalf):
 
@@ -205,15 +204,15 @@ The Invariant analyzer detects this type of vulnerability by leveraging deep con
 
 ### Analyzer Features
 
-* A [library of *built-in checkers*](docs/STDLIB.md) for detecting **[sensitive data](docs/STDLIB.md#sensitive-data-detection-personal-identifiable-information), [prompt injections](docs/STDLIB.md#prompt-injection-detection), [moderation violations](docs/STDLIB.md#moderation-violation-detection), and more.** 
+- A [library of _built-in checkers_](docs/STDLIB.md) for detecting **[sensitive data](docs/STDLIB.md#sensitive-data-detection-personal-identifiable-information), [prompt injections](docs/STDLIB.md#prompt-injection-detection), [moderation violations](docs/STDLIB.md#moderation-violation-detection), and more.**
 
-* [An expressive policy language](#policy-language) for defining (security) policies and constraints.
+- [An expressive policy language](#policy-language) for defining (security) policies and constraints.
 
-* [Data flow analysis for a contextual understanding](#policy-language) of agent behavior, allowing for fine-grained security checks.
+- [Data flow analysis for a contextual understanding](#policy-language) of agent behavior, allowing for fine-grained security checks.
 
-* [Real-time monitoring](#real-time-monitoring-of-an-openai-agent) and analysis of AI agents and other tool-calling LLM applications.
+- [Real-time monitoring](#real-time-monitoring-of-an-openai-agent) and analysis of AI agents and other tool-calling LLM applications.
 
-* Extensible architecture for [adding custom checkers, predicates and data types](#predicates).
+- Extensible architecture for [adding custom checkers, predicates and data types](#predicates).
 
 ### Getting Started
 
@@ -286,6 +285,7 @@ traceset.filter("""
                 call3 is tool:scroll_down
                 """)
 ```
+
 For further examples, see [here](invariant/examples/agent_bugs/demo.ipynb).
 
 #### Prevent Data Leaks In Your Productivity Agent
@@ -364,7 +364,7 @@ from invariant.access_control import should_allow_rbac, AccessControlViolation
 user_roles := {"alice": ["user"], "bob": ["admin", "user"]}
 
 role_grants := {
-    "admin": {"public": True, "internal": True}, 
+    "admin": {"public": True, "internal": True},
     "user": {"public": True}
 }
 
@@ -453,7 +453,7 @@ call2 is tool:send_email({
 })
 ```
 
-Secondly, the first call must be a `get_inbox` call, and the second call must be a `send_email` call with a recipient that does not have an `acme.com` email address, as expressed by the regular expression `^[^@]*@(?!acme\\.com)`. 
+Secondly, the first call must be a `get_inbox` call, and the second call must be a `send_email` call with a recipient that does not have an `acme.com` email address, as expressed by the regular expression `^[^@]*@(?!acme\\.com)`.
 
 If the specified conditions are met, we consider the rule as triggered, and a relevant policy violation will be raised.
 
@@ -476,11 +476,12 @@ class Message(Event):
 { "role": "user", "content": "Hello, how are you?" }
 ```
 
-* **role** (`str`): The role of the message, e.g., "user", "assistant", or "system".
-* **content** (`str`): The content of the message, e.g., a chat message or a tool call.
-* **tool_calls** (Optional[List[ToolCall]]): A list of tool calls made by the agent in response to the message.
+- **role** (`str`): The role of the message, e.g., "user", "assistant", or "system".
+- **content** (`str`): The content of the message, e.g., a chat message or a tool call.
+- **tool_calls** (Optional[List[ToolCall]]): A list of tool calls made by the agent in response to the message.
 
 **`ToolCall`**
+
 ```python
 class ToolCall(Event):
     id: str
@@ -494,11 +495,11 @@ class Function(BaseModel):
 {"id": "1","type": "function","function": {"name": "get_inbox","arguments": {"n": 10}}}
 ```
 
-* **id** (`str`): A unique identifier for the tool call.
-* **type** (`str`): The type of the tool call, e.g., "function".
-* **function** (FunctionCall): The function call made by the agent.
-    * **name** (`str`): The name of the function called.
-    * **arguments** (`Dict[str, Any]`): The arguments passed to the function.
+- **id** (`str`): A unique identifier for the tool call.
+- **type** (`str`): The type of the tool call, e.g., "function".
+- **function** (FunctionCall): The function call made by the agent.
+  - **name** (`str`): The name of the function called.
+  - **arguments** (`Dict[str, Any]`): The arguments passed to the function.
 
 **`ToolOutput`**
 
@@ -512,22 +513,22 @@ class ToolOutput(Event):
 {"role": "tool","tool_call_id": "1","content": {"id": "1","subject": "Hello","from": "Alice","date": "2024-01-01"}]}
 ```
 
-* **tool_call_id** (`str`): The identifier of a previous `ToolCall` that this output corresponds to.
-* **content** (`str | dict`): The content of the tool output, e.g., the result of a function call. This can be a parsed dictionary or a string of the JSON output.
- 
+- **tool_call_id** (`str`): The identifier of a previous `ToolCall` that this output corresponds to.
+- **content** (`str | dict`): The content of the tool output, e.g., the result of a function call. This can be a parsed dictionary or a string of the JSON output.
+
 ##### Trace Example
 
 The format suitable for the analyzer is a list of messages like the one shown here:
 
-```python 
+```python
 messages = [
-    {"role": "user", "content": "What's in my inbox?"}, 
+    {"role": "user", "content": "What's in my inbox?"},
     {"role": "assistant", "content": None, "tool_calls": [
         {"id": "1","type": "function","function": {"name": "get_inbox","arguments": {}}}
-    ]}, 
-    {"role": "tool","tool_call_id": "1","content": 
+    ]},
+    {"role": "tool","tool_call_id": "1","content":
     "1. Subject: Hello, From: Alice, Date: 2024-01-0, 2. Subject: Meeting, From: Bob, Date: 2024-01-02"},
-    {"role": "user", "content": "Say hello to Alice."}, 
+    {"role": "user", "content": "Say hello to Alice."},
 ]
 ```
 
@@ -550,26 +551,25 @@ messages = [
 Input(messages).print()
 ```
 
-
 #### Custom Error Types
 
 By default `raise "<msg>" if: ...` rules will raise a `PolicyViolation` error. However, you can also return richer or entirely custom error types by raising a custom exception:
 
 ```python
 # => PolicyViolation("user message found")
-raise "user message found" if: 
+raise "user message found" if:
     (msg: Message)
     msg.role == "user"
 
 # => PolicyViolation("assistant message found", msg=msg)
-raise PolicyViolation("assistant message found", msg=msg) if: 
+raise PolicyViolation("assistant message found", msg=msg) if:
     (msg: Message)
     msg.role == "assistant"
 
 from my_project.errors import CustomError
 
 # => CustomError("tool message found", msg=msg)
-raise CustomError("tool message found", msg=msg) if: 
+raise CustomError("tool message found", msg=msg) if:
     (msg: ToolOutput)
     msg.role == "tool"
 ```
@@ -579,7 +579,7 @@ raise CustomError("tool message found", msg=msg) if:
 If repetitive conditions and patterns arise in your policies, you can define predicates to encapsulate these conditions and reuse them across multiple rules. Predicates are defined as follows:
 
 ```python
-is_affirmative(m: Message) := 
+is_affirmative(m: Message) :=
     "yes" in m.content or "true" in m.content
 
 raise PolicyViolation("The assistant should not reply affirmatively", message=msg) if:
@@ -619,65 +619,81 @@ This expression evaluates to `True` for a `ToolCall` where the tool name is `too
 Overall, the following value matching expressions are supported:
 
 **Matching Personally Identifiable Information (PII)**
+
 ```
 <EMAIL_ADDRESS|LOCATION|PHONE_NUMBER|PERSON>
 ```
+
 Matches arguments that contain an email address, location, phone number, or person name, respectively.
 
 Example: `call is tool:tool_name({arg1: <EMAIL_ADDRESS>})`
 
 **Matching Regular Expressions**
+
 ```
 r"<regex>"
 ```
+
 Matches arguments that match the specified regular expression.
 
 Example: `call is tool:tool_name({arg1: r"[0-9]{3}-[0-9]{2}-[0-9]{4}"})`
 
 **Matching Content**
+
 ```
 "<constant>"
 ```
+
 Matches arguments that are equal to the specified constant.
 
 Example: `call is tool:tool_name({arg1: "Alice"})`
 
 **Matching Moderated Content**
+
 ```
 <MODERATED>
 ```
+
 Matches arguments that contain content that has been flagged as inappropriate or toxic.
 
 Example: `call is tool:tool_name({arg1: <MODERATED>})`
 
 **Matching Tool Calls**
+
 ```
 call is tool:tool_name({ ... })
 ```
+
 Matches tool calls with the specified tool name and arguments.
 
 Example: `call is tool:tool_name`
 
 **Matching Argument Objects**
+
 ```
 { "key1": <subpattern1>, "key2": <subpattern2>, ... }
 ```
+
 Matches an object of tool call arguments, where each argument value matches the specified subpattern.
 
 Example: `call is tool:tool_name({ arg1: "Alice", arg2: r"[0-9]{3}-[0-9]{2}-[0-9]{4}" })`
 
 **Matching Lists**
+
 ```
 [ <subpattern1>, <subpattern2>, ... ]
 ```
+
 Matches a list of tool call arguments, where each element matches the specified subpattern.
 
 Example: `call is tool:tool_name({ arg1: ["Alice", r"Bob|Charlie"] })`
 
 **Wildcard Matching**
+
 ```
 call is tool({ arg1: * })
 ```
+
 Matches any tool call with the specified tool name, regardless of the arguments. A wildcard `*` can be used to match any value.
 
 Example: `call is tool:tool_name({ arg1: * })`
@@ -697,11 +713,59 @@ raise PolicyViolation("Emails should must never be sent to 'Alice'", call=call) 
     call.function.arguments.to == "Alice"
 ```
 
-<!-- TODO #### External Functions and Standard Library: write about different parts of the stdlib library, how to important functions and where they are defined -->
+#### Quantifiers
+
+Quantifiers let you specify conditions over multiple trace events. You can implement your own custom quantifiers as needed, but two built-in quantifiers are provided (see [this file](invariant/analyzer/stdlib/invariant/quantifiers.py) for more):
+
+**count**: Ensures a condition occurs within a specified range.
+
+```python
+raise "found result" if:
+    count(min=2, max=4):
+        (tc: ToolCall)
+        tc is tool:get_inbox
+```
+
+**forall:** Checks that a condition holds for every matching event.
+
+```python
+from invariant import ToolCall, forall
+
+raise "found result" if:
+    forall:
+        (tc: ToolCall)
+        tc is tool:get_inbox
+```
+
+This triggers if all ToolCall events are get_inbox.
+
+Negating quantifiers (e.g., `not forall: ...`) allows you to enforce the opposite condition. Quantifiers can also span over related events using closure (e.g., linking a call to its outputs).
+
+#### Closures and Quantifiers
+
+Quantifiers can also occur later in the rule body, allowing you to specify conditions over related events.
+
+This allows you to capture the value of a previous event and use it in the quantifier body.
+
+```python
+# using quantifiers with closures to relate events:
+raise "found result" if:
+    # select some scroll_down call
+    (call: ToolCall)
+    call is tool:scroll_down
+
+    # find at leats 5 subsequent tool outputs
+    count(min=5):
+        (output: ToolOutput)
+        call -> output
+        "django" in output.content
+```
+
+Here, the rule triggers if there are at least 5 `ToolOutput` events that follow the 'call' event, and the content of those outputs contains the string "django".
 
 ### Integration
 
-The Invariant Policy Language is used by the security analyzer and can be used either to detect and uncover security issues with pre-recorded agent traces or to monitor agents in real-time. 
+The Invariant Policy Language is used by the security analyzer and can be used either to detect and uncover security issues with pre-recorded agent traces or to monitor agents in real-time.
 
 The following sections discuss both use cases in more detail, including how to monitor [OpenAI-based](#real-time-monitoring-of-an-openai-agent) and [`langchain`](#real-time-monitoring-of-a-langchain-agent) agents.
 
@@ -748,7 +812,7 @@ policy.analyze(messages)
 # )
 ```
 
-In this example, we define a policy that checks two things: (1) whether the user's email address is leaked via the `search_web` tool, and (2) whether the search results contain the word "France". We then analyze a message trace to check for these properties. These properties may be desirable to prevent a web browsing agent from leaking personally-identifiable information (PII) about the user or returning inappropriate search results. For PII checks, the analyzer relies on the [`presidio-analyzer`](https://github.com/microsoft/presidio) library but can also be extended to detect and classify other types of sensitive data. 
+In this example, we define a policy that checks two things: (1) whether the user's email address is leaked via the `search_web` tool, and (2) whether the search results contain the word "France". We then analyze a message trace to check for these properties. These properties may be desirable to prevent a web browsing agent from leaking personally-identifiable information (PII) about the user or returning inappropriate search results. For PII checks, the analyzer relies on the [`presidio-analyzer`](https://github.com/microsoft/presidio) library but can also be extended to detect and classify other types of sensitive data.
 
 Since both specified security properties are violated by the given message trace, the analyzer returns an `AnalysisResult` with two `PolicyViolation`s.
 
@@ -763,7 +827,7 @@ error = policy.analyze(messages).errors[1]
 # PolicyViolation(A web result contains 'France', call=...)
 error.ranges
 # [
-#   Range(object_id='4323252960', start=None, end=None, json_path='3'), 
+#   Range(object_id='4323252960', start=None, end=None, json_path='3'),
 #   Range(object_id='4299976464', start=24, end=30, json_path='3.content:24-30')
 # ]
 # -> the error is caused by 3rd message (tool call), and the relevant range is in the content at offset 24-30
@@ -806,18 +870,18 @@ while True:
     # actually call the tools, inserting results into 'messages'
     for tool_call in model_response.tool_calls:
         # ...
-    
+
     # (optional) check message trace again to detect violations
     # in tool outputs right away (e.g. before sending them to the user)
     monitor.check(messages, tool_outputs)
     messages.extend(tool_outputs)
 ```
+
 > For the full snippet, see [invariant/examples/openai_agent_example.py](./invariant/examples/openai_agent_example.py)
 
 To enable real-time monitoring for policy violations, you can use a `Monitor` as shown, and integrate it into your agent's execution loop. With a `Monitor`, policy checking is performed eagerly, i.e., before and after every tool use, to ensure that the agent does not violate the policy at any point in time.
 
 This way, all tool interactions of the agent are monitored in real-time. As soon as a violation is detected, an exception is raised. This stops the agent from executing a potentially unsafe tool call and allows you to take appropriate action, such as filtering out a call or ending the session.
-
 
 #### Real-Time Monitoring of a `langchain` Agent
 
@@ -854,6 +918,7 @@ agent = create_openai_functions_agent(llm, [something, something_else], prompt)
 agent_executor = MonitoringAgentExecutor(agent=agent, tools=[something, something_else],
                                          verbose=True, monitor=monitor)
 ```
+
 > For the full snippet, see [invariant/examples/lc_flow_example.py](./invariant/examples/lc_flow_example.py)
 
 The `MonitoringAgentExecutor` will automatically check all tool calls, ensuring that the agent never violates the policy. If a violation is detected, the executor will raise an exception.
