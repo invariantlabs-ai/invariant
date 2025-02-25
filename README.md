@@ -720,6 +720,8 @@ Quantifiers let you specify conditions over multiple trace events. You can imple
 **count**: Ensures a condition occurs within a specified range.
 
 ```python
+from invariant import count
+
 raise "found result" if:
     count(min=2, max=4):
         (tc: ToolCall)
@@ -729,7 +731,7 @@ raise "found result" if:
 **forall:** Checks that a condition holds for every matching event.
 
 ```python
-from invariant import ToolCall, forall
+from invariant import forall
 
 raise "found result" if:
     forall:
@@ -748,6 +750,8 @@ Quantifiers can also occur later in the rule body, allowing you to specify condi
 This allows you to capture the value of a previous event and use it in the quantifier body.
 
 ```python
+from invariant import count
+
 # using quantifiers with closures to relate events:
 raise "found result" if:
     # select some scroll_down call
