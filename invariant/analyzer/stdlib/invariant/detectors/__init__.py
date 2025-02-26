@@ -4,4 +4,5 @@ from invariant.analyzer.stdlib.invariant.detectors.secrets import *
 from invariant.analyzer.stdlib.invariant.detectors.code import *
 from invariant.analyzer.stdlib.invariant.detectors.pii import *
 from invariant.analyzer.stdlib.invariant.detectors.copyright import *
+from invariant.analyzer.stdlib.invariant.detectors.image import image_policy_violations
 
