@@ -300,6 +300,7 @@ class TestImageDetector(unittest.TestCase):
         self.sample_coordinates = (0.5, 0.5)
 
     def _is_unsafe_click(self, screenshot, policy, click_coordinates):
+        # This is a hack for mocking the calls from inside DSL
         result = image_policy_violations(screenshot, policy, click_coordinates)
         return result
 
