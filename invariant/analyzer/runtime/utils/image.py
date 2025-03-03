@@ -1,8 +1,8 @@
-from anthropic import Anthropic
 from typing import Tuple, Literal, List
 import base64
 import io
 from PIL import Image, ImageDraw
+from invariant.analyzer.extras import anthropic_extra
 
 
 def add_rectangles_to_image(
@@ -158,7 +158,7 @@ class ClaudeModel:
         self.system_prompt = system_prompt
         self.image_format = image_format
 
-
+        Anthropic = anthropic_extra.package("anthropic").import_names("Anthropic")
         self.client = Anthropic(api_key=self.api_key)
         self.bbox_config = bbox_config or {
             "color": "red",

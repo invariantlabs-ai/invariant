@@ -1,13 +1,7 @@
 name: Publish to PyPI
 
 on:
-<<<<<<< HEAD
-  push:
-    tags:
-      - "v*"
-=======
   workflow_dispatch:
->>>>>>> 0872f43b43bc496e5f3207d1f36b23d99fecb78e
 
 jobs:
   pypi-publish:
@@ -32,14 +26,14 @@ jobs:
       - name: Build package
         run: |
           poetry build
-      
+
       # Install invariant package in a virtual environment for testing
       - name: Create virtual environment and install package
         run: |
           python -m venv venv
           source venv/bin/activate
           pip install dist/*.whl
-        
+
       # Make sure the tests pass when the package is built and installed
       - name: Run tests
         env:
@@ -51,19 +45,7 @@ jobs:
       - name: Set PyPI credentials
         run: |
           poetry config pypi-token.pypi ${{ secrets.PYPI_API_TOKEN }}
-<<<<<<< HEAD
 
-      - name: Build package
-        run: |
-          poetry build
-
-      - name: Store as artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: dist
-=======
-      
       - name: Publish to PyPI
         run: |
           poetry publish --dist-dir dist
->>>>>>> 0872f43b43bc496e5f3207d1f36b23d99fecb78e

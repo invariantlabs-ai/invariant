@@ -204,6 +204,13 @@ langchain_extra = Extra(
     {"langchain": ExtrasImport("langchain", "langchain", ">=0.2.1")},
 )
 
+"""Extra for features that rely on the `anthropic` library."""
+anthropic_extra = Extra(
+    "Anthropic Integration",
+    "Enables the use of Anthropic's Claude models for text and image analysis",
+    {"anthropic": ExtrasImport("anthropic", "anthropic", ">=0.46.0")},
+)
+
 
 def extras_available(*extras: list[Extra]) -> bool:
     """Returns true if and only if all given extras are available."""
