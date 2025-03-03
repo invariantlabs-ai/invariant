@@ -4,7 +4,7 @@ import unittest.mock
 from invariant.analyzer import Policy
 from invariant.analyzer.policy import analyze_trace
 from invariant.analyzer.traces import *
-from invariant.analyzer.extras import extras_available, presidio_extra, transformers_extra, openai_extra
+from invariant.analyzer.extras import extras_available, presidio_extra, transformers_extra, openai_extra, anthropic_extra
 from invariant.analyzer.stdlib.invariant.detectors.image import image_policy_violations
 
 class TestPII(unittest.TestCase):
@@ -290,6 +290,7 @@ class TestCopyrightDetector(unittest.TestCase):
         self.assertEqual(len(res.errors), 1)
 
 
+@unittest.skipUnless(extras_available(anthropic_extra), "anthropic is not installed")
 class TestImageDetector(unittest.TestCase):
     def setUp(self):
         # Sample base64 encoded image data (this is a minimal valid base64 image)
