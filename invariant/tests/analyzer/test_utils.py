@@ -1,9 +1,11 @@
 import unittest
 import json
+import unittest.mock
 from invariant.analyzer import Policy
 from invariant.analyzer.policy import analyze_trace
 from invariant.analyzer.traces import *
 from invariant.analyzer.extras import extras_available, presidio_extra, transformers_extra, openai_extra
+from invariant.analyzer.stdlib.invariant.detectors.image import image_policy_violations
 
 class TestPII(unittest.TestCase):
     @unittest.skipUnless(extras_available(presidio_extra), "presidio-analyzer is not installed")
@@ -206,7 +208,7 @@ class TestPythonDetector(unittest.TestCase):
         self.assertEqual(len(analyze_trace(policy_str_template, trace_good).errors), 0)
         trace_syntax_err = [tool("1", """*[f"cabinet {i}"] for i in range(1,10)]""")]
         self.assertEqual(len(analyze_trace(policy_str_template, trace_syntax_err).errors), 0)
-    
+
     def test_syntax_error(self):
         policy_str_template = """
         from invariant.detectors import python_code
@@ -288,5 +290,67 @@ class TestCopyrightDetector(unittest.TestCase):
         self.assertEqual(len(res.errors), 1)
 
 
-if __name__ == "__main__":
-    unittest.main()
+class TestImageDetector(unittest.TestCase):
+    def setUp(self):
+        # Sample base64 encoded image data (this is a minimal valid base64 image)
+        self.sample_image_data = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+        # Sample image data with data URI prefix
+        self.sample_image_data_with_prefix = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+        # Sample click coordinates
+        self.sample_coordinates = (0.5, 0.5)
+        self.api_key = "sk-ant-api03-1234567890"
+
+    def _is_unsafe_click(self, screenshot, policy, click_coordinates):
+        # This is a hack for mocking the calls from inside DSL
+        result = image_policy_violations(screenshot, policy, click_coordinates, self.api_key)
+        return result
+
+    @unittest.mock.patch('invariant.analyzer.stdlib.invariant.detectors.image._evaluate_single_image')
+    def test_image_policy_violations(self, mock_evaluate):
+        # Configure the mock to return different values based on inputs
+        def mock_evaluate_side_effect(image, policy, click_coordinates):
+            return True
+
+        mock_evaluate.side_effect = mock_evaluate_side_effect
+
+        # Test with a policy that should trigger a violation
+        policy_str_violation = """
+        from invariant.detectors.image import image_policy_violations
+
+        raise PolicyViolation("image policy violation", msg) if:
+            (msg: Message)
+            input.is_unsafe_click(msg.content, "Harmful content policy", (0.5, 0.5))
+        """
+
+        trace = [user(self.sample_image_data)]
+
+        # Test with policy that should trigger violation
+        policy = Policy.from_string(policy_str_violation)
+        result = policy.analyze(trace, is_unsafe_click=self._is_unsafe_click)
+        self.assertEqual(len(result.errors), 1)
+
+        # Verify the mock was called with expected arguments
+        mock_evaluate.assert_called()
+
+    @unittest.mock.patch('invariant.analyzer.stdlib.invariant.detectors.image._evaluate_single_image')
+    def test_image_policy_with_data_uri_prefix(self, mock_evaluate):
+        # Configure the mock to always return False (no violation)
+        mock_evaluate.return_value = False
+
+        policy_str = """
+        from invariant.detectors.image import image_policy_violations
+
+        raise PolicyViolation("image policy violation", msg) if:
+            (msg: Message)
+            input.is_unsafe_click(msg.content, "Test policy", (0.5, 0.5))
+        """
+
+        # Create a trace with the prefixed image data
+        trace = [user(self.sample_image_data_with_prefix)]
+
+        policy = Policy.from_string(policy_str)
+        result = policy.analyze(trace, is_unsafe_click=self._is_unsafe_click)
+        self.assertEqual(len(result.errors), 0)
+
+        # Verify the mock was called
+        mock_evaluate.assert_called()
