@@ -9,10 +9,10 @@ class ClientFactory:
     """Factory for creating LLM clients."""
 
     @staticmethod
-    def get(client_name: str) -> LLMClient:
+    def get(client_name: str, client_kwargs: dict) -> LLMClient:
         """Get an LLM client by name."""
         if client_name == SupportedClients.OPENAI:
-            return OpenAIClient()
+            return OpenAIClient(client_kwargs)
         if client_name == SupportedClients.ANTHROPIC:
             return AnthropicClient()
         raise ValueError(f"Invalid client name: {client_name}")
