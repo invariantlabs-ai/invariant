@@ -8,7 +8,7 @@ from typing import Generator
 from invariant.analyzer.language.ast import *
 from invariant.analyzer.runtime.patterns import SemanticPatternMatcher
 from invariant.analyzer.runtime.input import Input, Selectable, Range
-from invariant.analyzer.language.scope import InputData
+from invariant.analyzer.language.scope import InputData, VariableDeclaration
 from invariant.analyzer.runtime.evaluation_context import EvaluationContext, PolicyParameters
 
 
@@ -710,3 +710,35 @@ class Interpreter(RaisingTransformation):
 
     def visit_ArrayLiteral(self, node: ArrayLiteral):
         return [self.visit(entry) for entry in node.elements]
+
+    def visit_ListComprehension(self, node: ListComprehension):
+        # First, evaluate the iterable
+        iterable = self.visit(node.iterable)
+
+        if iterable is None:
+            return []
+
+        # Get the variable name for the iterator
+        var_name = node.var_name.name if hasattr(node.var_name, 'name') else node.var_name
+
+        results = []
+        # Create a new scope for each iteration to hold the iteration variable
+        original_vars = self.variable_store.copy()
+
+        # Iterate over each item in the iterable and evaluate the expression with the item bound to var_name
+        for item in iterable:
+            # Update variable store with current item
+            self.variable_store[var_name] = item
+
+            # If there's a condition, evaluate it and only include items where condition is True
+            if node.condition and self.visit(node.condition) is not True:
+                continue
+
+            # Evaluate the expression with the current item
+            result = self.visit(node.expr)
+            results.append(result)
+
+        # Restore original variable store
+        self.variable_store = original_vars
+
+        return results

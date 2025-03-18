@@ -6,6 +6,7 @@ import textwrap
 
 import lark
 
+# Import from modular AST structure
 from invariant.analyzer.language.ast import *
 from invariant.analyzer.language.ast import BinaryExpr, FunctionCall, Identifier, ValueReference
 from invariant.analyzer.language.typing import typing
@@ -17,9 +18,9 @@ parser = lark.Lark(r"""
     %import common.NUMBER
 
     start: statement*
-    
+
     statement: raise_stmt | def_stmt | decl_stmt | import_stmt
-    
+
     import_stmt: full_import | from_import
     full_import: "import" import_spec
     from_import: "from" IMPORT_MODULE "import" import_spec ("," import_spec)*
@@ -31,10 +32,10 @@ parser = lark.Lark(r"""
     decl_stmt: ( ID | func_signature ) ":=" expr | ( ID | func_signature ) INDENT NEWLINE? expr (NEWLINE expr)* DEDENT
 
     expr: ID | assignment_expr | "(" expr ("," expr)* ")" | block_expr | import_stmt
-    
+
     quantifier_expr: ( "not" )? ( func_call | ID ) INDENT NEWLINE? expr (NEWLINE expr)* DEDENT
     block_expr: INDENT expr (NEWLINE expr)* DEDENT
-    
+
     assignment_expr: ( ID ":=" binary_expr ) | binary_expr
     binary_expr: cmp_expr LOGICAL_OPERATOR cmp_expr | cmp_expr
     cmp_expr: ( term CMP_OPERATOR term ) | term
@@ -42,28 +43,29 @@ parser = lark.Lark(r"""
     factor: power FACTOR_OPERATOR power | power
     power: atom POWER_OPERATOR atom | atom
     atom: unary_expr | NUMBER | multiline_string | STRING | ID | "(" expr ")" | member_access | key_access | expr | func_call | quantifier_expr | typed_identifier | tool_ref | object_literal | list_literal | STAR | value_ref
-                   
+
     unary_expr: UNARY_OPERATOR expr
     func_call: expr  "(" ( (expr ("," expr)*)? ("," kwarg ("," kwarg)*)? ) ")" | \
                expr  "(" (kwarg ("," kwarg)*)? ")"
     kwarg: ID "=" expr
     func_signature: ID "(" (parameter_decl ("," parameter_decl)*)? ")"
     parameter_decl: ID ":" ID
-    
+
     member_access: expr "." ID
     key_access: expr "[" expr "]"
 
     typed_identifier: "(" ID ":" ID ")"
     tool_ref: "tool" ":" ID
-    
+
     object_literal: "{" ( object_entry ("," object_entry)* )? "}"
     object_entry: (ID|STRING) ":" expr
-    list_literal: "[" ( expr ("," expr)* )? "]"
+    list_literal: "[" ( expr ("," expr)* )? "]" | list_comprehension
+    list_comprehension: "[" expr "for" ID "in" expr ("if" expr)? "]"
     STAR: "*"
     value_ref: VALUE_TYPE
 
     multiline_string: ML_STRING | SINGLE_ML_STRING
-    
+
     STRING: QUOTED_STRING | SINGLE_QUOTED_STRING
     ML_STRING: ("r" | "f")? /\"\"\"(?:[^"\\]|\\.|"{1,2}(?!"))*\"\"\"/
     SINGLE_ML_STRING: ("r" | "f")? /'''(?:[^'\\]|\\.|'{1,2}(?!'))*'''/
@@ -74,16 +76,16 @@ parser = lark.Lark(r"""
 
     QUOTED_STRING: ("r"|"f")? "\"" _STRING_ESC_INNER "\""
     SINGLE_QUOTED_STRING: ("r"|"f")? "'" _STRING_ESC_INNER "'"
-    
+
     INDENT: "|INDENT|"
     DEDENT: "|DEDENT|"
-    
+
     ID.2: /[a-zA-Z_]([a-zA-Z0-9_])*/
     UNARY_OPERATOR.3: /not[\n\t ]/ | "-" | "+"
     LOGICAL_OPERATOR: /and[\n\t ]/ | /or[\n\t ]/
     CMP_OPERATOR: "==" | "!=" | ">" | "<" | ">=" | "<=" | /is[\n\t ]/ | /contains_only[\n\t ]/ | /in[\n\t ]/ | "->"
     VALUE_TYPE: /<[a-zA-Z_:]+>/
-    
+
     TERM_OPERATOR: "+" | "-"
     FACTOR_OPERATOR: "*" | "/" | "%"
     POWER_OPERATOR: "**"
@@ -325,6 +327,21 @@ class IPLTransformer(lark.Transformer):
 
     def list_literal(self, items):
         return ArrayLiteral(items).with_location(self.loc(items))
+
+    def list_comprehension(self, items):
+        # Extract components of the list comprehension
+        print(f"DEBUG - list_comprehension items: {'\n'.join([f'{i}: {item}' for i, item in enumerate(items)])}")
+
+        expr = items[0]  # Expression to evaluate for each item
+        var_name = items[1]  # Variable name (ID node)
+        iterable = items[2]  # Iterable to loop over
+        condition = None
+
+        # If there's a condition ('if' clause)
+        if len(items) > 3:
+            condition = items[3]
+
+        return ListComprehension(expr, var_name, iterable, condition).with_location(self.loc(items))
 
     def STAR(self, items):
         return Wildcard().with_location(self.loc(items))

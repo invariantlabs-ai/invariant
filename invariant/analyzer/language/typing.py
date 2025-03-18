@@ -14,7 +14,7 @@ from invariant.analyzer.language.ast import (
     ValueReference,
     Wildcard,
 )
-from invariant.analyzer.language.scope import ExternalReference, GlobalScope, VariableDeclaration
+from invariant.analyzer.language.scope import ExternalReference, GlobalScope, VariableDeclaration, Scope
 from invariant.analyzer.language.types import *
 
 
@@ -246,6 +246,36 @@ class TypingTransformation(RaisingTransformation):
             raise PolicyError(f"Failed to resolve identifier {node.name}")
         node.type = declaration.type_ref
         node.id = declaration
+        return node
+
+    def visit_ListComprehension(self, node: ListComprehension):
+        # First visit the iterable to ensure it's typed correctly
+        node.iterable = self.visit(node.iterable)
+
+        # Set up the scope for the iteration variable
+        node.scope.parent = self.context.scope
+
+        # Add the iteration variable to the scope
+        from invariant.analyzer.language.scope import VariableDeclaration
+        from invariant.analyzer.language.ast.expressions import Identifier
+
+        var_name = node.var_name.name if hasattr(node.var_name, 'name') else node.var_name
+        var_decl = VariableDeclaration(var_name, UnknownType())
+        node.scope.declarations = {var_name: var_decl}
+
+        # Set the id on the var_name if it's an Identifier
+        if isinstance(node.var_name, Identifier):
+            node.var_name.id = var_decl
+
+        # Now visit the expression with the iteration variable in scope
+        with TransformationContext(node):
+            node.expr = self.visit(node.expr)
+            if node.condition:
+                node.condition = self.visit(node.condition)
+
+        # The type of the list comprehension is a list of the expression type
+        node.type = list
+
         return node
 
     def visit_BinaryExpr(self, node: BinaryExpr):
