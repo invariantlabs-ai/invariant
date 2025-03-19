@@ -42,7 +42,7 @@ parser = lark.Lark(r"""
     term: factor TERM_OPERATOR factor | factor
     factor: power FACTOR_OPERATOR power | power
     power: atom POWER_OPERATOR atom | atom
-    atom: unary_expr | NUMBER | multiline_string | STRING | ID | "(" expr ")" | member_access | key_access | expr | func_call | quantifier_expr | typed_identifier | tool_ref | object_literal | list_literal | STAR | value_ref
+    atom: unary_expr | NUMBER | multiline_string | STRING | ID | "(" expr ")" | member_access | key_access | expr | func_call | quantifier_expr | typed_identifier | tool_ref | object_literal | list_literal | STAR | value_ref | list_comprehension
 
     unary_expr: UNARY_OPERATOR expr
     func_call: expr  "(" ( (expr ("," expr)*)? ("," kwarg ("," kwarg)*)? ) ")" | \
@@ -59,7 +59,7 @@ parser = lark.Lark(r"""
 
     object_literal: "{" ( object_entry ("," object_entry)* )? "}"
     object_entry: (ID|STRING) ":" expr
-    list_literal: "[" ( expr ("," expr)* )? "]" | list_comprehension
+    list_literal: "[" ( expr ("," expr)* )? "]"
     list_comprehension: "[" expr "for" ID "in" expr ("if" expr)? "]"
     STAR: "*"
     value_ref: VALUE_TYPE

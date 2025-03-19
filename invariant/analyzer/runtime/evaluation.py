@@ -275,6 +275,7 @@ class Interpreter(RaisingTransformation):
                     assume_bool=True,
                     return_ranges=True,
                 )
+                # print(f"-------\nDEBUG: result in assignments {result}\n-------")
 
                 if verbose:
                     print("\n    result:", termcolor.colored(result, "green" if result else "red"))
@@ -600,12 +601,21 @@ class Interpreter(RaisingTransformation):
                     raise KeyError(f"Object {obj} has no key {key}")
             raise KeyError(f"Object {obj} has no key {key}")
 
+    def _is_unknown(self, value):
+        if value is Unknown:
+            return True
+        elif isinstance(value, list):
+            return any(self._is_unknown(item) for item in value)
+        else:
+            return False
+
     def visit_FunctionCall(self, node: FunctionCall):
+        # add logic to check if any argument has unknown
         function = self.visit(node.name)
         args = [self.visit(arg) for arg in node.args]
 
         # only call functions, once all parameters are known
-        if function is Unknown or any(arg is Unknown for arg in args):
+        if function is Unknown or any(self._is_unknown(arg) for arg in args):
             return Unknown
         kwargs = {entry.key: self.visit(entry.value) for entry in node.kwargs}
 
@@ -712,33 +722,44 @@ class Interpreter(RaisingTransformation):
         return [self.visit(entry) for entry in node.elements]
 
     def visit_ListComprehension(self, node: ListComprehension):
-        # First, evaluate the iterable
         iterable = self.visit(node.iterable)
 
         if iterable is None:
             return []
 
-        # Get the variable name for the iterator
-        var_name = node.var_name.name if hasattr(node.var_name, 'name') else node.var_name
-
+        var_name = node.var_name.id if hasattr(node.var_name, 'id') else node.var_name
         results = []
-        # Create a new scope for each iteration to hold the iteration variable
         original_vars = self.variable_store.copy()
-
-        # Iterate over each item in the iterable and evaluate the expression with the item bound to var_name
         for item in iterable:
-            # Update variable store with current item
             self.variable_store[var_name] = item
 
-            # If there's a condition, evaluate it and only include items where condition is True
             if node.condition and self.visit(node.condition) is not True:
                 continue
 
-            # Evaluate the expression with the current item
             result = self.visit(node.expr)
             results.append(result)
 
         # Restore original variable store
         self.variable_store = original_vars
-
         return results
+
+    def _convert_value_for_variable_store(self, value):
+        """
+        Convert a Python value to an appropriate AST node type if needed.
+        If the value is already an AST node, return it as is.
+        """
+        if isinstance(value, Node):
+            return value
+
+        # Convert Python values to appropriate AST node types
+        if isinstance(value, str):
+            return StringLiteral(value)
+        elif isinstance(value, (int, float)):
+            return NumberLiteral(value)
+        elif isinstance(value, bool):
+            return BooleanLiteral(value)
+        elif value is None:
+            return NoneLiteral()
+        else:
+            raise ValueError(f"Unsupported value type: {type(value)}")
+
