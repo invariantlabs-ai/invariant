@@ -7,7 +7,7 @@ from typing import Any
 
 from invariant.analyzer.language.ast.base import Node
 from invariant.analyzer.language.ast.errors import PolicyError
-from invariant.analyzer.language.ast.statements import PolicyRoot
+from invariant.analyzer.language.ast.nodes import PolicyRoot
 
 
 TRANSFORMATION_CONTEXT_VAR = contextvars.ContextVar("transformation_context", default=[])
