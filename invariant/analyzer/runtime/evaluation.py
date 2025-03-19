@@ -624,6 +624,19 @@ class Interpreter(RaisingTransformation):
         else:
             return self.evaluation_context.call_function(function, args, **kwargs)
 
+    def visit_TernaryOp(self, node: TernaryOp):
+        condition = self.visit(node.condition)
+
+        # If condition is unknown, the result is unknown
+        if condition is Unknown:
+            return Unknown
+
+        # Evaluate only the branch that will be executed
+        if condition:
+            return self.visit(node.then_expr)
+        else:
+            return self.visit(node.else_expr)
+
     def visit_PredicateCall(self, node: Declaration, args, **kwargs):
         assert not node.is_constant, "Predicate call should not be constant."
         assert isinstance(node.name, FunctionSignature), (

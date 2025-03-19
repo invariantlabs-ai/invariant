@@ -42,7 +42,7 @@ parser = lark.Lark(r"""
     term: factor TERM_OPERATOR factor | factor
     factor: power FACTOR_OPERATOR power | power
     power: atom POWER_OPERATOR atom | atom
-    atom: unary_expr | NUMBER | multiline_string | STRING | ID | "(" expr ")" | member_access | key_access | expr | func_call | quantifier_expr | typed_identifier | tool_ref | object_literal | list_literal | STAR | value_ref | list_comprehension
+    atom: unary_expr | NUMBER | multiline_string | STRING | ID | "(" expr ")" | member_access | key_access | expr | func_call | quantifier_expr | typed_identifier | tool_ref | object_literal | list_literal | STAR | value_ref | list_comprehension | ternary_op
 
     unary_expr: UNARY_OPERATOR expr
     func_call: expr  "(" ( (expr ("," expr)*)? ("," kwarg ("," kwarg)*)? ) ")" | \
@@ -85,6 +85,7 @@ parser = lark.Lark(r"""
     LOGICAL_OPERATOR: /and[\n\t ]/ | /or[\n\t ]/
     CMP_OPERATOR: "==" | "!=" | ">" | "<" | ">=" | "<=" | /is[\n\t ]/ | /contains_only[\n\t ]/ | /in[\n\t ]/ | "->"
     VALUE_TYPE: /<[a-zA-Z_:]+>/
+    ternary_op: expr "if" expr "else" expr
 
     TERM_OPERATOR: "+" | "-"
     FACTOR_OPERATOR: "*" | "/" | "%"
@@ -416,6 +417,11 @@ class IPLTransformer(lark.Transformer):
 
     def loc(self, items):
         return Location.from_items(items, self.line_mappings, self.source_code)
+
+    def ternary_op(self, items):
+        # items are [then_expr, condition, else_expr]
+        print(items)
+        return TernaryOp(items[0], items[1], items[2]).with_location(self.loc(items))
 
 
 def transform(policy):

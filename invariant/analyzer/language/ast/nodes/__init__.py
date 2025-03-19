@@ -13,6 +13,7 @@ from invariant.analyzer.language.ast.nodes.key_access import KeyAccess
 from invariant.analyzer.language.ast.nodes.member_access import MemberAccess
 from invariant.analyzer.language.ast.nodes.parameter_declaration import ParameterDeclaration
 from invariant.analyzer.language.ast.nodes.some_expr import SomeExpr
+from invariant.analyzer.language.ast.nodes.ternary_op import TernaryOp
 from invariant.analyzer.language.ast.nodes.unary_expr import UnaryExpr
 from invariant.analyzer.language.ast.nodes.value_reference import ValueReference
 
