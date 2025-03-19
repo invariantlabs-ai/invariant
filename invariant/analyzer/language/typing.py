@@ -3,19 +3,8 @@ Invariant Policy Language type system.
 """
 
 from invariant.analyzer.language.ast import *
-from invariant.analyzer.language.ast import (
-    BinaryExpr,
-    Declaration,
-    FunctionCall,
-    MemberAccess,
-    PolicyRoot,
-    RaisePolicy,
-    TypedIdentifier,
-    ValueReference,
-    Wildcard,
-)
-from invariant.analyzer.language.scope import ExternalReference, GlobalScope, VariableDeclaration, Scope
 from invariant.analyzer.language.types import *
+from invariant.analyzer.language.scope import ExternalReference, GlobalScope, VariableDeclaration, Scope
 
 
 class CollectVariableDeclarations(RaisingTransformation):
@@ -256,9 +245,6 @@ class TypingTransformation(RaisingTransformation):
         node.scope.parent = self.context.scope
 
         # Add the iteration variable to the scope
-        from invariant.analyzer.language.scope import VariableDeclaration
-        from invariant.analyzer.language.ast.expressions import Identifier
-
         var_name = node.var_name.name if hasattr(node.var_name, 'name') else node.var_name
         var_decl = VariableDeclaration(var_name, UnknownType())
         node.scope.declarations = {var_name: var_decl}
