@@ -419,8 +419,6 @@ class IPLTransformer(lark.Transformer):
         return Location.from_items(items, self.line_mappings, self.source_code)
 
     def ternary_op(self, items):
-        # items are [then_expr, condition, else_expr]
-        print(items)
         return TernaryOp(items[0], items[1], items[2]).with_location(self.loc(items))
 
 

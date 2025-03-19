@@ -275,7 +275,6 @@ class Interpreter(RaisingTransformation):
                     assume_bool=True,
                     return_ranges=True,
                 )
-                # print(f"-------\nDEBUG: result in assignments {result}\n-------")
 
                 if verbose:
                     print("\n    result:", termcolor.colored(result, "green" if result else "red"))
@@ -755,24 +754,3 @@ class Interpreter(RaisingTransformation):
         # Restore original variable store
         self.variable_store = original_vars
         return results
-
-    def _convert_value_for_variable_store(self, value):
-        """
-        Convert a Python value to an appropriate AST node type if needed.
-        If the value is already an AST node, return it as is.
-        """
-        if isinstance(value, Node):
-            return value
-
-        # Convert Python values to appropriate AST node types
-        if isinstance(value, str):
-            return StringLiteral(value)
-        elif isinstance(value, (int, float)):
-            return NumberLiteral(value)
-        elif isinstance(value, bool):
-            return BooleanLiteral(value)
-        elif value is None:
-            return NoneLiteral()
-        else:
-            raise ValueError(f"Unsupported value type: {type(value)}")
-
