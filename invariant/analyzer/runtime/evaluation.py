@@ -745,8 +745,13 @@ class Interpreter(RaisingTransformation):
         for item in iterable:
             self.variable_store[var_name] = item
 
-            if node.condition and self.visit(node.condition) is not True:
-                continue
+            if node.condition:
+                condition_result = self.visit(node.condition)
+                if condition_result is Unknown:
+                    results.append(Unknown)
+                    continue
+                elif condition_result is not True:
+                    continue
 
             result = self.visit(node.expr)
             results.append(result)
