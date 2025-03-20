@@ -260,7 +260,7 @@ class TypingTransformation(RaisingTransformation):
                 node.condition = self.visit(node.condition)
 
         # The type of the list comprehension is a list of the expression type
-        node.type = list
+        node.type = UnknownType
 
         return node
 

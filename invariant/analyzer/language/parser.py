@@ -331,8 +331,6 @@ class IPLTransformer(lark.Transformer):
 
     def list_comprehension(self, items):
         # Extract components of the list comprehension
-        print(f"DEBUG - list_comprehension items: {'\n'.join([f'{i}: {item}' for i, item in enumerate(items)])}")
-
         expr = items[0]  # Expression to evaluate for each item
         var_name = items[1]  # Variable name (ID node)
         iterable = items[2]  # Iterable to loop over
