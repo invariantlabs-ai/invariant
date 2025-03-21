@@ -8,7 +8,7 @@ from typing import Generator
 from invariant.analyzer.language.ast import *
 from invariant.analyzer.runtime.patterns import SemanticPatternMatcher
 from invariant.analyzer.runtime.input import Input, Selectable, Range
-from invariant.analyzer.language.scope import InputData
+from invariant.analyzer.language.scope import InputData, VariableDeclaration
 from invariant.analyzer.runtime.evaluation_context import EvaluationContext, PolicyParameters
 
 
@@ -600,12 +600,21 @@ class Interpreter(RaisingTransformation):
                     raise KeyError(f"Object {obj} has no key {key}")
             raise KeyError(f"Object {obj} has no key {key}")
 
+    def _is_unknown(self, value):
+        if value is Unknown:
+            return True
+        elif isinstance(value, list):
+            return any(self._is_unknown(item) for item in value)
+        else:
+            return False
+
     def visit_FunctionCall(self, node: FunctionCall):
+        # add logic to check if any argument has unknown
         function = self.visit(node.name)
         args = [self.visit(arg) for arg in node.args]
 
         # only call functions, once all parameters are known
-        if function is Unknown or any(arg is Unknown for arg in args):
+        if function is Unknown or any(self._is_unknown(arg) for arg in args):
             return Unknown
         kwargs = {entry.key: self.visit(entry.value) for entry in node.kwargs}
 
@@ -613,6 +622,19 @@ class Interpreter(RaisingTransformation):
             return self.visit_PredicateCall(function, args, **kwargs)
         else:
             return self.evaluation_context.call_function(function, args, **kwargs)
+
+    def visit_TernaryOp(self, node: TernaryOp):
+        condition = self.visit(node.condition)
+
+        # If condition is unknown, the result is unknown
+        if condition is Unknown:
+            return Unknown
+
+        # Evaluate only the branch that will be executed
+        if condition:
+            return self.visit(node.then_expr)
+        else:
+            return self.visit(node.else_expr)
 
     def visit_PredicateCall(self, node: Declaration, args, **kwargs):
         assert not node.is_constant, "Predicate call should not be constant."
@@ -710,3 +732,30 @@ class Interpreter(RaisingTransformation):
 
     def visit_ArrayLiteral(self, node: ArrayLiteral):
         return [self.visit(entry) for entry in node.elements]
+
+    def visit_ListComprehension(self, node: ListComprehension):
+        iterable = self.visit(node.iterable)
+
+        if iterable is None:
+            return []
+
+        var_name = node.var_name.id if hasattr(node.var_name, 'id') else node.var_name
+        results = []
+        original_vars = self.variable_store.copy()
+        for item in iterable:
+            self.variable_store[var_name] = item
+
+            if node.condition:
+                condition_result = self.visit(node.condition)
+                if condition_result is Unknown:
+                    results.append(Unknown)
+                    continue
+                elif condition_result is not True:
+                    continue
+
+            result = self.visit(node.expr)
+            results.append(result)
+
+        # Restore original variable store
+        self.variable_store = original_vars
+        return results

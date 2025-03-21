@@ -5,9 +5,9 @@ from invariant.analyzer.runtime.input import Input  # noqa
 from invariant.analyzer.stdlib.invariant.errors import *
 from invariant.analyzer.stdlib.invariant.message import *
 from invariant.analyzer.stdlib.invariant.nodes import *
+from invariant.analyzer.runtime.evaluation import Unknown
 
 # Utilities
-
 
 def any(iterable):
     return py_builtins.any(iterable)
