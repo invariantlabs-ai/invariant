@@ -355,11 +355,12 @@ class Input(Selectable):
                 if "role" in event:
                     if event["role"] != "tool":
                         # If arguments are given as string convert them into dict using json.loads(...)
-                        for call in event.get("tool_calls", []):
-                            if type(call["function"]["arguments"]) == str:
-                                call["function"]["arguments"] = json.loads(
-                                    call["function"]["arguments"]
-                                )
+                        if "tool_calls" in event and event["tool_calls"] is not None:
+                            for call in event["tool_calls"]:
+                                if type(call["function"]["arguments"]) == str:
+                                    call["function"]["arguments"] = json.loads(
+                                        call["function"]["arguments"]
+                                    )
                         msg = Message(**event)
                         parsed_data.append(msg)
                         if msg.tool_calls is not None:
