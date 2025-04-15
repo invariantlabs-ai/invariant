@@ -845,6 +845,7 @@ name = "invariant-ai"
 version = "0.2.1"
 source = { editable = "." }
 dependencies = [
+    { name = "aiohttp" },
     { name = "beautifulsoup4" },
     { name = "diskcache" },
     { name = "invariant-sdk" },
@@ -862,8 +863,8 @@ dependencies = [
     { name = "termcolor" },
 ]
 
-[package.dev-dependencies]
-dev = [
+[package.optional-dependencies]
+extras = [
     { name = "anthropic" },
     { name = "langchain" },
     { name = "langchain-community" },
@@ -882,40 +883,38 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "aiohttp", specifier = ">=3.11.11" },
+    { name = "anthropic", marker = "extra == 'extras'", specifier = ">=0.40.0,<0.41" },
     { name = "beautifulsoup4", specifier = ">=4.12.3,<5" },
     { name = "diskcache", specifier = ">=5.6.3,<6" },
     { name = "invariant-sdk", specifier = ">=0.0.11,<0.0.12" },
+    { name = "langchain", marker = "extra == 'extras'", specifier = ">=0.2.1" },
+    { name = "langchain-community", marker = "extra == 'extras'", specifier = ">=0.3.9,<0.4" },
+    { name = "langchain-openai", marker = "extra == 'extras'", specifier = ">=0.2.10" },
+    { name = "langchainhub", marker = "extra == 'extras'", specifier = ">=0.1.16" },
+    { name = "langgraph", marker = "extra == 'extras'", specifier = ">=0.2.53,<0.3" },
     { name = "lark", specifier = ">=1.1.9" },
     { name = "nltk", specifier = ">=3.9.1,<4" },
+    { name = "numpy", marker = "extra == 'extras'", specifier = "==1.26.4" },
     { name = "openai", specifier = ">=1.54.4,<2" },
+    { name = "openai-swarm", marker = "extra == 'extras'", specifier = ">=0.1.1,<0.2" },
     { name = "pexpect", specifier = ">=4.9.0,<5" },
     { name = "pillow", specifier = ">=10.0.0,<11" },
     { name = "pip", specifier = ">=24.0" },
+    { name = "presidio-analyzer", marker = "extra == 'extras'", specifier = ">=2.2.354" },
     { name = "pydantic", specifier = ">=2.9.2,<3.0.0" },
     { name = "pytesseract", specifier = ">=0.3.13" },
     { name = "pytest", specifier = ">=8.2.1" },
+    { name = "pytest-cov", marker = "extra == 'extras'", specifier = ">=5.0.0,<6" },
+    { name = "python-dotenv", marker = "extra == 'extras'", specifier = ">=1.0.1" },
     { name = "requests", specifier = ">=2.32.3,<3" },
     { name = "semgrep", specifier = ">=1.78.0" },
+    { name = "spacy", marker = "extra == 'extras'", specifier = ">=3.7.5" },
     { name = "termcolor", specifier = ">=2.4.0" },
+    { name = "torch", marker = "extra == 'extras'", specifier = ">=2.3.0" },
+    { name = "transformers", marker = "extra == 'extras'", specifier = ">=4.41.1" },
 ]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "anthropic", specifier = ">=0.40.0,<0.41" },
-    { name = "langchain", specifier = ">=0.2.1" },
-    { name = "langchain-community", specifier = ">=0.3.9,<0.4" },
-    { name = "langchain-openai", specifier = ">=0.2.10" },
-    { name = "langchainhub", specifier = ">=0.1.16" },
-    { name = "langgraph", specifier = ">=0.2.53,<0.3" },
-    { name = "numpy", specifier = "==1.26.4" },
-    { name = "openai-swarm", specifier = ">=0.1.1,<0.2" },
-    { name = "presidio-analyzer", specifier = ">=2.2.354" },
-    { name = "pytest-cov", specifier = ">=5.0.0,<6" },
-    { name = "python-dotenv", specifier = ">=1.0.1" },
-    { name = "spacy", specifier = ">=3.7.5" },
-    { name = "torch", specifier = ">=2.3.0" },
-    { name = "transformers", specifier = ">=4.41.1" },
-]
+provides-extras = ["extras"]
 
 [[package]]
 name = "invariant-sdk"

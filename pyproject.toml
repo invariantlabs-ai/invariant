@@ -19,14 +19,15 @@ dependencies = [
     "pip>=24.0",
     "semgrep>=1.78.0",
     "pytest>=8.2.1",
-    "pytesseract>=0.3.13"
+    "pytesseract>=0.3.13",
+    "aiohttp>=3.11.11",
 ]
 
 [project.scripts]
 invariant = "invariant.__main__:main"
 
-[dependency-groups]
-dev = [
+[project.optional-dependencies]
+extras = [
     "pytest-cov>=5.0.0,<6",
     "openai-swarm>=0.1.1,<0.2",
     "langgraph>=0.2.53,<0.3",
