@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  test-no-extras:
     runs-on: ubuntu-latest
 
     steps:
@@ -21,10 +21,38 @@ jobs:
           python-version: "3.12.2"
       - name: Install uv
         uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
       - name: Set up Python
         run: uv python install 3.12
       - name: Install Dependencies
         run: uv sync
+      - name: Run tests
+        env:
+          OPENAI_API_KEY: ${{ secrets.INVARIANT_TESTING_OPENAI_KEY }}
+          LOCAL_POLICY: "1"
+        run: |
+          uv run pytest --cov=invariant --cov-report=term --cov-fail-under=60 -s -vv invariant/tests
+
+  test-all-extras:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.12.2
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.12.2"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+      - name: Set up Python
+        run: uv python install 3.12
+      - name: Install Dependencies
+        run: uv sync --all-extras
       - name: Run tests
         env:
           OPENAI_API_KEY: ${{ secrets.INVARIANT_TESTING_OPENAI_KEY }}

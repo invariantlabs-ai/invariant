@@ -1,3 +1,3 @@
-from invariant import analyzer, testing
+from invariant import analyzer
 
-__all__ = ["analyzer", "testing"]
+__all__ = ["analyzer"]
