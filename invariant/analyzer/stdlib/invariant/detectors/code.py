@@ -1,12 +1,12 @@
-from invariant.analyzer.runtime.functions import cache
+from invariant.analyzer.runtime.functions import cached
 from invariant.analyzer.runtime.utils.code import *
 
 PYTHON_ANALYZER = None
 SEMGREP_DETECTOR = None
 
 
-@cache
-def python_code(
+@cached
+async def python_code(
     data: str | list | dict, ipython_mode=False, **config: dict
 ) -> PythonDetectorResult:
     """Predicate used to extract entities from Python code."""
@@ -28,14 +28,14 @@ def python_code(
     return res
 
 
-@cache
-def ipython_code(data: str | list | dict, **config: dict) -> PythonDetectorResult:
+@cached
+async def ipython_code(data: str | list | dict, **config: dict) -> PythonDetectorResult:
     """Predicate used to extract entities from IPython cell code."""
-    return python_code(data, ipython_mode=True, **config)
+    return await python_code(data, ipython_mode=True, **config)
 
 
-@cache
-def semgrep(data: str | list | dict, **config: dict) -> list[CodeIssue]:
+@cached
+async def semgrep(data: str | list | dict, lang: str, **config: dict) -> list[CodeIssue]:
     """Predicate used to run Semgrep on code."""
 
     global SEMGREP_DETECTOR
@@ -43,7 +43,7 @@ def semgrep(data: str | list | dict, **config: dict) -> list[CodeIssue]:
         SEMGREP_DETECTOR = SemgrepDetector()
 
     if type(data) is str:
-        return SEMGREP_DETECTOR.detect_all(data, **config)
+        return await SEMGREP_DETECTOR.adetect_all(data, lang=lang, **config)
 
     chat = (
         data if isinstance(data, list) else ([{"content": data}] if type(data) == str else [data])
@@ -53,5 +53,5 @@ def semgrep(data: str | list | dict, **config: dict) -> list[CodeIssue]:
     for message in chat:
         if message.content is None:
             continue
-        res.extend(SEMGREP_DETECTOR.detect_all(message.content, **config))
+        res.extend(await SEMGREP_DETECTOR.adetect_all(message.content, lang=lang, **config))
     return res

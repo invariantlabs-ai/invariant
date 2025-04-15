@@ -7,9 +7,7 @@ from invariant.analyzer.policy import (
     AnalysisResult,
     Input,
     Policy,
-    PolicyRoot,
     UnhandledError,
-    parse,
     parse_file,
 )
 from invariant.analyzer.runtime.rule import RuleSet
@@ -77,7 +75,7 @@ def is_wrapping(handler):
     return "call_next" in parameters
 
 
-class Monitor(Policy):
+class Monitor:
     """
     A monitor is a policy that can be incrementally applied to an application state.
 
@@ -89,7 +87,7 @@ class Monitor(Policy):
     having to worry about duplicate error reports.
     """
 
-    def __init__(self, policy_root: PolicyRoot, policy_parameters: dict, raise_unhandled=False):
+    def __init__(self, policy: Policy, policy_parameters: dict, raise_unhandled=False):
         """Creates a new monitor with the given policy source.
 
         Args:
@@ -98,9 +96,8 @@ class Monitor(Policy):
         Raises:
             ValueError: If the policy source contains errors.
         """
-        super().__init__(policy_root, cached=True)
-        # error handlers
-        self.handlers = {}
+        # we are using an incremental policy here to enable stateful analysis (only show new error on each call)
+        self.policy = policy.incremental()
         # policy parameters used in `check()` calls
         self.policy_parameters = policy_parameters
         # whether to raise unhandled errors in `check()`
@@ -115,46 +112,42 @@ class Monitor(Policy):
         return cls(parse_file(path), policy_parameters)
 
     @classmethod
-    def from_string(cls, string: str, path: str | None = None, **policy_parameters):
-        return cls(parse(string, path), policy_parameters)
+    def from_string(
+        cls,
+        string: str,
+        optimize: bool = False,
+        symbol_table=None,
+        **policy_parameters,
+    ):
+        return cls(
+            Policy.from_string(string, optimize=optimize, symbol_table=symbol_table),
+            policy_parameters,
+        )
+
+    def analyze(self, input: dict, raise_unhandled=False, **policy_parameters):
+        return self.policy.analyze(input, raise_unhandled=raise_unhandled, **policy_parameters)
+
+    def analyze_pending(
+        self,
+        past_events: list[dict],
+        pending_events: list[dict],
+        raise_unhandled=False,
+        **policy_parameters,
+    ):
+        return self.policy.analyze_pending(
+            past_events, pending_events, raise_unhandled=raise_unhandled, **policy_parameters
+        )
 
     def check(self, past_events: list[dict], pending_events: list[dict]):
-        analysis_result = self.analyze_pending(
+        analysis_result = self.policy.analyze_pending(
             past_events, pending_events, **self.policy_parameters
         )
-        analysis_result.execute_handlers()
         if self.raise_unhandled and len(analysis_result.errors) > 0:
             raise UnhandledError(analysis_result.errors)
         return analysis_result.errors
 
     def add_error_to_result(self, error, analysis_result):
-        type_key = type(error)
-
-        if type(error).__name__ in self.handlers:
-            for handler in self.handlers[type(error).__name__]:
-                analysis_result.handled_errors.append(HandledError(handler, error))
-        elif type_key in self.handlers:
-            for handler in self.handlers[type_key]:
-                analysis_result.handled_errors.append(HandledError(handler, error))
-        else:
-            analysis_result.errors.append(error)
-
-    def on(self, exception: str | type, wrap=False):
-        """
-        Registers a handler for a specific exception type.
-        """
-
-        def decorator(func):
-            exception_name = exception if isinstance(exception, str) else exception.__name__
-            self.handlers.setdefault(exception_name, []).append(func)
-
-            # also register on the exception type
-            if isinstance(exception, type):
-                self.handlers.setdefault(exception, []).append(func)
-
-            return func
-
-        return decorator
+        analysis_result.errors.append(error)
 
     def run(self, operation: ValidatedOperation):
         # prepare the operation and collect potential errors
@@ -163,8 +156,6 @@ class Monitor(Policy):
         # check for unhandled errors (i.e. errors that have no handler)
         if len(analysis_result.errors) > 0:
             raise UnhandledError(analysis_result.errors)
-        # apply the other handlers
-        analysis_result.execute_handlers()
         wrappers = [
             partial(handler_call.handler, error=handler_call.error)
             for handler_call in analysis_result.handled_errors
@@ -182,9 +173,6 @@ class Monitor(Policy):
         # check for unhandled errors (i.e. errors that have no handler)
         if len(analysis_result.errors) > 0:
             raise UnhandledError(analysis_result.errors)
-
-        # apply the other handlers
-        analysis_result.execute_handlers()
 
         return result
 
@@ -240,9 +228,6 @@ class stack:
 
     def __call__(self, *args, **kwargs):
         return self.fct(*args, **kwargs)
-
-    def __repr__(self) -> str:
-        return f"StackedFunction({self.calls})"
 
 
 def stack_functions(remaining_calls=[]):

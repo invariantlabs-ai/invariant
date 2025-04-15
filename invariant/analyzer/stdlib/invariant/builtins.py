@@ -1,13 +1,14 @@
 import builtins as py_builtins
 import re
 
+from invariant.analyzer.runtime.evaluation import Interpreter
 from invariant.analyzer.runtime.input import Input  # noqa
 from invariant.analyzer.stdlib.invariant.errors import *
 from invariant.analyzer.stdlib.invariant.message import *
 from invariant.analyzer.stdlib.invariant.nodes import *
-from invariant.analyzer.runtime.evaluation import Unknown
 
 # Utilities
+
 
 def any(iterable):
     return py_builtins.any(iterable)
@@ -19,6 +20,18 @@ def empty(iterable) -> bool:
 
 
 # String operations
+
+
+def json_loads(s: str) -> dict:
+    """
+    Parses a JSON string and returns the corresponding Python object.
+    """
+    import json
+
+    try:
+        return json.loads(s)
+    except json.JSONDecodeError as e:
+        raise JSONDecodeError(f"Invalid JSON string: {s}") from e
 
 
 def match(pattern: str, s: str) -> bool:
@@ -67,5 +80,14 @@ def print(*args, **kwargs):
     to boolean semantics, `print(...)` does not have any effect on the rule evaluation
     (e.g. neither True nor False), and rather is filtered out during the evaluation process.
     """
+    interpeter = Interpreter.current()
+    kwargs["file"] = interpeter.output_stream
     py_builtins.print(*args, **kwargs)
     return True
+
+
+def tuple(*args, **kwargs):
+    """
+    Creates a tuple from the given arguments.
+    """
+    return py_builtins.tuple(*args, **kwargs)

@@ -3,11 +3,21 @@ from typing import Callable, Optional
 
 from pydantic.dataclasses import dataclass
 
+from invariant.analyzer.runtime.evaluation import Interpreter
+from invariant.analyzer.runtime.runtime_errors import InvariantAttributeError
+
 
 @dataclass
 class File:
     path: str
     content: str
+
+    def __invariant_attribute__(self, name: str):
+        if name in ["path", "content"]:
+            return getattr(self, name)
+        raise InvariantAttributeError(
+            f"Attribute {name} not found in File class. Only 'path' and 'content' are allowed."
+        )
 
 
 def filter_path(path: list[Path], pattern: Optional[str]) -> Path:
@@ -61,14 +71,14 @@ def get_file_contents(
     return [get_file_content(workspace_path, file) for file in files]
 
 
-def is_sensitive(file: File, func: Callable[[str], bool | list]) -> bool:
+async def is_sensitive(file: File, func: Callable[[str], bool | list]) -> bool:
     """Returns True if the file content is sensitive according to the given function.
 
     Args:
         file: The file to check for content sensitivity.
         func: The function that determines sensitivity (each should return bool or list of sensitive results)
     """
-    res = func(file.content)
+    res = await Interpreter.current().acall_function(func, file.content)
     if type(res) is bool:
         return res
     if type(res) is list:
@@ -78,7 +88,7 @@ def is_sensitive(file: File, func: Callable[[str], bool | list]) -> bool:
     )
 
 
-def is_sensitive_dir(
+async def is_sensitive_dir(
     workspace_path: str,
     funcs: list[Callable[[str], bool | list]],
     path: str = ".",
@@ -97,6 +107,6 @@ def is_sensitive_dir(
     files = get_file_contents(workspace_path, path, pattern, tree)
     for file in files:
         for func in funcs:
-            if is_sensitive(file, func):
+            if await is_sensitive(file, func):
                 return True
     return False

@@ -4,7 +4,10 @@ Relevant input objects for policy evaluation.
 In a separate file, for better separation of dependencies.
 """
 
+from typing import Optional
+
 from invariant.analyzer.runtime.input import Input
+from invariant.analyzer.runtime.symbol_table import SymbolTable
 
 
 class EvaluationContext:
@@ -14,10 +17,27 @@ class EvaluationContext:
     and provide their own flow semantics (e.g. lookup in a graph).
     """
 
+    def __init__(self, symbol_table: Optional[SymbolTable] = None):
+        self.symbol_table = symbol_table
+
+        self.evaluation_counter = 0
+
     def call_function(self, function, args, **kwargs):
-        return function(*args, **kwargs)
+        raise NotImplementedError("EvaluationContext must implement call_function()")
+
+    async def acall_function(self, function, args, **kwargs):
+        raise NotImplementedError("EvaluationContext must implement acall_function()")
+
+    def link(self, function, node):
+        if self.symbol_table:
+            return self.symbol_table.link(function, node)
+        else:
+            return function
 
     def has_flow(self, left, right):
+        return False
+
+    def is_parent(self, left, right):
         return False
 
     def get_policy_parameter(self, name):

@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
-from invariant.analyzer.runtime.functions import cache
+from invariant.analyzer.runtime.functions import cached
+from invariant.analyzer.runtime.nodes import text
 from invariant.analyzer.stdlib.invariant.nodes import LLM
 
 PII_ANALYZER = None
@@ -21,8 +22,18 @@ def get_entities(results: list):
     return [res.entity_type for res in results]
 
 
-@cache
-def pii(data: str | list, entities: list[str] | None = None) -> list[str]:
+@cached
+def _pii_detect(data: str | list, entities: list[str] | None = None) -> list[str]:
+    global PII_ANALYZER
+    if PII_ANALYZER is None:
+        from invariant.analyzer.runtime.utils.pii import PII_Analyzer
+
+        PII_ANALYZER = PII_Analyzer()
+
+    return PII_ANALYZER.detect_all(data, entities)
+
+
+async def pii(data: str | list, entities: list[str] | None = None) -> list[str]:
     """Predicate which detects PII in the given data.
 
     Returns the list of PII detected in the data.
@@ -30,29 +41,14 @@ def pii(data: str | list, entities: list[str] | None = None) -> list[str]:
     Supported data types:
     - str: A single message
     """
-    global PII_ANALYZER
-    if PII_ANALYZER is None:
-        from invariant.analyzer.runtime.utils.pii import PII_Analyzer
-
-        PII_ANALYZER = PII_Analyzer()
-
     from invariant.analyzer.runtime.evaluation import Interpreter
 
     interpreter = Interpreter.current()
 
-    if type(data) is str:
-        results = PII_ANALYZER.detect_all(data, entities)
-        add_ranges(data, results, interpreter)
-        return get_entities(results)
-
-    if type(data) is not list:
-        data = [data]
-
     all_pii = []
-    for message in data:
-        if message.content is None:
-            continue
-        results = PII_ANALYZER.detect_all(message.content, entities)
-        add_ranges(message, results, interpreter)
+    for t in text(data):
+        results = await _pii_detect(t, entities)
+        add_ranges(t, results, interpreter)
         all_pii.extend(get_entities(results))
+
     return all_pii

@@ -3,8 +3,8 @@ Invariant Policy Language type system.
 """
 
 from invariant.analyzer.language.ast import *
+from invariant.analyzer.language.scope import ExternalReference, GlobalScope, VariableDeclaration
 from invariant.analyzer.language.types import *
-from invariant.analyzer.language.scope import ExternalReference, GlobalScope, VariableDeclaration, Scope
 
 
 class CollectVariableDeclarations(RaisingTransformation):

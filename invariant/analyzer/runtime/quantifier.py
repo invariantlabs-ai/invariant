@@ -1,4 +1,3 @@
-from invariant.analyzer.runtime.evaluation_context import EvaluationContext
 from invariant.analyzer.runtime.input import Input
 
 
@@ -12,5 +11,5 @@ class Quantifier:
     See invariant/stdlib/invariant/quantifiers.py for different quantifier implementations.
     """
 
-    def eval(self, input_data: Input, body, globals: dict, evaluation_context: EvaluationContext):
+    def eval(self, input_data: Input, body, globals: dict, evaluation_context: "EvaluationContext"):
         raise NotImplementedError

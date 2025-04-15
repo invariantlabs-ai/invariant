@@ -1,15 +1,60 @@
-from dataclasses import dataclass  # noqa: I001
+import asyncio
+import contextvars
 import json
 import re
-import contextvars
+import sys
+from dataclasses import dataclass  # noqa: I001
 from itertools import product
-from typing import Generator
+from typing import AsyncGenerator
 
-from invariant.analyzer.language.ast import *
-from invariant.analyzer.runtime.patterns import SemanticPatternMatcher
-from invariant.analyzer.runtime.input import Input, Selectable, Range
+import termcolor
+
+from invariant.analyzer.language.ast import (
+    ArrayLiteral,
+    BinaryExpr,
+    BooleanLiteral,
+    CapturedVariableCollector,
+    Declaration,
+    Expression,
+    FunctionCall,
+    FunctionDefinition,
+    FunctionSignature,
+    Identifier,
+    Import,
+    ImportSpecifier,
+    KeyAccess,
+    MemberAccess,
+    Node,
+    NoneLiteral,
+    NumberLiteral,
+    ObjectLiteral,
+    ParameterDeclaration,
+    PolicyError,
+    PolicyRoot,
+    Quantifier,
+    RaisePolicy,
+    RaisingAsyncTransformation,
+    SemanticPattern,
+    StringLiteral,
+    ToolReference,
+    TypedIdentifier,
+    UnaryExpr,
+    VariableDeclaration,
+    ListComprehension,
+    TernaryOp,
+)
 from invariant.analyzer.language.scope import InputData, VariableDeclaration
 from invariant.analyzer.runtime.evaluation_context import EvaluationContext, PolicyParameters
+from invariant.analyzer.runtime.functions import CachedFunctionWrapper
+from invariant.analyzer.runtime.input import Input, Range, Selectable
+from invariant.analyzer.runtime.interface.primitives import DictValue, StringValue
+from invariant.analyzer.runtime.nodes import Event
+from invariant.analyzer.runtime.patterns import SemanticPatternMatcher
+from invariant.analyzer.runtime.runtime_errors import MissingPolicyParameter
+from invariant.analyzer.runtime.utils.invariant_attributes import (
+    invariant_attr,
+    is_safe_invariant_value,
+)
 
 
 class symbol:
@@ -75,11 +120,36 @@ class EvaluationResult:
     input_value: any
     ranges: list
 
+    def result_key(self):
+        """
+        Returns a key for this result, given a rule index.
+
+        This key can be used to recognize this rule match across different calls
+        to the interpreter (e.g. to filter error duplicates in incremental analysis).
+
+        The key is based on the variable assignments of the rule body, and is
+        stable across runs of the interpreter.
+        """
+        model_keys = []
+
+        for k, v in self.variable_assignments.items():
+            if type(v) is dict and "key" in v:
+                model_keys.append((k.name, v["key"]))
+            else:
+                idx = (
+                    v.metadata["trace_idx"]
+                    if isinstance(v, Event) and "trace_idx" in v.metadata
+                    else -1
+                )
+                model_keys.append((k.name, idx))
+
+        return tuple(vkey for k, vkey in sorted(model_keys, key=lambda x: x[0]))
+
 
 INTERPRETER_STACK = contextvars.ContextVar("interpreter_stack", default=[])
 
 
-class Interpreter(RaisingTransformation):
+class Interpreter(RaisingAsyncTransformation):
     """
     The Interpreter class is used to evaluate expressions based on
     a given variable store and global variables. It is used to evaluate
@@ -92,7 +162,7 @@ class Interpreter(RaisingTransformation):
     """
 
     @staticmethod
-    def current():
+    def current() -> "Interpreter":
         stack = INTERPRETER_STACK.get()
         if len(stack) == 0:
             raise ValueError(
@@ -101,7 +171,7 @@ class Interpreter(RaisingTransformation):
         return stack[-1]
 
     @staticmethod
-    def eval(
+    async def eval(
         expr_or_list,
         variable_store,
         globals,
@@ -143,13 +213,13 @@ class Interpreter(RaisingTransformation):
                 # note: this is not just an optimization, but also prevents type errors, if only
                 # a later condition fails (e.g. `type(a) is int and a + b > 2`), where checking the
                 # second condition fail with a type error if `a` is not an integer.
-                results = interpreter.visit_ShortCircuitedConjunction(expr)
+                results = await interpreter.visit_ShortCircuitedConjunction(expr)
             else:
                 # otherwise evaluate all expressions
-                results = [interpreter.visit(e) for e in expr]
+                results = [await interpreter.visit(e) for e in expr]
 
             # evaluate all component expressions
-            result = Interpreter.eval_all(results)
+            result = await Interpreter.eval_all(results)
 
             # for non-list expressions with list results, select the first result
             if type(result) is list:
@@ -172,7 +242,7 @@ class Interpreter(RaisingTransformation):
                 return return_obj
 
     @staticmethod
-    def eval_all(list_of_results):
+    async def eval_all(list_of_results):
         """
         Like all(...) over a list of evaluation results, but also accounts for Unknown and NOP values.
 
@@ -205,14 +275,14 @@ class Interpreter(RaisingTransformation):
             return result
 
     @staticmethod
-    def assignments(
+    async def assignments(
         expr_or_list,
         input_data: Input,
         globals: dict,
         verbose=False,
         extra_check: callable = None,
         evaluation_context: EvaluationContext | None = None,
-    ) -> Generator[EvaluationResult, None, None]:
+    ) -> AsyncGenerator[EvaluationResult, None]:
         """
         Iterator function over all possible variable assignments that either definitively satisfy or violate the given expression.
 
@@ -235,18 +305,18 @@ class Interpreter(RaisingTransformation):
 
             evaluation_context: The evaluation context to use for evaluation.
         """
-        candidates = [{}]
+        tasks = []
+        results = asyncio.Queue()
 
-        while len(candidates) > 0:
-            # for each variable, select a domain
-            candidate_domains = candidates.pop()
+        async def process(candidate_domains: dict):
             # for each domain, compute set of possible values
             candidate = {
                 variable: select(domain, input_data)
                 for variable, domain in candidate_domains.items()
             }
+
             # iterate over all cross products of all known variable domains
-            for input_dict in dict_product(candidate):
+            async def process_input(input_dict):
                 subdomains = {
                     k: VariableDomain(d.type_ref, values=[input_dict[k]])
                     for k, d in candidate_domains.items()
@@ -266,7 +336,10 @@ class Interpreter(RaisingTransformation):
                         print("  - <empty>")
                     print()
 
-                result, new_variable_domains, ranges = Interpreter.eval(
+                # track number of rule body evaluations
+                evaluation_context.evaluation_counter += 1
+
+                result, new_variable_domains, ranges = await Interpreter.eval(
                     expr_or_list,
                     input_dict,
                     globals,
@@ -283,30 +356,55 @@ class Interpreter(RaisingTransformation):
                 if result is False:
                     model = EvaluationResult(result, input_dict, input_data, ranges)
                     # add all objects form input_dict as object ranges
-                    for k, v in input_dict.items():
+                    for _, v in input_dict.items():
                         ranges.append(Range.from_object(v))
-                    yield model
-                    continue
+                    results.put_nowait(model)
                 # if we find a complete model, we can stop
                 elif result is True and (
-                    extra_check is None or extra_check(input_dict, evaluation_context)
+                    extra_check is None or await extra_check(input_dict, evaluation_context)
                 ):
                     model = EvaluationResult(result, input_dict, input_data, ranges)
                     # add all objects form input_dict as object ranges
-                    for k, v in input_dict.items():
+                    for _, v in input_dict.items():
                         ranges.append(Range.from_object(v))
-                    yield model
-                    continue
+                    results.put_nowait(model)
                 elif len(new_variable_domains) > 0:
                     # if more derived variable domains are found, we explore them
                     updated_domains = {**subdomains, **new_variable_domains}
-                    candidates.append(updated_domains)
+                    tasks.append(asyncio.create_task(process(updated_domains)))
 
                     if verbose:
                         termcolor.cprint("discovered new variable domains", "green")
                         for k, v in updated_domains.items():
                             termcolor.cprint("  -" + str(k) + " in " + str(v), color="green")
                         print()
+
+            # iterate over all cross products of all known variable domains
+            for input_dict in dict_product(candidate):
+                tasks.append(asyncio.create_task(process_input(input_dict)))
+
+        # start with the input data as candidate
+        initial = asyncio.create_task(process({}))
+        tasks.append(initial)
+
+        while len(tasks) > 0 or results.qsize() > 0:
+            # check and re-raise for any exceptions
+            for t in tasks:
+                if t.done() and t.exception():
+                    raise t.exception()
+
+            # only keep tasks that are not done yet
+            tasks = [t for t in tasks if not t.done()]
+            # yield any new results
+            if results.qsize() == 0:
+                # if no tasks remain, we can stop
+                if len(tasks) == 0:
+                    break
+                # wait for at least one more task to finish
+                await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+            else:
+                yield await results.get()
+                results.task_done()
 
     def __init__(self, variable_store, globals, evaluation_context=None, partial=True):
         super().__init__(reraise=True)
@@ -318,42 +416,94 @@ class Interpreter(RaisingTransformation):
 
         self.ranges = []
 
+        self.output_stream = sys.stdout
+
         # variable ranges describe the domain of all encountered
         # free variables. A domain of 'None' means the variable
         # quantifies over the global input domain (cf. Input objects).
         self.variable_domains = {}
 
+        # parent interpreter
+        self.parent = None
+
     def __enter__(self):
+        if len(INTERPRETER_STACK.get()) > 0:
+            self.parent = INTERPRETER_STACK.get()[-1]
         INTERPRETER_STACK.get().append(self)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         INTERPRETER_STACK.get().pop()
 
-    def visit_ShortCircuitedConjunction(self, exprs: list):
+    async def evaluate_arrow_operator(self, node: BinaryExpr, operator: str):
+        """
+        Evaluates the arrow operator (-> or ~>) on two identifiers.
+
+        Returns a tuple of the left and right values.
+        """
+        if not (isinstance(node.left, Identifier) and isinstance(node.right, Identifier)):
+            raise ValueError(
+                f"The '{operator}' operator can only be used with Identifier or TypedIdentifier."
+            )
+
+        # collect free variable, if not already specified
+        if type(node.left) is TypedIdentifier:
+            assert node.left.id is not None, "Encountered TypedIdentifier without id {}".format(
+                node.left
+            )
+            self.register_variable_domain(node.left.id, VariableDomain(node.left.type_ref, None))
+        if type(node.right) is TypedIdentifier:
+            assert node.right.id is not None, "Encountered TypedIdentifier without id {}".format(
+                node.right
+            )
+            self.register_variable_domain(node.right.id, VariableDomain(node.right.type_ref, None))
+
+        lvalue = await self.visit_Identifier(node.left)
+        rvalue = await self.visit_Identifier(node.right)
+
+        return lvalue, rvalue
+
+    async def visit_ShortCircuitedConjunction(self, exprs: list):
         results = []
+
         for e in exprs:
-            result = self.visit(e)
+            result = await self.visit(e)
             if result is False:
                 return results + [False]
             results.append(result)
+
+        # # gather all sub results, and as soon as one is False, return False
+
+        # TODO: this cannot be done yet, since sometimes the order of execution matters (with assignments and existential quantifiers over collections)
+        # To enable this, we first need to build a dependency graph, and then only schedule tasks for nodes on the same level, so that evaluation/variable dependencies are not violated.
+
+        # tasks = [asyncio.create_task(self.visit(e)) for e in exprs]
+        # while len(tasks) > 0:
+        #     done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+        #     for t in done:
+        #         tasks.remove(t)
+        #         result = t.result()
+        #         if result is False:
+        #             return results + [False]
+        #         results.append(result)
+
         return results
 
-    def visit_PolicyRoot(self, node: PolicyRoot):
+    async def visit_PolicyRoot(self, node: PolicyRoot):
         raise NotImplementedError("Policies cannot be evaluated directly.")
 
-    def visit_FunctionDefinition(self, node: FunctionDefinition):
+    async def visit_FunctionDefinition(self, node: FunctionDefinition):
         raise NotImplementedError("Function definitions cannot be evaluated directly.")
 
-    def visit_Declaration(self, node: Declaration):
+    async def visit_Declaration(self, node: Declaration):
         if node.is_constant:
-            return Interpreter.eval(node.value[0], {}, self.globals, self.evaluation_context)
+            return await Interpreter.eval(node.value[0], {}, self.globals, self.evaluation_context)
         return node
 
-    def visit_RaisePolicy(self, node: RaisePolicy):
+    async def visit_RaisePolicy(self, node: RaisePolicy):
         raise NotImplementedError("RaisePolicy nodes cannot be evaluated directly.")
 
-    def visit_Quantifier(self, node: Quantifier):
+    async def visit_Quantifier(self, node: Quantifier):
         """
         Quantifiers are evaluated by their implemented quantifier functions.
 
@@ -361,7 +511,7 @@ class Interpreter(RaisingTransformation):
 
         The actual quantifier semantics are implemented in the respective quantifier classes (stdlib).
         """
-        quantifier = self.visit(node.quantifier_call)
+        quantifier = await self.visit(node.quantifier_call)
         if type(quantifier) is type:
             quantifier = quantifier()
 
@@ -372,28 +522,28 @@ class Interpreter(RaisingTransformation):
         if len(free_captured_variables) > 0:
             return Unknown
 
-        return quantifier.eval(
+        return await quantifier.eval(
             input_data=self.evaluation_context.get_input(),
             body=node.body,
             globals={**self.globals, **self.variable_store},
             evaluation_context=self.evaluation_context,
         )
 
-    def visit_BinaryExpr(self, node: BinaryExpr):
+    async def visit_BinaryExpr(self, node: BinaryExpr):
         op = node.op
 
         # special case: variabel binding
         if op == ":=":
-            self.variable_store[node.left.id] = self.visit(node.right)
+            self.variable_store[node.left.id] = await self.visit(node.right)
             return NOP
         # special case: (var: type) in <set>
         elif op == "in" and type(node.left) is TypedIdentifier:
             # collect mappings for the quantified variable
-            rvalue = self.visit(node.right)
+            rvalue = await self.visit(node.right)
             if rvalue is not Unknown:
-                assert type(node.left.id) is VariableDeclaration, (
-                    "Expected VariableDeclaration, got {}".format(node.left.id)
-                )
+                assert (
+                    type(node.left.id) is VariableDeclaration
+                ), "Expected VariableDeclaration, got {}".format(node.left.id)
                 self.register_variable_domain(
                     node.left.id, VariableDomain(node.left.type_ref, rvalue)
                 )
@@ -401,37 +551,22 @@ class Interpreter(RaisingTransformation):
             return True
         # special case: arrow operator
         elif op == "->":
-            if not (isinstance(node.left, Identifier) and isinstance(node.right, Identifier)):
-                raise ValueError(
-                    "The '->' operator can only be used with Identifier or TypedIdentifier."
-                )
-
-            # # collect free variable, if not already specified
-            if type(node.left) is TypedIdentifier:
-                assert node.left.id is not None, "Encountered TypedIdentifier without id {}".format(
-                    node.left
-                )
-                self.register_variable_domain(
-                    node.left.id, VariableDomain(node.left.type_ref, None)
-                )
-            if type(node.right) is TypedIdentifier:
-                assert node.right.id is not None, (
-                    "Encountered TypedIdentifier without id {}".format(node.right)
-                )
-                self.register_variable_domain(
-                    node.right.id, VariableDomain(node.right.type_ref, None)
-                )
-
-            lvalue = self.visit_Identifier(node.left)
-            rvalue = self.visit_Identifier(node.right)
+            lvalue, rvalue = await self.evaluate_arrow_operator(node, op)
 
             if lvalue is Unknown or rvalue is Unknown:
                 return Unknown
             return self.evaluation_context.has_flow(lvalue, rvalue)
+        elif op == "~>":
+            lvalue, rvalue = await self.evaluate_arrow_operator(node, op)
+
+            if lvalue is Unknown or rvalue is Unknown:
+                return Unknown
+            return self.evaluation_context.is_parent(lvalue, rvalue)
+
         # standard binary expressions
         else:
-            lvalue = self.visit(node.left)
-            rvalue = self.visit(node.right)
+            lvalue = await self.visit(node.left)
+            rvalue = await self.visit(node.right)
 
             if op == "and":
                 # if any value of a conjunction is False, the whole conjunction is False
@@ -489,7 +624,7 @@ class Interpreter(RaisingTransformation):
             elif op == "<=":
                 return lvalue <= rvalue
             elif op == "is":
-                return self.visit_Is(node, lvalue, rvalue)
+                return await self.visit_Is(node, lvalue, rvalue)
             elif op == "in":
                 # note: special case for (var: type) in <set> handled above
 
@@ -523,7 +658,11 @@ class Interpreter(RaisingTransformation):
         """
         self.ranges.append(Range.from_object(obj, start, end))
 
-    def visit_Is(self, node: BinaryExpr, left, right):
+        # also mark in parent
+        if self.parent is not None:
+            self.parent.mark(obj, start, end)
+
+    async def visit_Is(self, node: BinaryExpr, left, right):
         if (
             type(node.right) is UnaryExpr
             and node.right.op == "not"
@@ -533,14 +672,14 @@ class Interpreter(RaisingTransformation):
 
         if type(right) is SemanticPattern or type(right) is ToolReference:
             matcher = SemanticPatternMatcher.from_semantic_pattern(right)
-            return matcher.match(left)
+            return await matcher.match(left)
         else:
             return left is right
 
-    def visit_UnaryExpr(self, node: UnaryExpr):
+    async def visit_UnaryExpr(self, node: UnaryExpr):
         # not, -, +
         op = node.op
-        opvalue = self.visit(node.expr)
+        opvalue = await self.visit(node.expr)
 
         # unknown -> unknown
         if opvalue is Unknown:
@@ -555,36 +694,72 @@ class Interpreter(RaisingTransformation):
         else:
             raise NotImplementedError(f"Unknown unary operator: {op}")
 
-    def visit_MemberAccess(self, node: MemberAccess):
-        obj = self.visit(node.expr)
+    async def visit_MemberAccess(self, node: MemberAccess):
+        obj = await self.visit(node.expr)
         # member access on unknown values is unknown
         if obj is Unknown:
             return Unknown
 
         if type(obj) is PolicyParameters:
             if not obj.has_policy_parameter(node.member):
-                raise KeyError(
-                    f"Missing policy parameter '{node.member}' (policy relies on `input.{node.member}`), which is required for evaluation of a rule."
+                raise MissingPolicyParameter(
+                    f"'{node.member}' (policy relies on `input.{node.member}`), which is required for evaluation of a rule."
                 )
             return obj.get(node.member)
 
-        if hasattr(obj, node.member):
+        # check for special cases
+        if type(obj) is str:
+            try:
+                # case 1: member access on stringified JSON objects
+                obj = json.loads(obj)
+                return obj[node.member]
+            except json.JSONDecodeError:
+                # case 2: member access on str instance (e.g. .split, .strip, etc.)
+                return invariant_attr(StringValue(obj), node.member)
+        # standard dict case
+        elif type(obj) is dict:
+            # case 3: member access on dictionaries (first resolved against dict keys, then against available dict methods)
+            if node.member in obj.keys():
+                return obj.get(node.member)
+            else:
+                # try to access the member as a method of the dict (e.g. .keys(), .values(), etc.)
+                dict_value = DictValue(obj)
+                try:
+                    return invariant_attr(dict_value, node.member)
+                except KeyError as e:
+                    raise AttributeError(
+                        f"object {obj} of type {type(obj)} does not support member access {node.member}"
+                    ) from e
+        # case 4: access via safe invariant object interface
+        elif is_safe_invariant_value(obj):
+            return invariant_attr(obj, node.member)
+        elif self.evaluation_context.symbol_table.allows_module_interfacing():
             return getattr(obj, node.member)
 
-        try:
-            if type(obj) is str:
-                obj = json.loads(obj)
-            return obj[node.member]
-        except Exception:
-            raise KeyError(f"Object {obj} has no key {node.member}")
+        # case 4: member access on unsupported types
+        raise TypeError(
+            f"object {obj} of type {type(obj)} does not support member access (e.g. {node.member})"
+        )
 
-    def visit_KeyAccess(self, node: KeyAccess):
-        obj = self.visit(node.expr)
-        key = self.visit(node.key)
+    async def visit_KeyAccess(self, node: KeyAccess):
+        obj = await self.visit(node.expr)
+        key = await self.visit(node.key)
 
         # if either the object or the key is unknown, the result is unknown
         if obj is Unknown or key is Unknown:
             return Unknown
+
+        # check for index access
+        if type(key) is int and hasattr(obj, "__getitem__"):
+            # check for __getitem__ access on strings
+            return obj.__getitem__(key)
+
+        if not hasattr(obj, "keys"):
+            raise TypeError(f"Object {obj} has no keys (type: {type(obj)})")
+
+        if key not in obj.keys():
+            raise KeyError(f"Object {obj} has no key {key} (type: {type(obj)})")
+
         try:
             return obj[key]
         except TypeError as e:
@@ -596,9 +771,9 @@ class Interpreter(RaisingTransformation):
                 try:
                     obj = json.loads(obj)
                     return obj[key]
-                except (json.JSONDecodeError, KeyError):
-                    raise KeyError(f"Object {obj} has no key {key}")
-            raise KeyError(f"Object {obj} has no key {key}")
+                except (json.JSONDecodeError, KeyError) as e:
+                    raise KeyError(f"Object {obj} has no key {key}") from e
+            raise KeyError(f"Object {obj} has no key {key}") from e
 
     def _is_unknown(self, value):
         if value is Unknown:
@@ -608,23 +783,28 @@ class Interpreter(RaisingTransformation):
         else:
             return False
 
-    def visit_FunctionCall(self, node: FunctionCall):
-        # add logic to check if any argument has unknown
-        function = self.visit(node.name)
-        args = [self.visit(arg) for arg in node.args]
+    async def visit_FunctionCall(self, node: FunctionCall):
+        function = await self.visit(node.name)
+        args = await asyncio.gather(*[self.visit(arg) for arg in node.args])
 
         # only call functions, once all parameters are known
         if function is Unknown or any(self._is_unknown(arg) for arg in args):
             return Unknown
-        kwargs = {entry.key: self.visit(entry.value) for entry in node.kwargs}
+        kwarg_items = await asyncio.gather(
+            *[
+                asyncio.gather(self.visit(entry.key), self.visit(entry.value))
+                for entry in node.kwargs
+            ]
+        )
+        kwargs = {k: v for k, v in kwarg_items}
 
         if isinstance(function, Declaration):
-            return self.visit_PredicateCall(function, args, **kwargs)
+            return await self.visit_PredicateCall(function, args, **kwargs)
         else:
-            return self.evaluation_context.call_function(function, args, **kwargs)
+            return await self.acall_function(function, *args, **kwargs)
 
-    def visit_TernaryOp(self, node: TernaryOp):
-        condition = self.visit(node.condition)
+    async def visit_TernaryOp(self, node: TernaryOp):
+        condition = await self.visit(node.condition)
 
         # If condition is unknown, the result is unknown
         if condition is Unknown:
@@ -632,42 +812,53 @@ class Interpreter(RaisingTransformation):
 
         # Evaluate only the branch that will be executed
         if condition:
-            return self.visit(node.then_expr)
+            return await self.visit(node.then_expr)
         else:
-            return self.visit(node.else_expr)
+            return await self.visit(node.else_expr)
 
-    def visit_PredicateCall(self, node: Declaration, args, **kwargs):
+    async def visit_PredicateCall(self, node: Declaration, args, **kwargs):
         assert not node.is_constant, "Predicate call should not be constant."
-        assert isinstance(node.name, FunctionSignature), (
-            "predicate declaration did not have a function signature as name."
-        )
+        assert isinstance(
+            node.name, FunctionSignature
+        ), "predicate declaration did not have a function signature as name."
         signature: FunctionSignature = node.name
 
         parameters = {}
         for p in signature.params:
             parameters[p.name.id] = args.pop(0)
         parameters.update(kwargs)
-        return all(
-            Interpreter.eval(condition, parameters, self.globals, self.evaluation_context)
-            for condition in node.value
-        )
 
-    def visit_FunctionSignature(self, node: FunctionSignature):
+        async for result in Interpreter.assignments(
+            # recursively evaluate the predicate body
+            node.value,
+            self.evaluation_context.get_input(),
+            # re-use globals, and assign parameter bindings
+            {**self.globals, **parameters},
+            # same evaluation context
+            evaluation_context=self.evaluation_context,
+        ):
+            # if the predicate is satisfied, we can stop
+            if result.result is True:
+                return result.result
+
+        return False
+
+    async def visit_FunctionSignature(self, node: FunctionSignature):
         raise NotImplementedError("Function signatures cannot be evaluated directly.")
 
-    def visit_ParameterDeclaration(self, node: ParameterDeclaration):
+    async def visit_ParameterDeclaration(self, node: ParameterDeclaration):
         raise NotImplementedError("Parameter declarations cannot be evaluated directly.")
 
-    def visit_StringLiteral(self, node: StringLiteral):
+    async def visit_StringLiteral(self, node: StringLiteral):
         return node.value
 
-    def visit_Expression(self, node: Expression):
+    async def visit_Expression(self, node: Expression):
         raise NotImplementedError("Expressions cannot be evaluated directly.")
 
-    def visit_NumberLiteral(self, node: NumberLiteral):
+    async def visit_NumberLiteral(self, node: NumberLiteral):
         return node.value
 
-    def visit_Identifier(self, node: Identifier):
+    async def visit_Identifier(self, node: Identifier):
         if node.id is None:
             raise PolicyError("'{}' (id: {}) must have an id".format(node, id(node)))
 
@@ -684,7 +875,7 @@ class Interpreter(RaisingTransformation):
             return Unknown
 
         if isinstance(result, Node):
-            result = Interpreter.eval(result, {}, self.globals, self.evaluation_context)
+            result = await Interpreter.eval(result, {}, self.globals, self.evaluation_context)
 
         # when `input` is resolved to the built-in `InputData` symbol, use
         # `PolicyParameters` to resolve policy parameters (e.g. values passed
@@ -694,47 +885,49 @@ class Interpreter(RaisingTransformation):
 
         return result
 
-    def visit_TypedIdentifier(self, node: TypedIdentifier):
+    async def visit_TypedIdentifier(self, node: TypedIdentifier):
         # # collect free variable, if not already specified
         self.register_variable_domain(node.id, VariableDomain(node.type_ref, None))
         # typed identifiers always evaluate to True
         return True
 
     def register_variable_domain(self, decl: VariableDeclaration, domain):
-        assert type(decl) is VariableDeclaration, (
-            "Can only register new variable domains for some VariableDeclaration, not for {}".format(
-                decl
-            )
+        assert (
+            type(decl) is VariableDeclaration
+        ), "Can only register new variable domains for some VariableDeclaration, not for {}".format(
+            decl
         )
         if decl not in self.variable_store and decl not in self.globals:
             self.variable_domains[decl] = domain
 
-    def visit_ToolReference(self, node: ToolReference):
+    async def visit_ToolReference(self, node: ToolReference):
         return node
 
-    def visit_SemanticPattern(self, node: SemanticPattern):
+    async def visit_SemanticPattern(self, node: SemanticPattern):
         return node
 
-    def visit_Import(self, node: Import):
+    async def visit_Import(self, node: Import):
         return NOP
 
-    def visit_ImportSpecifier(self, node: ImportSpecifier):
+    async def visit_ImportSpecifier(self, node: ImportSpecifier):
         return NOP
 
-    def visit_NoneLiteral(self, node: NoneLiteral):
+    async def visit_NoneLiteral(self, node: NoneLiteral):
         return None
 
-    def visit_BooleanLiteral(self, node: BooleanLiteral):
+    async def visit_BooleanLiteral(self, node: BooleanLiteral):
         return node.value
 
-    def visit_ObjectLiteral(self, node: ObjectLiteral):
-        return {self.visit(entry.key): self.visit(entry.value) for entry in node.entries}
+    async def visit_ObjectLiteral(self, node: ObjectLiteral):
+        return {
+            await self.visit(entry.key): await self.visit(entry.value) for entry in node.entries
+        }
 
-    def visit_ArrayLiteral(self, node: ArrayLiteral):
-        return [self.visit(entry) for entry in node.elements]
+    async def visit_ArrayLiteral(self, node: ArrayLiteral):
+        return [await self.visit(entry) for entry in node.elements]
 
-    def visit_ListComprehension(self, node: ListComprehension):
-        iterable = self.visit(node.iterable)
+    async def visit_ListComprehension(self, node: ListComprehension):
+        iterable = await self.visit(node.iterable)
 
         if iterable is None:
             return []
@@ -746,16 +939,28 @@ class Interpreter(RaisingTransformation):
             self.variable_store[var_name] = item
 
             if node.condition:
-                condition_result = self.visit(node.condition)
+                condition_result = await self.visit(node.condition)
                 if condition_result is Unknown:
                     results.append(Unknown)
                     continue
                 elif condition_result is not True:
                     continue
 
-            result = self.visit(node.expr)
+            result = await self.visit(node.expr)
             results.append(result)
 
         # Restore original variable store
         self.variable_store = original_vars
         return results
+
+    async def acall_function(self, function, *args, **kwargs):
+        ctx: EvaluationContext = self.evaluation_context
+        # if function is a cached function wrapper, unwrap it (at this point we
+        # are already caching it)
+        if isinstance(function, CachedFunctionWrapper):
+            function = function.func
+        linked_function = ctx.link(function, None)
+        # also unwrap linked function, if a cached function wrapper
+        if isinstance(linked_function, CachedFunctionWrapper):
+            linked_function = linked_function.func
+        return await ctx.acall_function(linked_function, args, **kwargs)

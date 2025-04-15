@@ -5,13 +5,15 @@ Invariant Policy Language linker for Python-based execution.
 import importlib
 import os
 from importlib import util
+from typing import Optional
 
 from invariant.analyzer.language.scope import ExternalReference
+from invariant.analyzer.runtime.symbol_table import SymbolTable
 
 STDLIB_PATH = os.path.join(os.path.dirname(__file__), "../stdlib")
 
 
-def resolve(ref: ExternalReference):
+def resolve(ref: ExternalReference, symbol_table: Optional[SymbolTable] = None):
     # import the module from STDLIB_PATH/{ref.module} and return the object
     # ref.obj if it is not None
     module_name = ref.module
@@ -29,41 +31,17 @@ def resolve(ref: ExternalReference):
             return getattr(module, ref.obj)
         return module
     except FileNotFoundError:
-        # try to import from the default sys path
-        module = resolve_default_path(ref)
-        if module is not None:
-            return module
-
-        raise ImportError(
-            f"Module '{module_name}' could not be resolved (stdlib path: {os.path.abspath(STDLIB_PATH)})"
-        ) from None
+        return symbol_table.link_import(ref)
 
 
-def resolve_default_path(ref: ExternalReference):
-    # import the module from {ref.module} and return the object ref.obj if it is not None
-    module_name = ref.module
+def link(scope, symbol_table: SymbolTable):
+    assert symbol_table is not None, "Symbol table must be provided for linking."
 
-    try:
-        spec = importlib.util.find_spec(module_name)
-        if spec is None:
-            return None
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        if ref.obj:
-            return getattr(module, ref.obj)
-        return module
-    except ModuleNotFoundError:
-        return None
-    except FileNotFoundError:
-        return None
-
-
-def link(scope):
-    symbol_table = {}
+    global_scope = {}
     for name, decl in scope.all():
         if isinstance(decl.value, ExternalReference):
-            symbol_table[decl] = resolve(decl.value)
+            global_scope[decl] = resolve(decl.value, symbol_table)
         else:
-            symbol_table[decl] = decl.value
+            global_scope[decl] = decl.value
 
-    return symbol_table
+    return global_scope

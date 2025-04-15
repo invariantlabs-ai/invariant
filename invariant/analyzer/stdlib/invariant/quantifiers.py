@@ -19,10 +19,12 @@ class forall(Quantifier):
 
     """
 
-    def eval(self, input_data: Input, body, globals: dict, evaluation_context: EvaluationContext):
+    async def eval(
+        self, input_data: Input, body, globals: dict, evaluation_context: EvaluationContext
+    ):
         from invariant.analyzer.runtime.evaluation import Interpreter
 
-        for m in Interpreter.assignments(
+        async for m in Interpreter.assignments(
             body, input_data, globals, evaluation_context=evaluation_context
         ):
             if not m.result:
@@ -61,14 +63,16 @@ class count(Quantifier):
         self.min = min
         self.max = max
 
-    def eval(self, input_data: Input, body, globals: dict, evaluation_context: EvaluationContext):
+    async def eval(
+        self, input_data: Input, body, globals: dict, evaluation_context: EvaluationContext
+    ):
         from invariant.analyzer.runtime.evaluation import Interpreter
 
         n_matches = 0
         bad_models = 0
         interpreter: Interpreter = Interpreter.current()
 
-        for m in Interpreter.assignments(
+        async for m in Interpreter.assignments(
             body, input_data, globals, evaluation_context=evaluation_context
         ):
             if m.result:

@@ -4,7 +4,7 @@ Invariant Policy Language scoping.
 
 import inspect
 
-from invariant.analyzer.language.types import *
+from invariant.analyzer.language.types import FunctionType, UnknownType
 
 IPL_BUILTINS = [
     "LLM",
@@ -13,18 +13,25 @@ IPL_BUILTINS = [
     "Function",
     "ToolOutput",
     "Input",
+    "Violation",
     "PolicyViolation",
     "UpdateMessage",
     "UpdateMessageHandler",
+    "TextChunk",
+    "Image",
     "any",
     "empty",
     "match",
+    "json_loads",
     "len",
     "find",
     "min",
     "max",
     "sum",
     "print",
+    "tuple",
+    "text",
+    "image",
 ]
 
 

@@ -1,4 +1,4 @@
-from invariant.analyzer.runtime.functions import cache
+from invariant.analyzer.runtime.functions import cached
 from invariant.analyzer.runtime.utils.base import DetectorResult
 from invariant.analyzer.runtime.utils.moderation import ModerationAnalyzer
 
@@ -12,8 +12,8 @@ def parse_moderation(obj, results: list[DetectorResult], interpreter) -> bool:
     return len(results) > 0
 
 
-@cache
-def moderated(data: str | list | dict, **config: dict) -> bool:
+@cached
+async def moderated(data: str | list | dict, **config: dict) -> bool:
     """Predicate which evaluates to true if the given data should be moderated.
 
     Available parameters in the config:
@@ -27,20 +27,18 @@ def moderated(data: str | list | dict, **config: dict) -> bool:
         MODERATION_ANALYZER = ModerationAnalyzer()
 
     from invariant.analyzer.runtime.evaluation import Interpreter
+    from invariant.analyzer.stdlib.invariant.builtins import text
 
     interpreter = Interpreter.current()
 
-    if type(data) is str:
-        return parse_moderation(data, MODERATION_ANALYZER.detect_all(data, **config), interpreter)
-    if type(data) is not list:
-        data = [data]
+    is_moderated = False
 
-    moderated = False
-    for message in data:
-        if message is None or message.content is None:
-            continue
+    for t in text(data):
         if parse_moderation(
-            message.content, MODERATION_ANALYZER.detect_all(message.content, **config), interpreter
+            t,
+            await MODERATION_ANALYZER.adetect(t, **config),
+            interpreter,
         ):
-            moderated = True
-    return moderated
+            is_moderated = True
+
+    return is_moderated

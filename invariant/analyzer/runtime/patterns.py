@@ -20,8 +20,9 @@ from invariant.analyzer.language.ast import (
     ValueReference,
     Wildcard,
 )
-from invariant.analyzer.runtime.utils.moderation import ModerationAnalyzer
-from invariant.analyzer.runtime.utils.pii import PII_Analyzer
+from invariant.analyzer.runtime.nodes import text
+from invariant.analyzer.stdlib.invariant.detectors import pii
+from invariant.analyzer.stdlib.invariant.detectors.moderation import moderated
 from invariant.analyzer.stdlib.invariant.nodes import ToolCall, ToolOutput
 
 
@@ -37,7 +38,7 @@ class SemanticPatternMatcher(ABC):
         return MatcherFactory().transform(pattern)
 
     @abstractmethod
-    def match(self, obj) -> bool:
+    async def match(self, obj) -> bool:
         raise NotImplementedError
 
 
@@ -94,15 +95,16 @@ class ConstantMatcher(SemanticPatternMatcher):
             return f'ConstantMatcher("{self.value}")'
         return f"ConstantMatcher({self.value})"
 
-    def match_regex(self, value) -> bool:
+    async def match_regex(self, value) -> bool:
         if type(self.value) is not str:
             return False
-        return re.match(self.value + "$", value, re.DOTALL) is not None
+        return any(re.match(self.value + "$", t, re.DOTALL) is not None for t in text(value))
 
-    def match(self, value) -> bool:
+    async def match(self, value) -> bool:
         if not issubclass(type(value), type(self.value)):
             return False
-        return self.value == value or self.match_regex(value)
+        joined_value = "".join(text(value))
+        return self.value == value or self.value == joined_value or await self.match_regex(value)
 
 
 @dataclass
@@ -116,7 +118,7 @@ class DictMatcher(SemanticPatternMatcher):
     def __repr__(self):
         return "DictMatcher({" + ", ".join(f"{k}: {v}" for k, v in self.entries.items()) + "})"
 
-    def match(self, value) -> bool:
+    async def match(self, value) -> bool:
         if not hasattr(value, "__getitem__"):
             return False
 
@@ -125,7 +127,7 @@ class DictMatcher(SemanticPatternMatcher):
                 if type(value) is not dict:
                     return False
                 key_var = value[key]
-                if not matcher.match(key_var):
+                if not await matcher.match(key_var):
                     return False
             except KeyError:
                 return False
@@ -143,12 +145,12 @@ class ListMatcher(SemanticPatternMatcher):
     def __repr__(self):
         return f"[{', '.join(map(str, self.elements))}]"
 
-    def match(self, value) -> bool:
+    async def match(self, value) -> bool:
         if type(value) is not list:
             return False
         if len(value) != len(self.elements):
             return False
-        return all(matcher.match(var) for matcher, var in zip(self.elements, value))
+        return all([await matcher.match(var) for matcher, var in zip(self.elements, value)])
 
 
 @dataclass
@@ -160,7 +162,7 @@ class ToolCallMatcher(SemanticPatternMatcher):
     tool_pattern: str
     args: Optional[List[Any]]
 
-    def match(self, value) -> bool:
+    async def match(self, value) -> bool:
         if type(value) is ToolOutput and value._tool_call is not None:
             value = value._tool_call
         if type(value) is not ToolCall:
@@ -174,7 +176,7 @@ class ToolCallMatcher(SemanticPatternMatcher):
         elif not len(self.args) == 1:
             return False
 
-        return self.args[0].match(value.function.arguments)
+        return await self.args[0].match(value.function.arguments)
 
     def __repr__(self):
         return f"ToolCallMatcher({self.tool_pattern}, {self.args})"
@@ -191,7 +193,7 @@ class WildcardMatcher(SemanticPatternMatcher):
     def __repr__(self):
         return "*"
 
-    def match(self, value) -> bool:
+    async def match(self, value) -> bool:
         return True
 
 
@@ -220,18 +222,11 @@ class PIIMatcher(SemanticPatternMatcher):
     def __repr__(self):
         return f"PIIMatcher({self.entity})"
 
-    def match(self, value) -> bool:
-        if not PIIMatcher.pii_analyzer:
-            PIIMatcher.pii_analyzer = PII_Analyzer()
-        pii_analyzer = PIIMatcher.pii_analyzer
+    async def match(self, value) -> bool:
+        from invariant.analyzer.runtime.evaluation import Interpreter
 
-        res = pii_analyzer.detect_all(value)
-        res = [r.entity_type for r in res]
-
-        return self.entity in res
-
-
-PIIMatcher.pii_analyzer = None
+        result = await Interpreter.current().acall_function(pii, value)
+        return self.entity in result
 
 
 @value_matcher
@@ -247,15 +242,10 @@ class ModerationMatcher(SemanticPatternMatcher):
     def __repr__(self):
         return f"ModerationMatcher({self.category})"
 
-    def match(self, value) -> bool:
-        if not ModerationMatcher.moderation_analyzer:
-            ModerationMatcher.moderation_analyzer = ModerationAnalyzer()
-        moderation_analyzer = ModerationMatcher.moderation_analyzer
+    async def match(self, value) -> bool:
+        from invariant.analyzer.runtime.evaluation import Interpreter
 
-        if type(value) is not str:
-            return False
-
-        return moderation_analyzer.detect(value)
+        return await Interpreter.current().acall_function(moderated, value)
 
 
 ModerationMatcher.moderation_analyzer = None
@@ -279,5 +269,5 @@ class ValueMatcherDummyMatcher(SemanticPatternMatcher):
     def __repr__(self):
         return f"ValueMatcherDummyMatcher({self.entity})"
 
-    def match(self, value) -> bool:
+    async def match(self, value) -> bool:
         return value == "__DUMMY__"

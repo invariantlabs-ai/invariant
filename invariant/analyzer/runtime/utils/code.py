@@ -1,28 +1,32 @@
 import ast
+import asyncio
 import json
 import subprocess
 import tempfile
-from enum import Enum
+from typing import Literal
 
-from pydantic.dataclasses import Field, dataclass
+from pydantic import BaseModel
+from pydantic.dataclasses import Field
 
+from invariant.analyzer.runtime.runtime_errors import InvariantAttributeError
 from invariant.analyzer.runtime.utils.base import BaseDetector, DetectorResult
 
-
-class CodeSeverity(str, Enum):
-    INFO = "info"
-    WARNING = "warning"
-    ERROR = "error"
+CodeSeverity = Literal["info", "warning", "error"]
 
 
-@dataclass
-class CodeIssue:
+class CodeIssue(BaseModel):
     description: str
     severity: CodeSeverity
 
+    def __invariant_attribute__(self, name: str):
+        if name in ["description", "severity"]:
+            return getattr(self, name)
+        raise InvariantAttributeError(
+            f"Attribute {name} not found in CodeIssue. Available attributes are: description, severity"
+        )
 
-@dataclass
-class PythonDetectorResult:
+
+class PythonDetectorResult(BaseModel):
     """
     Represents the analysis results of a Python code snippet.
 
@@ -73,6 +77,20 @@ class PythonDetectorResult:
         self.function_calls.update(other.function_calls)
         if other.syntax_error:
             self.syntax_error = True
+
+    def __invariant_attribute__(self, name: str):
+        if name in [
+            "imports",
+            "builtins",
+            "function_calls",
+            "syntax_error",
+            "syntax_error_exception",
+            "function_calls",
+        ]:
+            return getattr(self, name)
+        raise InvariantAttributeError(
+            f"Attribute {name} not found in PythonDetectorResult. Available attributes are: imports, builtins, function_calls"
+        )
 
 
 class ASTDetectionVisitor(ast.NodeVisitor):
@@ -160,12 +178,12 @@ class SemgrepDetector(BaseDetector):
 
     def get_severity(self, severity: str) -> CodeSeverity:
         if severity == "ERROR":
-            return CodeSeverity.ERROR
+            return "error"
         elif severity == "WARNING":
-            return CodeSeverity.WARNING
-        return CodeSeverity.INFO
+            return "warning"
+        return "info"
 
-    def detect_all(self, code: str, lang: str) -> list[CodeIssue]:
+    async def adetect_all(self, code: str, lang: str) -> list[CodeIssue]:
         temp_file = self.write_to_temp_file(code, lang)
         if lang == "python":
             config = "r/python.lang.security"
@@ -175,7 +193,7 @@ class SemgrepDetector(BaseDetector):
             raise ValueError(f"Unsupported language: {lang}")
 
         cmd = [
-            "rye",
+            "poetry",
             "run",
             "semgrep",
             "scan",
@@ -188,11 +206,17 @@ class SemgrepDetector(BaseDetector):
             temp_file,
         ]
         try:
-            out = subprocess.run(cmd, capture_output=True)
-            semgrep_res = json.loads(out.stdout.decode("utf-8"))
+            out = await asyncio.create_subprocess_exec(
+                *cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
+            stdout, stderr = await out.communicate()
+            semgrep_res = json.loads(stdout.decode("utf-8"))
         except Exception:
-            out = subprocess.run(cmd[2:], capture_output=True)
-            semgrep_res = json.loads(out.stdout.decode("utf-8"))
+            out = await asyncio.create_subprocess_exec(
+                *cmd[2:], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
+            stdout, stderr = await out.communicate()
+            semgrep_res = json.loads(stdout.decode("utf-8"))
         issues = []
         for res in semgrep_res["results"]:
             severity = self.get_severity(res["extra"]["severity"])

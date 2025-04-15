@@ -1,5 +1,6 @@
-from pydantic.dataclasses import dataclass
 from pydantic import Field
+from pydantic.dataclasses import dataclass
+
 
 @dataclass
 class DetectorResult:
@@ -32,7 +33,7 @@ class BaseDetector:
         raise NotImplementedError("")
 
     def detect(self, text: str, *args, **kwargs) -> bool:
-        """Performs detection on the given text and returns a list of DetectorResult objects.
+        """Performs detection on the given text and returns a boolean indicating whether there has been any detection.
 
         Args:
             text: The text to analyze.
@@ -40,3 +41,11 @@ class BaseDetector:
             A boolean indicating whether there has been any detection.
         """
         return len(self.detect_all(text, *args, **kwargs)) > 0
+
+    async def preload(self):
+        """
+        Some workload to run to initialize the detector for lower-latency inference later on.
+
+        For instance, model loading or other expensive operations.
+        """
+        pass

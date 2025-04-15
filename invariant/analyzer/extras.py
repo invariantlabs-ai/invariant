@@ -4,6 +4,19 @@ Optional dependency management for Invariant.
 
 import sys
 
+TERMINATE_ON_EXTRA_FAILURE = True
+
+
+def set_extras_strategy(terminate_on_extra_failure: bool):
+    """
+    Set the strategy for handling missing extras.
+
+    Args:
+        terminate_on_extra_failure (bool): If True, the program will terminate if an extra is not available.
+    """
+    global TERMINATE_ON_EXTRA_FAILURE
+    TERMINATE_ON_EXTRA_FAILURE = terminate_on_extra_failure
+
 
 class ExtrasImport:
     """
@@ -140,7 +153,12 @@ class Extra:
                     sys.stderr.write(
                         "error: 'pip' is not installed. Please install the above mentioned packages manually.\n"
                     )
-                    sys.exit(1)
+                    if TERMINATE_ON_EXTRA_FAILURE:
+                        sys.exit(1)
+                    else:
+                        raise RuntimeError(
+                            "policy execution failed due to missing dependencies in the runtime environment"
+                        )
                 for imp in self.packages.values():
                     subprocess.call(
                         [
@@ -152,9 +170,19 @@ class Extra:
                         ]
                     )
             else:
-                sys.exit(1)
+                if TERMINATE_ON_EXTRA_FAILURE:
+                    sys.exit(1)
+                else:
+                    raise RuntimeError(
+                        "policy execution failed due to missing dependencies in the runtime environment"
+                    )
         else:
-            sys.exit(1)
+            if TERMINATE_ON_EXTRA_FAILURE:
+                sys.exit(1)
+            else:
+                raise RuntimeError(
+                    "policy execution failed due to missing dependencies in the runtime environment"
+                )
 
     @staticmethod
     def find_all() -> list["Extra"]:
@@ -202,13 +230,6 @@ langchain_extra = Extra(
     "langchain Integration",
     "Enables the use of Invariant's langchain integration",
     {"langchain": ExtrasImport("langchain", "langchain", ">=0.2.1")},
-)
-
-"""Extra for features that rely on the `anthropic` library."""
-anthropic_extra = Extra(
-    "Anthropic Integration",
-    "Enables the use of Anthropic's Claude models for text and image analysis",
-    {"anthropic": ExtrasImport("anthropic", "anthropic", ">=0.46.0")},
 )
 
 

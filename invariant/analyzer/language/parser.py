@@ -6,9 +6,9 @@ import textwrap
 
 import lark
 
-# Import from modular AST structure
 from invariant.analyzer.language.ast import *
 from invariant.analyzer.language.ast import BinaryExpr, FunctionCall, Identifier, ValueReference
+from invariant.analyzer.language.optimizer import optimize
 from invariant.analyzer.language.typing import typing
 
 """
@@ -83,7 +83,7 @@ parser = lark.Lark(r"""
     ID.2: /[a-zA-Z_]([a-zA-Z0-9_])*/
     UNARY_OPERATOR.3: /not[\n\t ]/ | "-" | "+"
     LOGICAL_OPERATOR: /and[\n\t ]/ | /or[\n\t ]/
-    CMP_OPERATOR: "==" | "!=" | ">" | "<" | ">=" | "<=" | /is[\n\t ]/ | /contains_only[\n\t ]/ | /in[\n\t ]/ | "->"
+    CMP_OPERATOR: "==" | "!=" | ">" | "<" | ">=" | "<=" | /is[\n\t ]/ | /contains_only[\n\t ]/ | /in[\n\t ]/ | "->" | "~>"
     VALUE_TYPE: /<[a-zA-Z_:]+>/
     ternary_op: expr "if" expr "else" expr
 
@@ -439,7 +439,7 @@ def transform(policy):
     return policy
 
 
-def parse(text, path=None, verbose=True):
+def parse(text, path=None, verbose=True, optimize_rules=True):
     """
     Multi-stage parsing process to transform a string of IPL code into an Invariant Policy AST.
 
@@ -477,6 +477,10 @@ def parse(text, path=None, verbose=True):
 
         # scoping and type checking (populate type information into the AST)
         policy = typing(policy)
+
+        # optimize policy for inference
+        if optimize_rules:
+            policy = optimize(policy)
 
         policy.source_code = source_code
 

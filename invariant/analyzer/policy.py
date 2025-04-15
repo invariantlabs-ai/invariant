@@ -1,87 +1,26 @@
-import textwrap
-from dataclasses import dataclass
+import asyncio
+import os
+from typing import List, Optional, Tuple
 
-from pydantic import BaseModel
-
+from invariant.analyzer.base_policy import BasePolicy
 from invariant.analyzer.language.ast import PolicyError, PolicyRoot
 from invariant.analyzer.language.parser import parse, parse_file
+from invariant.analyzer.runtime.evaluation import EvaluationResult
+from invariant.analyzer.runtime.function_cache import FunctionCache
 from invariant.analyzer.runtime.rule import Input, RuleSet
-from invariant.analyzer.stdlib.invariant.errors import ErrorInformation
+from invariant.analyzer.runtime.symbol_table import SymbolTable
+from invariant.analyzer.stdlib.invariant.errors import (
+    AnalysisResult,
+    ErrorInformation,
+    PolicyLoadingError,
+    UnhandledError,
+)
 from invariant.analyzer.stdlib.invariant.nodes import Event
 
-
-@dataclass
-class UnhandledError(Exception):
-    errors: list[PolicyError]
-
-    def __str__(self):
-        errors_noun = "errors" if len(self.errors) > 1 else "error"
-        errors_list = "\n".join(
-            [" - " + type(error).__name__ + ": " + str(error) for error in self.errors]
-        )
-        return f"A policy analysis resulted in {len(self.errors)} unhandled {errors_noun}:\n{errors_list}.\n"
+from .remote_policy import RemotePolicy
 
 
-class AnalysisResult(BaseModel):
-    """
-    Result of applying a policy to an application state.
-
-    Includes all unresolved errors, as well as resolved (handled) errors
-    with corresponding handler calls (run them to actually resolve
-    them in the application state).
-    """
-
-    errors: list[ErrorInformation]
-    handled_errors: list[ErrorInformation]
-
-    def execute_handlers(self):
-        for handled_error in self.handled_errors:
-            handled_error.execute_handler()
-
-    def __str__(self):
-        width = 120
-
-        errors_str = "\n".join(
-            [
-                f"{textwrap.indent(textwrap.fill(str(error), width=width), ' ' * 4)}"
-                for error in self.errors
-            ]
-        )
-        error_line = "  errors=[]" if len(self.errors) == 0 else f"  errors=[\n{errors_str}\n  ]"
-
-        handled_errors_str = "\n".join(
-            [
-                f"{textwrap.indent(textwrap.fill(str(handled_error), width=width), ' ' * 4)}"
-                for handled_error in self.handled_errors
-            ]
-        )
-        handled_error_line = (
-            "  handled_errors=[]"
-            if len(self.handled_errors) == 0
-            else f"  handled_errors=[\n{handled_errors_str}\n  ]"
-        )
-
-        return f"AnalysisResult(\n{error_line},\n{handled_error_line}\n)"
-
-    def __repr__(self):
-        return self.__str__()
-
-
-@dataclass
-class PolicyLoadingError(Exception):
-    """
-    This exception is raised when a policy could not be loaded due to errors in
-    the policy source (parsing, scoping, typing, validation, etc.).
-    """
-
-    msg: str
-    errors: list[PolicyError]
-
-    def __str__(self):
-        return self.msg
-
-
-class Policy:
+class LocalPolicy(BasePolicy):
     """
     A policy is a set of rules that are applied to an application state.
 
@@ -104,7 +43,9 @@ class Policy:
     rule_set: RuleSet
     cached: bool
 
-    def __init__(self, policy_root: PolicyRoot, cached=False):
+    def __init__(
+        self, policy_root: PolicyRoot, cached=False, symbol_table: Optional[SymbolTable] = None
+    ):
         """Creates a new policy with the given policy source.
 
         Args:
@@ -119,7 +60,9 @@ class Policy:
         if not (policy_root and len(policy_root.errors) == 0):
             msg = f"Failed to create policy from policy source. The following errors were found:\n{PolicyError.error_report(policy_root.errors)}"
             raise PolicyLoadingError(msg, policy_root.errors)
-        self.rule_set = RuleSet.from_policy(policy_root, cached=cached)
+        self.rule_set = RuleSet.from_policy(
+            policy_root, cached=cached, symbol_table=symbol_table or SymbolTable()
+        )
         self.cached = cached
 
     @property
@@ -131,14 +74,29 @@ class Policy:
         return cls(parse_file(path))
 
     @classmethod
-    def from_string(cls, string: str, path: str | None = None) -> "Policy":
-        return cls(parse(string, path))
+    def from_string(
+        cls,
+        string: str,
+        path: str | None = None,
+        optimize: bool = False,
+        symbol_table: Optional[SymbolTable] = None,
+    ) -> "Policy":
+        return cls(parse(string, path, optimize_rules=optimize), symbol_table=symbol_table)
 
-    def add_error_to_result(self, error, analysis_result):
+    def add_error_to_result(self, error, analysis_result: AnalysisResult):
         """Implements how errors are added to an analysis result (e.g. as handled or non-handled errors)."""
         analysis_result.errors.append(error)
 
-    def analyze(self, input: list[dict], raise_unhandled=False, **policy_parameters):
+    def analyze(self, input: dict, raise_unhandled=False, **policy_parameters):
+        return asyncio.run(self.a_analyze(input, raise_unhandled, **policy_parameters))
+
+    async def a_analyze(
+        self,
+        input: list[dict],
+        raise_unhandled=False,
+        function_cache: Optional[FunctionCache] = None,
+        **policy_parameters,
+    ):
         input = Input(input)
 
         # prepare policy parameters
@@ -150,11 +108,18 @@ class Policy:
         policy_parameters["data"] = input
 
         # apply policy rules
-        exceptions = self.rule_set.apply(input, policy_parameters)
+        rule_set = self.rule_set
+        # use rule_set with provided cache
+        rule_set = rule_set.instance(cache=function_cache)
+
+        # evaluate rules
+        exceptions: List[Tuple[EvaluationResult, ErrorInformation]] = await rule_set.apply(
+            input, policy_parameters
+        )
 
         # collect errors into result
         analysis_result = AnalysisResult(errors=[], handled_errors=[])
-        for model, error in exceptions:
+        for _, error in exceptions:
             self.add_error_to_result(error, analysis_result)
 
         if raise_unhandled and len(analysis_result.errors) > 0:
@@ -163,6 +128,19 @@ class Policy:
         return analysis_result
 
     def analyze_pending(
+        self,
+        past_events: list[dict],
+        pending_events: list[dict],
+        raise_unhandled=False,
+        **policy_parameters,
+    ):
+        return asyncio.run(
+            self.a_analyze_pending(
+                past_events, pending_events, raise_unhandled, **policy_parameters
+            )
+        )
+
+    async def a_analyze_pending(
         self,
         past_events: list[dict],
         pending_events: list[dict],
@@ -181,10 +159,11 @@ class Policy:
         policy_parameters["data"] = input
 
         # apply policy rules
-        exceptions = self.rule_set.apply(input, policy_parameters)
+        self.rule_set.cached = self.cached
+        exceptions = await self.rule_set.apply(input, policy_parameters)
 
         # collect errors into result
-        analysis_result = AnalysisResult(errors=[], handled_errors=[])
+        analysis_result = AnalysisResult(errors=[])
         for model, error in exceptions:
             has_pending = False
             for val in model.variable_assignments.values():
@@ -205,3 +184,8 @@ class Policy:
 def analyze_trace(policy_str: str, trace: list):
     policy = Policy.from_string(policy_str)
     return policy.analyze(trace)
+
+
+Policy = LocalPolicy if os.getenv("LOCAL_POLICY", "0") == "1" else RemotePolicy
+# in pytest run with (setting the env)
+# pytest -o addopts='--env LOCAL_POLICY=1'

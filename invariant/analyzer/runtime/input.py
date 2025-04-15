@@ -11,13 +11,23 @@ import re
 import warnings
 from collections.abc import ItemsView, KeysView, ValuesView
 from copy import deepcopy
-from typing import Callable, Optional
+from typing import Callable
 
 from pydantic import BaseModel
 from rich.pretty import pprint as rich_print
 
 import invariant.analyzer.language.types as types
-from invariant.analyzer.stdlib.invariant.nodes import Event, Message, ToolCall, ToolOutput
+from invariant.analyzer.runtime.nodes import (
+    Contents,
+    Event,
+    Image,
+    Message,
+    TextChunk,
+    ToolCall,
+    ToolOutput,
+)
+
+from .range import Range
 
 
 class InputProcessor:
@@ -61,11 +71,14 @@ class Dataflow(InputProcessor):
     Important: All objects are identified by their id() in the graph.
     """
 
-    def __init__(self, edges=None):
+    def __init__(self, edges=None, parents=None):
         self.edges = edges or {}
+        self.parents = parents or {}
 
     def visit_top_level(self, value_list, name=None):
         so_far = set()
+        previous = None
+
         # iterate over messages in chat
         for i in value_list:
             # if type(i) is not dict: continue
@@ -73,11 +86,19 @@ class Dataflow(InputProcessor):
             self.edges.setdefault(id(i), set()).update(so_far)
             so_far.add(id(i))
 
+            # Update parents
+            self.parents[id(i)] = previous
+            previous = id(i)
+
             # same for tool calls
             if type(i) is Message and i.tool_calls is not None:
                 for tc in i.tool_calls:
                     self.edges.setdefault(id(tc), set()).update(so_far)
                     so_far.add(id(tc))
+
+                    # Update parents
+                    self.parents[id(tc)] = previous
+                    previous = id(tc)
 
     def has_flow(self, a, b):
         """Returns whether there is a flow from a to b in the dataflow graph.
@@ -92,6 +113,20 @@ class Dataflow(InputProcessor):
         if id(a) not in self.edges or id(b) not in self.edges:
             raise KeyError("Object with given id not in dataflow graph!")
         return id(a) in self.edges.get(id(b), set())
+
+    def is_parent(self, a, b):
+        """Returns whether a is an immediate predecessor of b in the dataflow graph.
+
+        Args:
+            a: The source object (must be the same (id(...)) object, as when creating the graph).
+            b: The target object (must be the same (id(...)) object, as when creating the graph).
+
+        Returns:
+            True if a is an immediate predecessor of b, False otherwise.
+        """
+        if id(a) not in self.parents or id(b) not in self.parents:
+            raise KeyError("Object with given id not in dataflow graph!")
+        return self.parents[id(b)] == id(a)
 
 
 class Selectable:
@@ -155,6 +190,12 @@ class Selectable:
                     self.select(type_name, data.tool_call_id),
                 ]
             )
+        elif type(data) is Contents:
+            return self.merge([self.select(type_name, item) for item in data])
+        elif type(data) is Image:
+            return self.merge([self.select(type_name, data.image_url)])
+        elif type(data) is TextChunk:
+            return self.merge([self.select(type_name, data.text)])
         elif type(data) is list:
             return self.merge([self.select(type_name, item) for item in data])
         elif type(data) is dict:
@@ -186,34 +227,6 @@ def inputcopy(opj):
         return deepcopy(opj)
 
 
-class Range(BaseModel):
-    """
-    Represents a range in the input object that is relevant for
-    the currently evaluated expression.
-
-    A range can be an entire object (start and end are None) or a
-    substring (start and end are integers, and object_id refers to
-    the object that the range is part of).
-    """
-
-    object_id: str
-    start: Optional[int]
-    end: Optional[int]
-
-    # json path to this range in the input object (not always directly available)
-    # Use Input.locate to generate the JSON paths
-    json_path: Optional[str] = None
-
-    @classmethod
-    def from_object(cls, obj, start=None, end=None):
-        if type(obj) is dict and "__origin__" in obj:
-            obj = obj["__origin__"]
-        return cls(object_id=str(id(obj)), start=start, end=end)
-
-    def match(self, obj):
-        return str(id(obj)) == self.object_id
-
-
 class InputVisitor:
     def __init__(self, data):
         self.data = data
@@ -237,9 +250,15 @@ class InputVisitor:
         elif type(object) is list:
             for i, v in enumerate(object):
                 self.visit(v, path + [i])
+        # when traversing a .content field, we recursively traverse each
+        # content chunk, e.g. [{"type": "text", "text": <content>}, ...]
+        elif isinstance(object, Contents):
+            # treat 'Contents' like a list of chunks
+            for i in range(len(object.root)):
+                self.visit(object.root[i], path + [i])
         elif isinstance(object, BaseModel):
             # get pydantic model fields
-            fields = object.model_fields
+            fields = object.__class__.model_fields
             for field in fields:
                 self.visit(getattr(object, field), path + [field])
         else:
@@ -253,6 +272,7 @@ class RangeLocator(InputVisitor):
         self.ranges_by_object_id = {}
         for r in ranges:
             self.ranges_by_object_id.setdefault(r.object_id, []).append(r)
+
         self.results = []
 
     def visit(self, object=None, path=None):
@@ -354,13 +374,18 @@ class Input(Selectable):
                     continue
                 if "role" in event:
                     if event["role"] != "tool":
-                        # If arguments are given as string convert them into dict using json.loads(...)
-                        if "tool_calls" in event and event["tool_calls"] is not None:
-                            for call in event["tool_calls"]:
-                                if type(call["function"]["arguments"]) == str:
-                                    call["function"]["arguments"] = json.loads(
-                                        call["function"]["arguments"]
-                                    )
+                        # if arguments are given as string convert them into dict using json.loads(...)
+                        for call in event.get("tool_calls") or []:
+                            if type(call["function"]["arguments"]) is str:
+                                call["function"]["arguments"] = json.loads(
+                                    call["function"]["arguments"]
+                                )
+
+                        # note: enable the following to ensure all .content fields will be lists of [{"type": "text", "text": ...}, ...]
+                        # # convert .content str to [{"type": "text": <content>}]
+                        # if type(event.get("content")) is str:
+                        #     event["content"] = [{"type": "text", "text": event["content"]}]
+
                         msg = Message(**event)
                         parsed_data.append(msg)
                         if msg.tool_calls is not None:
@@ -370,6 +395,7 @@ class Input(Selectable):
                     else:
                         if "tool_call_id" not in event:
                             event["tool_call_id"] = last_call_id
+
                         out = ToolOutput(**event)
                         if out.tool_call_id in tool_calls:
                             out._tool_call = tool_calls[out.tool_call_id]
@@ -394,6 +420,9 @@ class Input(Selectable):
 
     def has_flow(self, a, b):
         return self.dataflow.has_flow(a, b)
+
+    def is_parent(self, a, b):
+        return self.dataflow.is_parent(a, b)
 
     def print(self, expand_all=False):
         rich_print("<Input>")

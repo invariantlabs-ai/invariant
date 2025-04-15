@@ -1,14 +1,29 @@
 import re
-from dataclasses import dataclass
 from html.parser import HTMLParser
 
+from pydantic import BaseModel, Field
+
+from invariant.analyzer.runtime.functions import cached
+from invariant.analyzer.runtime.runtime_errors import InvariantAttributeError
 from invariant.analyzer.stdlib.invariant.nodes import ToolCall
 
 
-@dataclass
-class HiddenHTMLData:
-    alt_texts: list[str]
-    links: list[str]
+class HiddenHTMLData(BaseModel):
+    alt_texts: list[str] = Field(
+        default_factory=list,
+        description="List of alt texts extracted from HTML code.",
+    )
+    links: list[str] = Field(
+        default_factory=list,
+        description="List of links extracted from HTML code.",
+    )
+
+    def __invariant_attribute__(self, name: str):
+        if name in ["alt_texts", "links"]:
+            return getattr(self, name)
+        raise InvariantAttributeError(
+            f"Attribute {name} not found in HiddenHTMLData. Available attributes are: alt_texts, links"
+        )
 
 
 class HiddenDataParser(HTMLParser):
@@ -48,6 +63,7 @@ class HiddenDataParser(HTMLParser):
         return list(set(re.findall(pattern, data)))
 
 
+@cached
 def html_code(data: str | list | dict, **config: dict) -> HiddenHTMLData:
     """
     Parse the HTML code and extract the alt texts and links.
@@ -57,10 +73,10 @@ def html_code(data: str | list | dict, **config: dict) -> HiddenHTMLData:
     """
 
     chat = (
-        data if isinstance(data, list) else ([{"content": data}] if type(data) == str else [data])
+        data if isinstance(data, list) else ([{"content": data}] if type(data) is str else [data])
     )
 
-    res = HiddenHTMLData([], [])
+    res = HiddenHTMLData(alt_texts=[], links=[])
     for message in chat:
         if message is None:
             continue
