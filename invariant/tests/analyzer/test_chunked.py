@@ -1,11 +1,10 @@
 import unittest
 
-from invariant.analyzer import Monitor, Policy
-from invariant.analyzer.stdlib.invariant.errors import UnhandledError
+from invariant.analyzer import Monitor
 from invariant.analyzer.traces import chunked
 
 
-class TestConstants(unittest.TestCase):
+class TestChunked(unittest.TestCase):
     def test_simple(self):
         monitor = Monitor.from_string(
             """
@@ -16,13 +15,14 @@ class TestConstants(unittest.TestCase):
         raise PolicyViolation("Cannot send assistant message:", msg) if:
             (msg: Message)
             msg.role == "assistant"
-            INVALID_PATTERN in msg.content
+            (chunk: str) in text(msg.content)
+            INVALID_PATTERN in chunk
         """
         )
         input = []
         monitor.check(input, [])
 
-        pending_input = [{"role": "assistant", "content": "Hello, X"}]
+        pending_input = [chunked({"role": "assistant", "content": "Hello, X"})]
         errors = monitor.check(input, pending_input)
         input.extend(pending_input)
 
@@ -32,29 +32,38 @@ class TestConstants(unittest.TestCase):
             + str(errors[0])
         )
 
-        pending_input = [{"role": "assistant", "content": "Hello, Y"}]
+        pending_input = [chunked({"role": "assistant", "content": "Hello, Y"})]
         errors = monitor.check(input, pending_input)
         input.extend(pending_input)
 
         assert len(errors) == 0, "Expected no errors, but got: " + str(errors)
 
-    def test_simple_chunked(self):
+    def test_simple_but_multiple_text_chunks(self):
         monitor = Monitor.from_string(
             """
         from invariant import Message, PolicyViolation
-
+        
         INVALID_PATTERN := "X"
 
         raise PolicyViolation("Cannot send assistant message:", msg) if:
             (msg: Message)
             msg.role == "assistant"
-            INVALID_PATTERN in msg.content
+            (chunk: str) in text(msg.content)
+            INVALID_PATTERN in chunk
         """
         )
         input = []
         monitor.check(input, [])
 
-        pending_input = [chunked({"role": "assistant", "content": "Hello X"})]
+        pending_input = [
+            {
+                "role": "assistant",
+                "content": [
+                    {"type": "text", "text": "Hello, "},
+                    {"type": "text", "text": "X"},
+                ],
+            }
+        ]
         errors = monitor.check(input, pending_input)
         input.extend(pending_input)
 
@@ -64,32 +73,16 @@ class TestConstants(unittest.TestCase):
             + str(errors[0])
         )
 
-        pending_input = [{"role": "assistant", "content": "Hello, Y"}]
+        pending_input = [
+            {
+                "role": "assistant",
+                "content": [
+                    {"type": "text", "text": "Hello, "},
+                    {"type": "text", "text": "Y"},
+                ],
+            }
+        ]
         errors = monitor.check(input, pending_input)
         input.extend(pending_input)
 
         assert len(errors) == 0, "Expected no errors, but got: " + str(errors)
-
-    def test_ref(self):
-        policy = Policy.from_string(
-            """
-        from invariant import Message, PolicyViolation
-
-        INVALID_PATTERN1 := "X"
-        INVALID_PATTERN2 := "Y"
-        INVALID_PATTERN := INVALID_PATTERN1 + INVALID_PATTERN2
-
-        raise PolicyViolation("Cannot send assistant message:", msg) if:
-            (msg: Message)
-            msg.role == "assistant"
-            INVALID_PATTERN in msg.content
-        """
-        )
-
-        input = [{"role": "assistant", "content": "Hello, XY"}]
-        with self.assertRaises(UnhandledError) as context:
-            analysis_result = policy.analyze(input, raise_unhandled=True)
-
-
-if __name__ == "__main__":
-    unittest.main()

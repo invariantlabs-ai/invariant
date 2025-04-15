@@ -2,46 +2,59 @@
 name = "invariant-ai"
 version = "0.2.1"
 description = "Invariant Testing and Analyzer"
-readme = "README.md"
 requires-python = ">= 3.10,<4"
-
-[tool.poetry]
-packages = [
-    { include = "invariant", from = "." }
+readme = "README.md"
+dependencies = [
+    "pydantic>=2.9.2, <3.0.0",
+    "requests>=2.32.3,<3",
+    "nltk>=3.9.1,<4",
+    "openai>=1.54.4,<2",
+    "Pillow>=10.0.0,<11",
+    "beautifulsoup4>=4.12.3,<5",
+    "invariant-sdk>=0.0.11,<0.0.12",
+    "diskcache>=5.6.3,<6",
+    "pexpect>=4.9.0,<5",
+    "lark>=1.1.9",
+    "termcolor>=2.4.0",
+    "pip>=24.0",
+    "semgrep>=1.78.0",
+    "pytest>=8.2.1",
+    "pytesseract>=0.3.13"
 ]
 
-[tool.poetry.dependencies]
-python = ">= 3.10, <4.0"
-pydantic = ">=2.9.2, <3.0.0"
-requests = "^2.32.3"
-nltk = "^3.9.1"
-openai = "^1.54.4"
-Pillow = "^10.0.0"
-beautifulsoup4 = "^4.12.3"
-invariant-sdk = "^0.0.11"
-diskcache = "^5.6.3"
-pexpect = "^4.9.0"
-lark = ">=1.1.9"
-termcolor = ">=2.4.0"
-pip = ">=24.0"
-semgrep = ">=1.78.0"
-pytest = ">=8.2.1"
+[project.scripts]
+invariant = "invariant.__main__:main"
 
-[tool.poetry.group.dev.dependencies]
-pytest-cov = "^5.0.0"
-openai-swarm = "^0.1.1"
-langgraph = "^0.2.53"
-langchain-openai = ">=0.2.10"
-langchain-community = "^0.3.9"
-anthropic = "^0.40.0"
-presidio-analyzer = ">=2.2.354"
-spacy = ">=3.7.5"
-langchain = ">=0.2.1"
-langchainhub = ">=0.1.16"
-transformers = ">=4.41.1"
-torch = ">=2.3.0"
-python-dotenv = ">=1.0.1"
-numpy = "1.26.4"
+[dependency-groups]
+dev = [
+    "pytest-cov>=5.0.0,<6",
+    "openai-swarm>=0.1.1,<0.2",
+    "langgraph>=0.2.53,<0.3",
+    "langchain-openai>=0.2.10",
+    "langchain-community>=0.3.9,<0.4",
+    "anthropic>=0.40.0,<0.41",
+    "presidio-analyzer>=2.2.354",
+    "spacy>=3.7.5",
+    "langchain>=0.2.1",
+    "langchainhub>=0.1.16",
+    "transformers>=4.41.1",
+    "torch>=2.3.0",
+    "python-dotenv>=1.0.1",
+    "numpy==1.26.4",
+]
+
+[tool.hatch.build.targets.sdist]
+include = ["./invariant"]
+
+[tool.hatch.build.targets.wheel]
+include = ["./invariant"]
+
+[tool.hatch.build.targets.wheel.sources]
+"./invariant" = "invariant"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.pytest.ini_options]
 log_cli = true
@@ -49,10 +62,4 @@ log_cli_level = "INFO"
 log_cli_format = "%(asctime)s [%(levelname)s] %(message)s"
 log_cli_date_format = "%Y-%m-%d %H:%M:%S"
 testpaths = ["invariant/tests"]
-
-[project.scripts]
-invariant = "invariant.__main__:main"
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+pythonpath = ["."]
