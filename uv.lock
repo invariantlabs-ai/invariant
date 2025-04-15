@@ -874,11 +874,15 @@ extras = [
     { name = "numpy" },
     { name = "openai-swarm" },
     { name = "presidio-analyzer" },
-    { name = "pytest-cov" },
     { name = "python-dotenv" },
     { name = "spacy" },
     { name = "torch" },
     { name = "transformers" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest-cov" },
 ]
 
 [package.metadata]
@@ -905,7 +909,6 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.9.2,<3.0.0" },
     { name = "pytesseract", specifier = ">=0.3.13" },
     { name = "pytest", specifier = ">=8.2.1" },
-    { name = "pytest-cov", marker = "extra == 'extras'", specifier = ">=5.0.0,<6" },
     { name = "python-dotenv", marker = "extra == 'extras'", specifier = ">=1.0.1" },
     { name = "requests", specifier = ">=2.32.3,<3" },
     { name = "semgrep", specifier = ">=1.78.0" },
@@ -915,6 +918,9 @@ requires-dist = [
     { name = "transformers", marker = "extra == 'extras'", specifier = ">=4.41.1" },
 ]
 provides-extras = ["extras"]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest-cov", specifier = ">=5.0.0,<6" }]
 
 [[package]]
 name = "invariant-sdk"

@@ -26,9 +26,13 @@ dependencies = [
 [project.scripts]
 invariant = "invariant.__main__:main"
 
+[dependency-groups]
+dev = [
+    "pytest-cov>=5.0.0,<6",
+]
+
 [project.optional-dependencies]
 extras = [
-    "pytest-cov>=5.0.0,<6",
     "openai-swarm>=0.1.1,<0.2",
     "langgraph>=0.2.53,<0.3",
     "langchain-openai>=0.2.10",
