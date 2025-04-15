@@ -1,4 +1,4 @@
-name: Invariant testing CI
+name: Invariant Guardrails CI
 
 on:
   push:
