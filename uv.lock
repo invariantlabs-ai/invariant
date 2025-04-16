@@ -841,7 +841,7 @@ wheels = [
 ]
 
 [[package]]
-name = "invariant-ai"
+name = "invariant-guardrails"
 version = "0.2.1"
 source = { virtual = "." }
 dependencies = [
