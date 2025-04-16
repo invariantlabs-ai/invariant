@@ -16,6 +16,8 @@
 
 Invariant Guardrails is a simple rule-based guardrailing layer for LLM-powered and agentic applications.
 
+It is designed to be deployed between your application and your MCP servers or LLM provider, allowing for continuous steering and monitoring.
+
 ```python
 from invariant.analyzer import Policy
 
