@@ -63,7 +63,9 @@ Here, `(msg: Message)` automatically is assigned every checkable message, wherea
 
 To learn more about how to use Guardrails via its Gateway, go to the [Developer Quickstart Guide](https://explorer.invariantlabs.ai/docs/#getting-started-as-developer).
 
-## Using Guardrails via the API
+## Using Guardrails evaluation programmatically
+
+You can also use the `invariant-ai` package directly, to load and evaluate guardrailing rules (policies) directly in code, given an agent trace:
 
 ```python
 from invariant.analyzer import Policy
@@ -119,3 +121,12 @@ policy.analyze(messages)
 #   ]
 # )
 ```
+
+## Contribution
+
+We welcome contributions to Guardrails. If you have suggestions, bug reports, or feature requests, please open an issue on our GitHub repository.
+
+## Affiliation
+
+Guardrails is an open source project by [Invariant Labs](https://invariantlabs.ai). Stay safe. 
+
