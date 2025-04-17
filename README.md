@@ -1,4 +1,5 @@
 <div align="center">
+  <img src="https://invariantlabs.ai/images/guardrails.svg" width="120pt;"/>
   <h1 align="center">Invariant Guardrails</h1>
 
   <p align="center">
@@ -14,9 +15,43 @@
 </div>
 <br/>
 
-Invariant Guardrails is a comprehensive rule-based guardrailing layer for LLM-powered and agentic applications.
+Invariant Guardrails is a comprehensive rule-based guardrailing layer for LLM or MCP-powered AI applications.
 
-It is designed to be deployed between your application and your MCP servers or LLM provider, allowing for continuous steering and monitoring.
+It is deployed between your application and your MCP servers or LLM provider, allowing for continuous steering and monitoring.
+
+<br/>
+<div align="center">
+<img src="https://explorer.invariantlabs.ai/docs/assets/invariant-overview.svg" width="520pt"/>
+</div>
+<br/>
+
+Guardrailing rules are simple Python-inspired matching rules, that can be written to identify and prevent malicious agent behavior:
+
+```python
+raise "External email to unknown address" if:
+    # detect flows between tools
+    (call: ToolCall) -> (call2: ToolCall)
+
+    # check if the first call obtains the user's inbox
+    call is tool:get_inbox
+
+    # second call sends an email to an unknown address
+    call2 is tool:send_email({
+      to: ".*@[^ourcompany.com$].*"
+    })
+```
+
+Guardrails integrates transparently as MCP or LLM proxy, checking and intercepting tool calls automatically, based on your rules.
+
+## Learn about writing rules
+
+To learn more about how to write rules, see our [guide for securing agents with rules](https://explorer.invariantlabs.ai/docs/guardrails/) or the [rule writing reference](https://explorer.invariantlabs.ai/docs/guardrails/rules/). 
+
+## Using Guardrails via Gateway
+
+To learn more about how to use Guardrails via its Gateway, go to the [Developer Quickstart Guide](https://explorer.invariantlabs.ai/docs/#getting-started-as-developer).
+
+## Using Guardrails via the API
 
 ```python
 from invariant.analyzer import Policy
