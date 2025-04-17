@@ -7,7 +7,7 @@ from PIL import Image
 
 from invariant.analyzer import Monitor
 from invariant.analyzer.traces import image
-from invariant.tests.analyzer.utils import is_program_installed
+from invariant.tests.analyzer.utils import is_program_installed, is_remote_run
 
 file_name = "image_with_text_b64.txt"
 with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), file_name), "r") as f:
@@ -114,7 +114,9 @@ class TestImages(unittest.TestCase):
             + str(errors[0])
         )
 
-    @unittest.skipUnless(is_program_installed("tesseract"), "tesseract is not installed")
+    @unittest.skipUnless(
+        is_program_installed("tesseract") and not is_remote_run(), "tesseract is not installed"
+    )
     def test_ocr(self):
         """
         Simply check that OCR can be performed on images.
@@ -127,7 +129,7 @@ class TestImages(unittest.TestCase):
             raise PolicyViolation("found bad vibes!", msg) if:
                 (msg: Message)
                 image_data := image(msg)
-                ocr_result := ocr(image_data)
+                ocr_result := ocr(image_data)[0]
                 'it was the worst of times' in ocr_result
             """
         )

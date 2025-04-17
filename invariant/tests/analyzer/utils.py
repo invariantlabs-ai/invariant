@@ -1,3 +1,4 @@
+import os
 import shutil
 
 
@@ -40,3 +41,15 @@ def is_program_installed(program_name: str) -> bool:
 
     """
     return shutil.which(program_name) is not None
+
+
+def is_remote_run() -> bool:
+    """Check if policies are evaluated server-side, not in this process.
+
+    i.e. LOCAL_POLICY != 1
+
+    Returns:
+        bool: True if policies are evaluated server-side, False otherwise
+
+    """
+    return os.environ.get("LOCAL_POLICY", "0") != "1"
