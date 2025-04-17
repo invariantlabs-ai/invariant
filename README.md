@@ -40,7 +40,7 @@ raise "External email to unknown address" if:
     })
 ```
 
-Guardrails integrates transparently as MCP or LLM proxy, checking and intercepting tool calls automatically, based on your rules.
+Guardrails integrates transparently as MCP or LLM proxy, checking and intercepting tool calls automatically based on your rules.
 
 ## Learn about writing rules
 
@@ -60,7 +60,7 @@ Here, `(msg: Message)` automatically is assigned every checkable message, wherea
 
 ## Using Guardrails via Gateway
 
-Guardrails can easily be integrated via [Gateway](https://github.com/invariantlabs-ai/invariant-gateway), which automatically evaluates your rules on each LLM and MCP request.
+Guardrails is integrated via [Gateway](https://github.com/invariantlabs-ai/invariant-gateway), which automatically evaluates your rules on each LLM and MCP request (before and after).
 
 To learn more about how to use Guardrails via its Gateway, go to the [Developer Quickstart Guide](https://explorer.invariantlabs.ai/docs/#getting-started-as-developer).
 
