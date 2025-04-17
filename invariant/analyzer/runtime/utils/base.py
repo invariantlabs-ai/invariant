@@ -1,5 +1,15 @@
 from pydantic import Field
 from pydantic.dataclasses import dataclass
+from openai import AsyncClient
+
+
+client: AsyncClient | None = None
+def get_openai_client() -> AsyncClient:
+    """Get an OpenAI client for making requests."""
+    global client
+    if client is None:
+        client = AsyncClient()
+    return client
 
 
 @dataclass

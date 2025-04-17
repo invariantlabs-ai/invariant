@@ -23,6 +23,7 @@ from invariant.analyzer.language.ast import (
     Import,
     ImportSpecifier,
     KeyAccess,
+    ListComprehension,
     MemberAccess,
     Node,
     NoneLiteral,
@@ -36,12 +37,11 @@ from invariant.analyzer.language.ast import (
     RaisingAsyncTransformation,
     SemanticPattern,
     StringLiteral,
+    TernaryOp,
     ToolReference,
     TypedIdentifier,
     UnaryExpr,
     VariableDeclaration,
-    ListComprehension,
-    TernaryOp,
 )
 from invariant.analyzer.language.scope import InputData, VariableDeclaration
 from invariant.analyzer.runtime.evaluation_context import EvaluationContext, PolicyParameters
@@ -932,7 +932,7 @@ class Interpreter(RaisingAsyncTransformation):
         if iterable is None:
             return []
 
-        var_name = node.var_name.id if hasattr(node.var_name, 'id') else node.var_name
+        var_name = node.var_name.id if hasattr(node.var_name, "id") else node.var_name
         results = []
         original_vars = self.variable_store.copy()
         for item in iterable:
