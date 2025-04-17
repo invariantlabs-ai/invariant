@@ -63,14 +63,16 @@ Guardrails can easily be integrated via [Gateway](https://github.com/invariantla
 
 To learn more about how to use Guardrails via its Gateway, go to the [Developer Quickstart Guide](https://explorer.invariantlabs.ai/docs/#getting-started-as-developer).
 
-## Using Guardrails evaluation programmatically
+## Using Guardrails programmatically
 
-You can also use the `invariant-ai` package directly, to load and evaluate guardrailing rules (policies) directly in code, given an agent trace:
+You can also use the `invariant-ai` package directly, to load and evaluate guardrailing rules (policies) directly in code, given some agent trace. 
+
+The snippet below runs Guardrails entirely locally on your machine. You can also switch to `Policy.from_string(...)` from the `invariant.analyzer` package, which evaluates your rules via the Invariant Guardrails API (`INVARIANT_API_KEY` required, [get one here](https://explorer.invariantlabs.ai)).
 
 ```python
-from invariant.analyzer import Policy
+from invariant.analyzer import LocalPolicy
 
-policy = Policy.from_string("""
+policy = LocalPolicy.from_string("""
 from invariant.detectors import prompt_injection
 
 raise "Don't use send_email after get_website" if:
@@ -121,6 +123,8 @@ policy.analyze(messages)
 #   ]
 # )
 ```
+
+To learn more about the supported trace format, please see [the documentation](https://explorer.invariantlabs.ai/docs/guardrails/basics/).
 
 ## Contribution
 
