@@ -45,7 +45,7 @@ Guardrails integrates transparently as MCP or LLM proxy, checking and intercepti
 
 ## Learn about writing rules
 
-To learn more about how to write rules, see our [guide for securing agents with rules](https://explorer.invariantlabs.ai/docs/guardrails/) or the [rule writing reference](https://explorer.invariantlabs.ai/docs/guardrails/rules/). 
+To learn more about how to write rules, see our [guide for securing agents with rules](https://explorer.invariantlabs.ai/docs/guardrails/) or the [rule writing reference](https://explorer.invariantlabs.ai/docs/guardrails/rules/), or run snippets in the [playground](https://explorer.invariantlabs.ai/playground).
 
 ## Using Guardrails via Gateway
 
