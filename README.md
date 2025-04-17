@@ -47,6 +47,18 @@ Guardrails integrates transparently as MCP or LLM proxy, checking and intercepti
 
 To learn more about how to write rules, see our [guide for securing agents with rules](https://explorer.invariantlabs.ai/docs/guardrails/) or the [rule writing reference](https://explorer.invariantlabs.ai/docs/guardrails/rules/), or run snippets in the [playground](https://explorer.invariantlabs.ai/playground).
 
+A simple rule in Guardrails looks like this:
+
+```
+raise "The one who must not be named" if: 
+    (msg: Message)
+    "voldemort" in msg.content.lower() or "tom riddle" in msg.content.lower()
+```
+
+This rule will scan all LLM messages (including assistant and user messages) for the banned phrase, and error out LLM and MCP requests that violate the pattern.
+
+Here, `(msg: Message)` automatically is assigned every checkable message, whereas the second line executes like regular Python. To facilitate checking Guardrails comes with an extensive standard library of operations, also described in the [documentation](https://explorer.invariantlabs.ai/docs/)
+
 ## Using Guardrails via Gateway
 
 To learn more about how to use Guardrails via its Gateway, go to the [Developer Quickstart Guide](https://explorer.invariantlabs.ai/docs/#getting-started-as-developer).
