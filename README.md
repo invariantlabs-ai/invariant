@@ -15,9 +15,7 @@
 </div>
 <br/>
 
-Invariant Guardrails is a comprehensive rule-based guardrailing layer for LLM or MCP-powered AI applications.
-
-It is deployed between your application and your MCP servers or LLM provider, allowing for continuous steering and monitoring.
+Invariant Guardrails is a comprehensive rule-based guardrailing layer for LLM or MCP-powered AI applications. It is deployed between your application and your MCP servers or LLM provider, allowing for continuous steering and monitoring, without invasive code changes.
 
 <br/>
 <div align="center">
@@ -60,6 +58,8 @@ This rule will scan all LLM messages (including assistant and user messages) for
 Here, `(msg: Message)` automatically is assigned every checkable message, whereas the second line executes like regular Python. To facilitate checking Guardrails comes with an extensive standard library of operations, also described in the [documentation](https://explorer.invariantlabs.ai/docs/)
 
 ## Using Guardrails via Gateway
+
+Guardrails can easily be integrated via [Gateway](https://github.com/invariantlabs-ai/invariant-gateway), which automatically evaluates your rules on each LLM and MCP request.
 
 To learn more about how to use Guardrails via its Gateway, go to the [Developer Quickstart Guide](https://explorer.invariantlabs.ai/docs/#getting-started-as-developer).
 
