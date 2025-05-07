@@ -91,3 +91,19 @@ def tuple(*args, **kwargs):
     Creates a tuple from the given arguments.
     """
     return py_builtins.tuple(*args, **kwargs)
+
+
+def tool_call(tool_output: ToolOutput, *args, **kwargs) -> ToolCall:
+    """
+    Gets the tool call object from a tool output.
+
+    Args:
+        tool_output: A ToolOutput object.
+
+    Returns:
+        The ToolCall object that corresponds to the tool call in the tool output.
+    """
+    if not isinstance(tool_output, ToolOutput):
+        raise ValueError("tool_output argument must be a ToolOutput.")
+
+    return tool_output._tool_call
