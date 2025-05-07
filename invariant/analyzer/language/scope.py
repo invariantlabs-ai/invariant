@@ -30,6 +30,7 @@ IPL_BUILTINS = [
     "sum",
     "print",
     "tuple",
+    "tool_call",
     "text",
     "image",
 ]
