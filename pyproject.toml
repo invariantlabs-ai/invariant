@@ -1,6 +1,6 @@
 [project]
 name = "invariant-ai"
-version = "0.3.1"
+version = "0.3.2"
 description = "Invariant Guardrails"
 requires-python = ">= 3.10,<4"
 readme = "README.md"
