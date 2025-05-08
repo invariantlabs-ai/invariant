@@ -1,6 +1,6 @@
 import unittest
 
-from invariant.analyzer import Monitor
+from invariant.analyzer import Monitor, Policy
 from invariant.analyzer.traces import chunked
 
 
@@ -86,3 +86,56 @@ class TestChunked(unittest.TestCase):
         input.extend(pending_input)
 
         assert len(errors) == 0, "Expected no errors, but got: " + str(errors)
+
+    def test_contains_in_text_chunk(self):
+        # tests that 'abc' in message.content works both when 'abc' is in chunk 0 or chunk 1
+        policy = Policy.from_string(
+            """
+
+raise "pattern found" if:
+    (msg: Message)
+    msg.role == "assistant"
+    "abc" in msg.content
+"""
+        )
+
+        # in second chunk
+        input = [
+            {
+                "role": "assistant",
+                "content": [
+                    {"type": "text", "text": "Hello, "},
+                    {"type": "text", "text": "aa abc aa"},
+                ],
+            }
+        ]
+
+        result = policy.analyze(input, [])
+        assert len(result.errors) == 1, "Expected one error, but got: " + str(result)
+
+        # in no chunk
+        input = [
+            {
+                "role": "assistant",
+                "content": [
+                    {"type": "text", "text": "Hello, "},
+                    {"type": "text", "text": "adc"},
+                ],
+            }
+        ]
+
+        result = policy.analyze(input, [])
+        assert len(result.errors) == 0, "Expected no errors, but got: " + str(result)
+
+        # in first chunk
+        input = [
+            {
+                "role": "assistant",
+                "content": [
+                    {"type": "text", "text": "aa abc aa"},
+                    {"type": "text", "text": "Hello, "},
+                ],
+            }
+        ]
+        result = policy.analyze(input, [])
+        assert len(result.errors) == 1, "Expected one error, but got: " + str(result)

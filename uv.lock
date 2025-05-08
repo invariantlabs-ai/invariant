@@ -842,7 +842,7 @@ wheels = [
 
 [[package]]
 name = "invariant-ai"
-version = "0.3"
+version = "0.3.1"
 source = { virtual = "." }
 dependencies = [
     { name = "aiohttp" },

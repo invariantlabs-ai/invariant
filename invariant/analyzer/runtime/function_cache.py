@@ -74,5 +74,4 @@ async def call_either_way(
     if inspect.iscoroutinefunction(func):
         return await func(*args, **kwargs)
     else:
-        print([func, args, kwargs], flush=True)
         return func(*args, **kwargs)  # type: ignore
