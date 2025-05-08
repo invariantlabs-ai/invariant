@@ -1,6 +1,6 @@
 import os
 import textwrap
-from typing import Optional
+from typing import Optional, Callable, TypeVar, ParamSpec, Awaitable
 
 import invariant.analyzer.language.ast as ast
 from invariant.analyzer.language.linking import link
@@ -15,9 +15,14 @@ from invariant.analyzer.runtime.input import Input
 from invariant.analyzer.runtime.symbol_table import SymbolTable
 from invariant.analyzer.stdlib.invariant.errors import ErrorInformation
 
+P = ParamSpec("P")
+R = TypeVar("R")
 
 class PolicyAction:
     def __call__(self, input_dict):
+        raise NotImplementedError()
+
+    async def can_eval(self, input_dict, evaluation_context):
         raise NotImplementedError()
 
 
@@ -97,7 +102,7 @@ class Rule:
         action: PolicyAction,
         condition: list[ast.Expression],
         globals: dict,
-        repr: str = None,
+        repr: str | None = None,
     ):
         self.action = action
         self.condition = condition
@@ -149,15 +154,15 @@ class Rule:
 
 class InputEvaluationContext(EvaluationContext):
     def __init__(
-        self, input, rule_set: "RuleSet", policy_parameters, symbol_table: Optional[SymbolTable]
+        self, input: Input, rule_set: "RuleSet", policy_parameters, symbol_table: Optional[SymbolTable]
     ):
         super().__init__(symbol_table=symbol_table)
         self.input = input
         self.rule_set = rule_set
         self.policy_parameters = policy_parameters
 
-    async def acall_function(self, function, args, **kwargs):
-        return await self.rule_set.acall_function(function, args, **kwargs)
+    async def acall_function(self, func: Callable[P, Awaitable[R]] | Callable[P, R], *args: P.args, **kwargs: P.kwargs) -> R:
+        return await self.rule_set.acall_function(func, *args, **kwargs)
 
     def has_flow(self, a, b):
         return self.input.has_flow(a, b)
@@ -206,8 +211,8 @@ class RuleSet:
     def __del__(self):
         self.function_cache.clear()
 
-    async def acall_function(self, function, args, **kwargs):
-        return await self.function_cache.acall(function, args, **kwargs)
+    async def acall_function(self, func: Callable[P, Awaitable[R]] | Callable[P, R], *args: P.args, **kwargs: P.kwargs) -> R:
+        return await self.function_cache.acall(func, *args, **kwargs)
 
     def log_apply(self, rule, model):
         if not self.verbose:

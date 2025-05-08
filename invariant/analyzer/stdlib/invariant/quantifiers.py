@@ -59,9 +59,9 @@ class count(Quantifier):
     This expression only evaluates to True if there are between 2 and 4 `ToolCall` events in the trace that are `tool:get_inbox` events.
     """
 
-    def __init__(self, min: int = None, max: int = None):
-        self.min = min
-        self.max = max
+    def __init__(self, min: int | None = None, max: int | None = None):
+        self.min: int | None = min
+        self.max: int | None = max
 
     async def eval(
         self, input_data: Input, body, globals: dict, evaluation_context: EvaluationContext

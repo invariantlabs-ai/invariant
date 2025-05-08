@@ -1,4 +1,8 @@
 import inspect
+from typing import Awaitable, Callable, ParamSpec, TypeVar
+
+P = ParamSpec("P")
+R = TypeVar("R")
 
 
 class FunctionCache:
@@ -43,7 +47,12 @@ class FunctionCache:
     async def set(self, key, value):
         self.cache[key] = value
 
-    async def acall(self, function, args, **kwargs):
+    async def acall(
+        self,
+        function: Callable[P, Awaitable[R]] | Callable[P, R],
+        *args: P.args,
+        **kwargs: P.kwargs,
+    ) -> R:
         # if function is not marked with @cached we just call it directly (see ./functions.py module)
         if not hasattr(function, "__invariant_cache__"):
             return await call_either_way(function, *args, **kwargs)
@@ -59,8 +68,11 @@ class FunctionCache:
             return value
 
 
-async def call_either_way(fct, *args, **kwargs):
-    if inspect.iscoroutinefunction(fct):
-        return await fct(*args, **kwargs)
+async def call_either_way(
+    func: Callable[P, Awaitable[R]] | Callable[P, R], *args: P.args, **kwargs: P.kwargs
+) -> R:
+    if inspect.iscoroutinefunction(func):
+        return await func(*args, **kwargs)
     else:
-        return fct(*args, **kwargs)
+        print([func, args, kwargs], flush=True)
+        return func(*args, **kwargs)  # type: ignore

@@ -52,7 +52,7 @@ for conv_idx, conv in enumerate(input_data):
             else:
                 tool_called = True
                 match = re.search(r"```bash\n(.+?)\n```", msg["content"], re.DOTALL)
-                bash_cmd = match.group(1)
+                bash_cmd = match.group(1) if match else None
                 # print("-> ", bash_cmd)
                 ipl_messages += [
                     {

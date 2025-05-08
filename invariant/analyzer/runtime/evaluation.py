@@ -5,10 +5,12 @@ import re
 import sys
 from dataclasses import dataclass  # noqa: I001
 from itertools import product
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Awaitable, Callable, ParamSpec, TypeVar
 
 import termcolor
 
+P = ParamSpec("P")
+R = TypeVar("R")
 from invariant.analyzer.language.ast import (
     ArrayLiteral,
     BinaryExpr,
@@ -786,10 +788,6 @@ class Interpreter(RaisingAsyncTransformation):
     async def visit_FunctionCall(self, node: FunctionCall):
         function = await self.visit(node.name)
         args = await asyncio.gather(*[self.visit(arg) for arg in node.args])
-
-        # only call functions, once all parameters are known
-        if function is Unknown or any(self._is_unknown(arg) for arg in args):
-            return Unknown
         kwarg_items = await asyncio.gather(
             *[
                 asyncio.gather(self.visit(entry.key), self.visit(entry.value))
@@ -797,6 +795,14 @@ class Interpreter(RaisingAsyncTransformation):
             ]
         )
         kwargs = {k: v for k, v in kwarg_items}
+
+        # only call functions, once all parameters are known
+        if (
+            function is Unknown
+            or any(self._is_unknown(arg) for arg in args)
+            or any(self._is_unknown(v) for v in kwargs.values())
+        ):
+            return Unknown
 
         if isinstance(function, Declaration):
             return await self.visit_PredicateCall(function, args, **kwargs)
@@ -932,6 +938,9 @@ class Interpreter(RaisingAsyncTransformation):
         if iterable is None:
             return []
 
+        if iterable is Unknown:
+            return Unknown
+
         var_name = node.var_name.id if hasattr(node.var_name, "id") else node.var_name
         results = []
         original_vars = self.variable_store.copy()
@@ -953,14 +962,21 @@ class Interpreter(RaisingAsyncTransformation):
         self.variable_store = original_vars
         return results
 
-    async def acall_function(self, function, *args, **kwargs):
+    async def acall_function(
+        self,
+        function: Callable[P, Awaitable[R]] | Callable[P, R] | CachedFunctionWrapper,
+        *args: P.args,
+        **kwargs: P.kwargs,
+    ) -> R:
         ctx: EvaluationContext = self.evaluation_context
         # if function is a cached function wrapper, unwrap it (at this point we
         # are already caching it)
-        if isinstance(function, CachedFunctionWrapper):
-            function = function.func
-        linked_function = ctx.link(function, None)
+        func = function.func if isinstance(function, CachedFunctionWrapper) else function
+        linked_function = ctx.link(func, None)
         # also unwrap linked function, if a cached function wrapper
-        if isinstance(linked_function, CachedFunctionWrapper):
-            linked_function = linked_function.func
-        return await ctx.acall_function(linked_function, args, **kwargs)
+        linked_function = (
+            linked_function.func
+            if isinstance(linked_function, CachedFunctionWrapper)
+            else linked_function
+        )
+        return await ctx.acall_function(linked_function, *args, **kwargs)

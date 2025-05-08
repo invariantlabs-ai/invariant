@@ -46,9 +46,9 @@ class Range(BaseModel):
         # check for :<start>-<end>
         if ":" in address:
             _, start_end = address.split(":")
-            start, end = start_end.split("-")
-            start = int(start)
-            end = int(end)
+            start_str, end_str = start_end.split("-")
+            start = int(start_str)
+            end = int(end_str)
         else:
             start = None
             end = None

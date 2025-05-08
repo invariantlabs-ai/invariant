@@ -44,6 +44,11 @@ def invariant_attr(obj, name: str):
     if obj is None:
         raise AttributeError(f"Attribute {name} not found on None.")
 
+    if isinstance(obj, list):
+        raise AttributeError(
+            f"Attribute {name} not found on list. Use list[index] to access elements."
+        )
+
     raise AttributeError(
         f"Attribute {name} not found in {obj.__class__.__name__}. Available attributes are: {', '.join(obj.__dict__.keys())}"
     )

@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Union
+from typing import Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, Field, RootModel
 from pydantic.dataclasses import dataclass
@@ -305,3 +305,49 @@ def image(*args) -> list[str]:
                 result.append(arg)
 
     return result
+
+
+class ToolParameter(BaseModel):
+    type: Literal["object", "array", "string", "number", "boolean"]  # extend as needed
+    name: str
+    description: str
+    required: bool = False
+
+    # for object
+    properties: Optional[Dict[str, "ToolParameter"]] = None
+    additionalProperties: Optional[bool] = None
+
+    # for array
+    items: Optional["ToolParameter"] = None
+
+    # for enums (only if needed)
+    enum: Optional[List[str]] = None
+
+    def __invariant_attribute__(self, name: str):
+        if name in ["type", "name", "description", "required", "properties", "additionalProperties", "items", "enum"]:
+            return getattr(self, name)
+        raise InvariantAttributeError(
+            f"Attribute {name} not found in ToolParameter. Available attributes are: type, name, description, required, properties, additionalProperties, items, enum"
+        )
+
+
+ToolParameter.model_rebuild()
+
+
+class Tool(Event):
+    name: str
+    description: str
+    inputSchema: list[ToolParameter]
+
+    def __invariant_attribute__(self, name: str):
+        if name in ["name", "description", "inputSchema"]:
+            return getattr(self, name)
+        raise InvariantAttributeError(
+            f"Attribute {name} not found in Tool. Available attributes are: name, description, inputSchema"
+        )
+
+    def __str__(self):
+        return f"<Tool {self.name} ({self.description})>"
+
+    def __repr__(self):
+        return str(self)

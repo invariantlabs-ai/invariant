@@ -45,7 +45,7 @@ class HiddenDataParser(HTMLParser):
     def handle_data(self, data):
         pass
 
-    def parse(self, data: str) -> HiddenHTMLData:
+    def parse(self, data: str) -> None:
         self.feed(data)
         self.links = self.links.union(HiddenDataParser.get_links_regex(data))
 
@@ -73,7 +73,7 @@ def html_code(data: str | list | dict, **config: dict) -> HiddenHTMLData:
     """
 
     chat = (
-        data if isinstance(data, list) else ([{"content": data}] if type(data) is str else [data])
+        data if isinstance(data, list) else ([{"content": data}] if isinstance(data, str) else [data])
     )
 
     res = HiddenHTMLData(alt_texts=[], links=[])
@@ -104,7 +104,7 @@ def links(data: str | list | dict, **config: dict) -> list[str]:
     """
 
     chat = (
-        data if isinstance(data, list) else ([{"content": data}] if type(data) == str else [data])
+        data if isinstance(data, list) else ([{"content": data}] if isinstance(data, str) else [data])
     )
 
     res = []

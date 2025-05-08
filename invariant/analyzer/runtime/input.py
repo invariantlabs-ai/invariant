@@ -11,7 +11,7 @@ import re
 import warnings
 from collections.abc import ItemsView, KeysView, ValuesView
 from copy import deepcopy
-from typing import Callable
+from typing import Callable, List, Optional
 
 from pydantic import BaseModel
 from rich.pretty import pprint as rich_print
@@ -23,9 +23,12 @@ from invariant.analyzer.runtime.nodes import (
     Image,
     Message,
     TextChunk,
+    Tool,
     ToolCall,
     ToolOutput,
+    ToolParameter,
 )
+from invariant.analyzer.runtime.runtime_errors import InvariantInputValidationError
 
 from .range import Range
 
@@ -188,6 +191,12 @@ class Selectable:
                     self.select(type_name, data.role),
                     self.select(type_name, data.content),
                     self.select(type_name, data.tool_call_id),
+                ]
+            )
+        elif type(data) is Tool:
+            return self.merge(
+                [
+                    self.select(type_name, data.inputSchema),
                 ]
             )
         elif type(data) is Contents:
@@ -367,7 +376,7 @@ class Input(Selectable):
         tool_calls = {}
         last_call_id = None
 
-        for message_idx, event in enumerate(input):
+        for event in input:
             try:
                 if not isinstance(event, dict):
                     parsed_data.append(event)
@@ -405,13 +414,77 @@ class Input(Selectable):
                     last_call_id = call.id
                     tool_calls[call.id] = call
                     parsed_data.append(call)
+                elif "tools" in event:
+
+                    def parse_tool_param(
+                        name: str, schema: dict, required_keys: Optional[List[str]] = None
+                    ) -> ToolParameter:
+                        param_type = schema["type"]
+                        description = schema.get("description", "")
+
+                        # Only object-level schemas have required fields as a list
+                        if required_keys is None:
+                            required_keys = schema.get("required", [])
+
+                        if param_type == "object":
+                            properties = {}
+                            for key, subschema in schema.get("properties", {}).items():
+                                properties[key] = parse_tool_param(
+                                    name=key if " arguments" in name else f"{name}.{key}",
+                                    schema=subschema,
+                                    required_keys=schema.get("required", []),
+                                )
+                            return ToolParameter(
+                                name=name,
+                                type="object",
+                                description=description,
+                                required=name in required_keys,
+                                properties=properties,
+                                additionalProperties=schema.get("additionalProperties"),
+                            )
+                        elif param_type == "array":
+                            return ToolParameter(
+                                name=name,
+                                type="array",
+                                description=description,
+                                required=name in required_keys,
+                                items=parse_tool_param(name=f"{name} item", schema=schema["items"]),
+                            )
+                        else:
+                            return ToolParameter(
+                                name=name,
+                                type=param_type,
+                                description=description,
+                                required=name in required_keys,
+                                enum=schema.get("enum"),
+                            )
+
+                    for tool in event["tools"]:
+                        name = tool["name"]
+                        # Parse the input schema properties
+                        properties = []
+                        for key, subschema in tool["inputSchema"].get("properties", {}).items():
+                            properties.append(
+                                parse_tool_param(
+                                    name=key,
+                                    schema=subschema,
+                                    required_keys=tool["inputSchema"].get("required", []),
+                                )
+                            )
+
+                        tool_obj = Tool(
+                            name=name,
+                            description=tool["description"],
+                            inputSchema=properties,
+                        )
+                        parsed_data.append(tool_obj)
                 else:
-                    raise ValueError(
-                        "Could not parse event in the trace as any of the event types (Message, ToolCall, ToolOutput): "
+                    raise InvariantInputValidationError(
+                        "Input should be a list of one of (Message, ToolCall, ToolOutput, Tool). See the documentation for the schema requirements. Instead, got: "
                         + str(event)
                     )
             except Exception as e:
-                warnings.warn(f"Could not parse event in the trace: {event}!")
+                warnings.warn(f"Could not parse event in the trace: {event}!", stacklevel=1)
                 raise e
 
         for trace_idx, event in enumerate(parsed_data):

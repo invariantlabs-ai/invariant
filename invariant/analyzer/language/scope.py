@@ -33,6 +33,8 @@ IPL_BUILTINS = [
     "tool_call",
     "text",
     "image",
+    "Tool",
+    "ToolParameter",
 ]
 
 

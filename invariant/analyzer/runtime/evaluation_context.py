@@ -4,11 +4,13 @@ Relevant input objects for policy evaluation.
 In a separate file, for better separation of dependencies.
 """
 
-from typing import Optional
+from typing import Optional, TypeVar
 
 from invariant.analyzer.runtime.input import Input
 from invariant.analyzer.runtime.symbol_table import SymbolTable
+from invariant.analyzer.language.ast import Node
 
+R = TypeVar("R")
 
 class EvaluationContext:
     """
@@ -28,7 +30,7 @@ class EvaluationContext:
     async def acall_function(self, function, args, **kwargs):
         raise NotImplementedError("EvaluationContext must implement acall_function()")
 
-    def link(self, function, node):
+    def link(self, function: R, node: Node | None) -> R:
         if self.symbol_table:
             return self.symbol_table.link(function, node)
         else:
