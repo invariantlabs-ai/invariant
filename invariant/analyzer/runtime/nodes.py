@@ -135,9 +135,11 @@ class Contents(RootModel[list[Chunk]]):
     def __contains__(self, item: object) -> bool:
         for chunk in self.root:
             if isinstance(chunk, TextChunk):
-                return item in chunk.text
+                if item in chunk.text:
+                    return True
             elif isinstance(chunk, Image):
-                return item in chunk.image_url["url"]
+                if item in chunk.image_url["url"]:
+                    return True
         return False
 
     def __invariant_attribute__(self, name: str):
@@ -324,7 +326,16 @@ class ToolParameter(BaseModel):
     enum: Optional[List[str]] = None
 
     def __invariant_attribute__(self, name: str):
-        if name in ["type", "name", "description", "required", "properties", "additionalProperties", "items", "enum"]:
+        if name in [
+            "type",
+            "name",
+            "description",
+            "required",
+            "properties",
+            "additionalProperties",
+            "items",
+            "enum",
+        ]:
             return getattr(self, name)
         raise InvariantAttributeError(
             f"Attribute {name} not found in ToolParameter. Available attributes are: type, name, description, required, properties, additionalProperties, items, enum"
