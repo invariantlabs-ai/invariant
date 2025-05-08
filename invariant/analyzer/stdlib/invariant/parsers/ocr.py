@@ -19,7 +19,7 @@ async def _ocr_detect(image_data: str | list[ImageNode | str] | ImageNode) -> st
     return OCR_ANALYZER.detect_all(image_data)
 
 
-async def ocr(image_data: str | list[ImageNode | str] | ImageNode) -> str:
+async def ocr(image_data: str | list[ImageNode | str] | ImageNode) -> list[str]:
     """
     Extracts text from an image.
 
@@ -29,7 +29,7 @@ async def ocr(image_data: str | list[ImageNode | str] | ImageNode) -> str:
     Returns:
         str: The extracted text.
     """
-    ocr_results = []
+    ocr_results: list[str] = []
     for image_node in image(image_data):
         ocr_result = await _ocr_detect(image_node)
         ocr_results.append(ocr_result)

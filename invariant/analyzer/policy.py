@@ -70,7 +70,7 @@ class LocalPolicy(BasePolicy):
         return self.policy_root.errors
 
     @classmethod
-    def from_file(cls, path: str) -> "Policy":
+    def from_file(cls, path: str) -> "LocalPolicy":
         return cls(parse_file(path))
 
     @classmethod
@@ -80,14 +80,14 @@ class LocalPolicy(BasePolicy):
         path: str | None = None,
         optimize: bool = False,
         symbol_table: Optional[SymbolTable] = None,
-    ) -> "Policy":
+    ) -> "LocalPolicy":
         return cls(parse(string, path, optimize_rules=optimize), symbol_table=symbol_table)
 
     def add_error_to_result(self, error, analysis_result: AnalysisResult):
         """Implements how errors are added to an analysis result (e.g. as handled or non-handled errors)."""
         analysis_result.errors.append(error)
 
-    def analyze(self, input: dict, raise_unhandled=False, **policy_parameters):
+    def analyze(self, input: list[dict], raise_unhandled=False, **policy_parameters):
         return asyncio.run(self.a_analyze(input, raise_unhandled, **policy_parameters))
 
     async def a_analyze(

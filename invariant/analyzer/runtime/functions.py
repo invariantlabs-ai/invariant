@@ -3,9 +3,12 @@ Utilities for annotating (external) standard library functions
 with special runtime attributes, relevant in the context of the
 invariant agent analyzer.
 """
+from typing import Callable, TypeVar, ParamSpec, Awaitable, Generic
 
+P = ParamSpec("P")
+R = TypeVar("R")
 
-def cached(func):
+def cached(func: Callable[P, Awaitable[R]] | Callable[P, R]) -> Callable[P, Awaitable[R]]:
     """
     Decorator to mark a guardrailing function or built-in predicate as interpreter-cached.
 
@@ -38,19 +41,18 @@ def cached(func):
 
     return CachedFunctionWrapper(func)
 
-
-class CachedFunctionWrapper:
+class CachedFunctionWrapper(Generic[P, R]):
     """
     Wraps a function such that is is always called via the current Interpreter instance.
 
     This enables caching and other runtime features like function re-linking in a server context.
     """
 
-    def __init__(self, func):
+    def __init__(self, func: Callable[P, Awaitable[R]] | Callable[P, R]):
         self.func = func
-        self.func.__invariant_cache__ = True
+        self.func.__invariant_cache__ = True # type: ignore
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> Awaitable[R]:
         from invariant.analyzer.runtime.evaluation import Interpreter
 
         return Interpreter.current().acall_function(self.func, *args, **kwargs)

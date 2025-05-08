@@ -9,6 +9,7 @@ from invariant.analyzer.base_policy import BasePolicy
 from invariant.analyzer.runtime.runtime_errors import (
     ExcessivePolicyError,
     InvariantAttributeError,
+    InvariantInputValidationError,
     MissingPolicyParameter,
     PolicyExecutionError,
 )
@@ -111,7 +112,7 @@ class RemotePolicy(BasePolicy):
                 if "errors" in result:
                     raise ValueError("Invalid response from policy service: " + str(result))
 
-    def analyze(self, input: dict, raise_unhandled=False, **policy_parameters):
+    def analyze(self, input: list[dict], raise_unhandled=False, **policy_parameters):
         return asyncio.run(self.a_analyze(input, raise_unhandled, **policy_parameters))
 
     def get_json_policy_parameters(self, **policy_parameters):
@@ -261,6 +262,16 @@ async def handle_error_response(response: aiohttp.ClientResponse):
             except Exception as e:
                 text = str(e)
             raise InvariantAttributeError(text)
+        elif InvariantInputValidationError.catchphrase in text:
+            # get 'detail' from json
+            try:
+                error_json = await response.json()
+                text = error_json.get("detail", str(error_json))
+                # remove 'Invariant attribute error' from text
+                text = text.replace(InvariantInputValidationError.catchphrase, "")
+            except Exception as e:
+                text = str(e)
+            raise InvariantInputValidationError(text)
         else:
             raise ValueError("Invalid response from policy service: " + text)
 

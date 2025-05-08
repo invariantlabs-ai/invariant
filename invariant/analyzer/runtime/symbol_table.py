@@ -1,14 +1,14 @@
 import importlib
 
 from invariant.analyzer.language.scope import ExternalReference
-
+from invariant.analyzer.language.ast import Node
 
 class SymbolTable:
     """
     Links external identifiers and functions to their implementations
     """
 
-    def link(self, function, node):
+    def link(self, function, node: None | Node):
         """Links to the given function by default."""
         return function
 

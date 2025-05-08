@@ -115,9 +115,9 @@ class TraceSet:
     def filter(
         self,
         invariant_condition: str,
-        max_items: int = None,
-        python: str = None,
-        prefix: str = None,
+        max_items: int | None = None,
+        python: str | None = None,
+        prefix: str | None = None,
     ) -> "TraceSet":
         max_items = self.get_max_items(max_items)
 
@@ -155,7 +155,7 @@ class TraceSet:
 
         return max_items
 
-    def prepare_policy(self, invariant_condition: str, prefix: str = None):
+    def prepare_policy(self, invariant_condition: str, prefix: str | None = None):
         from invariant.analyzer import Policy
 
         # construct makeshift policy

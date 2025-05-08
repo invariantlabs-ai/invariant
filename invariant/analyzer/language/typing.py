@@ -158,15 +158,6 @@ class TypingTransformation(RaisingTransformation):
             node.type = UnknownType()
             return node
 
-        def has_member(obj_type, member):
-            if isinstance(obj_type, type) and hasattr(obj_type, "__dataclass_fields__"):
-                # check on type reference if attribute exists
-                return member in obj_type.__dataclass_fields__
-            return False
-
-        if not has_member(node.expr.type, node.member):
-            raise PolicyError(f"Type {node.expr}: {node.expr.type} has no member {node.member}")
-
         node.type = UnknownType()
 
         return node
@@ -245,7 +236,7 @@ class TypingTransformation(RaisingTransformation):
         node.scope.parent = self.context.scope
 
         # Add the iteration variable to the scope
-        var_name = node.var_name.name if hasattr(node.var_name, 'name') else node.var_name
+        var_name = node.var_name.name if hasattr(node.var_name, "name") else node.var_name
         var_decl = VariableDeclaration(var_name, UnknownType())
         node.scope.declarations = {var_name: var_decl}
 

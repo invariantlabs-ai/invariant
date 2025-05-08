@@ -20,7 +20,7 @@ class StringValue:
     Wrapper that offers some built-in string methods.
     """
 
-    ALLOWED = ["strip", "lower", "upper", "splitlines", "split"]
+    ALLOWED = ["strip", "lower", "upper", "splitlines", "split", "format", "join"]
 
     def __init__(self, value: str):
         self.value = value
