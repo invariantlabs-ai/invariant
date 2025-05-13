@@ -39,8 +39,6 @@ def match(pattern: str, s: str) -> bool:
 
 
 def find(pattern: str, s: str) -> list[str]:
-    from invariant.analyzer.runtime.evaluation import Interpreter
-
     interpreter = Interpreter.current()
 
     res = []

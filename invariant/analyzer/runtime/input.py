@@ -419,12 +419,24 @@ class Input(Selectable):
                     def parse_tool_param(
                         name: str, schema: dict, required_keys: Optional[List[str]] = None
                     ) -> ToolParameter:
-                        param_type = schema["type"]
+                        param_type = schema.get("type", "string")
                         description = schema.get("description", "")
 
                         # Only object-level schemas have required fields as a list
                         if required_keys is None:
                             required_keys = schema.get("required", [])
+
+                        aliases = {
+                            "integer": "number",
+                            "int": "number",
+                            "float": "number",
+                            "bool": "boolean",
+                            "str": "string",
+                            "dict": "object",
+                            "list": "array",
+                        }
+                        if param_type in aliases:
+                            param_type = aliases[param_type]
 
                         if param_type == "object":
                             properties = {}
@@ -450,13 +462,17 @@ class Input(Selectable):
                                 required=name in required_keys,
                                 items=parse_tool_param(name=f"{name} item", schema=schema["items"]),
                             )
-                        else:
+                        elif param_type in ["object", "array", "string", "number", "boolean"]:
                             return ToolParameter(
                                 name=name,
                                 type=param_type,
                                 description=description,
                                 required=name in required_keys,
                                 enum=schema.get("enum"),
+                            )
+                        else:
+                            raise InvariantInputValidationError(
+                                f"Unsupported schema type: {param_type} for parameter {name}. Supported types are: object, array, string, number, boolean."
                             )
 
                     for tool in event["tools"]:
