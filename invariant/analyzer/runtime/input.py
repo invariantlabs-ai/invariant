@@ -505,6 +505,15 @@ class Input(Selectable):
 
         for trace_idx, event in enumerate(parsed_data):
             event.metadata["trace_idx"] = trace_idx
+
+            if (
+                hasattr(event, "tool_calls")
+                and event.tool_calls
+                and isinstance(event.tool_calls, list)
+            ):
+                for tool_call in event.tool_calls:
+                    tool_call.metadata["trace_idx"] = trace_idx
+
         return parsed_data
 
     def has_flow(self, a, b):

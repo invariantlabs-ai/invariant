@@ -147,6 +147,41 @@ class TestMonitor(unittest.TestCase):
         self.assertTrue("Hello A!" in str(res.errors[0]))
         self.assertTrue("Bye A!" in str(res.errors[1]))
 
+    def test_analyze_pending_detects_tool_calls(self):
+        """Make sure that tool calls can raise when using analyze_pending"""
+
+        error_message = "dummy_tool should not be called"
+
+        policy = Monitor.from_string(f"""
+        raise PolicyViolation("{error_message}") if:
+            (call: ToolCall)
+            call is tool:dummy_tool
+        """)
+
+        messages = [
+            {
+                "role": "user",
+                "content": "whatever",
+            },
+            {
+                "role": "assistant",
+                "content": "",
+                "tool_calls": [
+                    {
+                        "id": "call_5",
+                        "type": "function",
+                        "function": {"name": "dummy_tool", "arguments": {"name": "123"}},
+                    }
+                ],
+            },
+        ]
+
+        res = policy.analyze_pending(messages[:-1], [messages[-1]])
+
+        self.assertEqual(len(res.errors), 1)
+        self.assertIsInstance(res.errors[0], ErrorInformation)
+        self.assertTrue(error_message in str(res.errors[0]))
+
 
 if __name__ == "__main__":
     unittest.main()
