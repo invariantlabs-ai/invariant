@@ -17,10 +17,10 @@ dependencies = [
     "lark>=1.1.9",
     "termcolor>=2.4.0",
     "pip>=24.0",
-    "semgrep>=1.78.0",
     "pytest>=8.2.1",
     "pytesseract>=0.3.13",
     "aiohttp>=3.11.11",
+    "rich>=13.5.3",
 ]
 
 [project.scripts]
@@ -40,6 +40,7 @@ extras = [
     "anthropic>=0.40.0,<0.41",
     "presidio-analyzer>=2.2.354",
     "spacy>=3.7.5",
+    "semgrep>=1.78.0",
     "langchain>=0.2.1",
     "langchainhub>=0.1.16",
     "transformers>=4.41.1",
