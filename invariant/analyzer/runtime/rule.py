@@ -1,6 +1,6 @@
 import os
 import textwrap
-from typing import Optional, Callable, TypeVar, ParamSpec, Awaitable
+from typing import Awaitable, Callable, Optional, ParamSpec, TypeVar
 
 import invariant.analyzer.language.ast as ast
 from invariant.analyzer.language.linking import link
@@ -17,6 +17,7 @@ from invariant.analyzer.stdlib.invariant.errors import ErrorInformation
 
 P = ParamSpec("P")
 R = TypeVar("R")
+
 
 class PolicyAction:
     def __call__(self, input_dict):
@@ -154,14 +155,20 @@ class Rule:
 
 class InputEvaluationContext(EvaluationContext):
     def __init__(
-        self, input: Input, rule_set: "RuleSet", policy_parameters, symbol_table: Optional[SymbolTable]
+        self,
+        input: Input,
+        rule_set: "RuleSet",
+        policy_parameters,
+        symbol_table: Optional[SymbolTable],
     ):
         super().__init__(symbol_table=symbol_table)
         self.input = input
         self.rule_set = rule_set
         self.policy_parameters = policy_parameters
 
-    async def acall_function(self, func: Callable[P, Awaitable[R]] | Callable[P, R], *args: P.args, **kwargs: P.kwargs) -> R:
+    async def acall_function(
+        self, func: Callable[P, Awaitable[R]] | Callable[P, R], *args: P.args, **kwargs: P.kwargs
+    ) -> R:
         return await self.rule_set.acall_function(func, *args, **kwargs)
 
     def has_flow(self, a, b):
@@ -211,7 +218,9 @@ class RuleSet:
     def __del__(self):
         self.function_cache.clear()
 
-    async def acall_function(self, func: Callable[P, Awaitable[R]] | Callable[P, R], *args: P.args, **kwargs: P.kwargs) -> R:
+    async def acall_function(
+        self, func: Callable[P, Awaitable[R]] | Callable[P, R], *args: P.args, **kwargs: P.kwargs
+    ) -> R:
         return await self.function_cache.acall(func, *args, **kwargs)
 
     def log_apply(self, rule, model):
@@ -248,6 +257,7 @@ class RuleSet:
             exceptions.extend(error)
 
         self.input = None
+
         return exceptions
 
     def __str__(self):

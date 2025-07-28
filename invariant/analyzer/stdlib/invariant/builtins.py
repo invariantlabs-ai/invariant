@@ -105,3 +105,16 @@ def tool_call(tool_output: ToolOutput, *args, **kwargs) -> ToolCall:
         raise ValueError("tool_output argument must be a ToolOutput.")
 
     return tool_output._tool_call
+
+
+def server(event: Event, *args, **kwargs) -> str | None:
+    """
+    Gets the server of the event.
+
+    Args:
+        event: An Event object.
+
+    Returns:
+        The server of the event.
+    """
+    return event.server

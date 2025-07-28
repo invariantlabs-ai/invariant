@@ -16,6 +16,8 @@ async def fuzzy_contains(search_text: str, query: str, query_similarity_threshol
 
     # Calculate error tolerance based on query length, not search_text length
     error_tolerance = int(len(query) * (1 - query_similarity_threshold))
+    if error_tolerance > 10:
+        error_tolerance = 10
     pattern = regex.compile(f'(?:{query}){{e<={error_tolerance}}}')
     match = None
 

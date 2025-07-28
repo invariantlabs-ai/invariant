@@ -32,6 +32,7 @@ IPL_BUILTINS = [
     "tuple",
     "tool_call",
     "text",
+    "server",
     "image",
     "Tool",
     "ToolParameter",

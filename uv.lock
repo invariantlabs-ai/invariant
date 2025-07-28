@@ -842,7 +842,7 @@ wheels = [
 
 [[package]]
 name = "invariant-ai"
-version = "0.3.3"
+version = "0.3.4"
 source = { virtual = "." }
 dependencies = [
     { name = "aiohttp" },
@@ -859,7 +859,7 @@ dependencies = [
     { name = "pytesseract" },
     { name = "pytest" },
     { name = "requests" },
-    { name = "semgrep" },
+    { name = "rich" },
     { name = "termcolor" },
 ]
 
@@ -875,6 +875,7 @@ extras = [
     { name = "openai-swarm" },
     { name = "presidio-analyzer" },
     { name = "python-dotenv" },
+    { name = "semgrep" },
     { name = "spacy" },
     { name = "torch" },
     { name = "transformers" },
@@ -903,7 +904,7 @@ requires-dist = [
     { name = "openai", specifier = ">=1.54.4,<2" },
     { name = "openai-swarm", marker = "extra == 'extras'", specifier = ">=0.1.1,<0.2" },
     { name = "pexpect", specifier = ">=4.9.0,<5" },
-    { name = "pillow", specifier = ">=10.0.0,<11" },
+    { name = "pillow", specifier = ">=10.1.0,<11" },
     { name = "pip", specifier = ">=24.0" },
     { name = "presidio-analyzer", marker = "extra == 'extras'", specifier = ">=2.2.354" },
     { name = "pydantic", specifier = ">=2.9.2,<3.0.0" },
@@ -911,7 +912,8 @@ requires-dist = [
     { name = "pytest", specifier = ">=8.2.1" },
     { name = "python-dotenv", marker = "extra == 'extras'", specifier = ">=1.0.1" },
     { name = "requests", specifier = ">=2.32.3,<3" },
-    { name = "semgrep", specifier = ">=1.78.0" },
+    { name = "rich", specifier = ">=13.5.3" },
+    { name = "semgrep", marker = "extra == 'extras'", specifier = ">=1.78.0" },
     { name = "spacy", marker = "extra == 'extras'", specifier = ">=3.7.5" },
     { name = "termcolor", specifier = ">=2.4.0" },
     { name = "torch", marker = "extra == 'extras'", specifier = ">=2.3.0" },

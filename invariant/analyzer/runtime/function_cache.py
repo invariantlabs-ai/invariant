@@ -1,8 +1,34 @@
+import asyncio
 import inspect
 from typing import Awaitable, Callable, ParamSpec, TypeVar
 
 P = ParamSpec("P")
 R = TypeVar("R")
+
+
+class DictLock:
+    def __init__(self):
+        self.locks = {}
+        self.main_lock = asyncio.Lock()
+
+    async def key(self, key):
+        async with self.main_lock:
+            if key not in self.locks:
+                self.locks[key] = DictLockValue(key)
+            return self.locks[key]
+
+
+class DictLockValue:
+    def __init__(self, value):
+        self.value = value
+        self.lock = asyncio.Lock()
+
+    async def __aenter__(self):
+        await self.lock.acquire()
+
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        self.lock.release()
+        return False
 
 
 class FunctionCache:
@@ -16,13 +42,14 @@ class FunctionCache:
 
     def __init__(self, cache=None):
         self.cache = cache or {}
+        self.cache_locks = DictLock()
 
     def clear(self):
         self.cache = {}
 
     def arg_key(self, arg):
         # cache primitives by value
-        if type(arg) is int or type(arg) is float or type(arg) is str:
+        if type(arg) is int or type(arg) is float or type(arg) is str or type(arg) is bool:
             return arg
         # cache lists by id
         elif type(arg) is list:
@@ -56,16 +83,17 @@ class FunctionCache:
         # if function is not marked with @cached we just call it directly (see ./functions.py module)
         if not hasattr(function, "__invariant_cache__"):
             return await call_either_way(function, *args, **kwargs)
-
         key = self.call_key(function, args, kwargs)
-        value = await self.get(key)
 
-        if value is not None:
-            return value
-        else:
-            value = await call_either_way(function, *args, **kwargs)
-            await self.set(key, value)
-            return value
+        async with await self.cache_locks.key(key):
+            value = await self.get(key)
+
+            if value is not None:
+                return value
+            else:
+                value = await call_either_way(function, *args, **kwargs)
+                await self.set(key, value)
+                return value
 
 
 async def call_either_way(
