@@ -11,7 +11,7 @@ import re
 import warnings
 from collections.abc import ItemsView, KeysView, ValuesView
 from copy import deepcopy
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, get_args
 
 from pydantic import BaseModel
 from rich.pretty import pprint as rich_print
@@ -27,6 +27,7 @@ from invariant.analyzer.runtime.nodes import (
     ToolCall,
     ToolOutput,
     ToolParameter,
+    ToolParameterType,
 )
 from invariant.analyzer.runtime.runtime_errors import InvariantInputValidationError
 
@@ -381,6 +382,12 @@ class Input(Selectable):
                 if not isinstance(event, dict):
                     parsed_data.append(event)
                     continue
+
+                # Extract relevant metadata from the event
+                if "metadata" in event:
+                    if "server" in event["metadata"]:
+                        event["server"] = event["metadata"]["server"]
+
                 if "role" in event:
                     if event["role"] != "tool":
                         # if arguments are given as string convert them into dict using json.loads(...)
@@ -394,7 +401,6 @@ class Input(Selectable):
                         # # convert .content str to [{"type": "text": <content>}]
                         # if type(event.get("content")) is str:
                         #     event["content"] = [{"type": "text", "text": event["content"]}]
-
                         msg = Message(**event)
                         parsed_data.append(msg)
                         if msg.tool_calls is not None:
@@ -420,22 +426,24 @@ class Input(Selectable):
                         name: str, schema: dict, required_keys: Optional[List[str]] = None
                     ) -> ToolParameter:
                         param_type = schema.get("type", "string")
-                        description = schema.get("description", "")
+                        description = schema.get("description")
+                        if description is None:
+                            description = "no description available"
 
                         # Only object-level schemas have required fields as a list
                         if required_keys is None:
                             required_keys = schema.get("required", [])
 
                         aliases = {
-                            "integer": "number",
-                            "int": "number",
+                            "int": "integer",
+                            "long": "integer",
                             "float": "number",
                             "bool": "boolean",
                             "str": "string",
                             "dict": "object",
                             "list": "array",
                         }
-                        if param_type in aliases:
+                        if isinstance(param_type, str) and param_type in aliases:
                             param_type = aliases[param_type]
 
                         if param_type == "object":
@@ -446,13 +454,19 @@ class Input(Selectable):
                                     schema=subschema,
                                     required_keys=schema.get("required", []),
                                 )
+                            additional_properties = (
+                                bool(schema.get("additionalProperties"))
+                                if schema.get("additionalProperties") is not None
+                                else None
+                            )
+
                             return ToolParameter(
                                 name=name,
                                 type="object",
                                 description=description,
                                 required=name in required_keys,
                                 properties=properties,
-                                additionalProperties=schema.get("additionalProperties"),
+                                additionalProperties=additional_properties,
                             )
                         elif param_type == "array":
                             return ToolParameter(
@@ -460,15 +474,35 @@ class Input(Selectable):
                                 type="array",
                                 description=description,
                                 required=name in required_keys,
-                                items=parse_tool_param(name=f"{name} item", schema=schema["items"]),
+                                items=parse_tool_param(
+                                    name=f"{name} item", schema=schema["items"], required_keys=[]
+                                )
+                                if "items" in schema
+                                else None,
                             )
-                        elif param_type in ["object", "array", "string", "number", "boolean"]:
+                        elif param_type in ["string", "number", "integer", "boolean"]:
                             return ToolParameter(
                                 name=name,
                                 type=param_type,
                                 description=description,
                                 required=name in required_keys,
                                 enum=schema.get("enum"),
+                            )
+                        elif isinstance(param_type, list):
+                            required = name in required_keys
+                            for param in param_type:
+                                if "null" in param:
+                                    required = False
+                                    continue
+                                if param not in get_args(ToolParameterType):
+                                    raise InvariantInputValidationError(
+                                        f"Unsupported schema type: {param} for parameter {name}. Supported types are: object, array, string, number, boolean."
+                                    )
+                            return ToolParameter(
+                                name=name,
+                                type=[p for p in param_type if p != "null"],
+                                description=description,
+                                required=required,
                             )
                         else:
                             raise InvariantInputValidationError(
@@ -488,10 +522,22 @@ class Input(Selectable):
                                 )
                             )
 
+                        tool_desc = tool.get("description")
+                        if tool_desc is None:
+                            tool_desc = "no description available"
+                        if not isinstance(tool_desc, str):
+                            try:
+                                tool_desc = str(tool_desc)
+                            except Exception:
+                                raise InvariantInputValidationError(
+                                    f"Tool description should be a string. Instead, got: {tool_desc} of type {type(tool_desc)}"
+                                )
+                        server = tool["metadata"].get("server", None) if "metadata" in tool else None
                         tool_obj = Tool(
                             name=name,
-                            description=tool["description"],
+                            description=tool_desc,
                             inputSchema=properties,
+                            server=server,
                         )
                         parsed_data.append(tool_obj)
                 else:

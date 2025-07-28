@@ -339,7 +339,7 @@ class Interpreter(RaisingAsyncTransformation):
                     print()
 
                 # track number of rule body evaluations
-                evaluation_context.evaluation_counter += 1
+                evaluation_context.increment_evaluation_counter()
 
                 result, new_variable_domains, ranges = await Interpreter.eval(
                     expr_or_list,
@@ -418,6 +418,7 @@ class Interpreter(RaisingAsyncTransformation):
 
         self.ranges = []
 
+        # output stream for printing
         self.output_stream = sys.stdout
 
         # variable ranges describe the domain of all encountered

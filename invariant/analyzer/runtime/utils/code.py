@@ -8,6 +8,7 @@ from typing import Literal
 from pydantic import BaseModel
 from pydantic.dataclasses import Field
 
+from invariant.analyzer.extras import semgrep_extra
 from invariant.analyzer.runtime.runtime_errors import InvariantAttributeError
 from invariant.analyzer.runtime.utils.base import BaseDetector, DetectorResult
 
@@ -168,6 +169,10 @@ class SemgrepDetector(BaseDetector):
         "python": ".py",
         "bash": ".sh",
     }
+
+    def __init__(self):
+        super().__init__()
+        semgrep_extra.package("semgrep")
 
     def write_to_temp_file(self, code: str, lang: str) -> str:
         suffix = self.CODE_SUFFIXES.get(lang, ".txt")

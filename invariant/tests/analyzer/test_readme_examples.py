@@ -3,6 +3,7 @@ import os
 import unittest
 
 from invariant.analyzer import Policy
+from invariant.analyzer.extras import extras_available, semgrep_extra
 from invariant.analyzer.traces import assistant, tool, tool_call, user
 
 
@@ -284,6 +285,7 @@ class TestReadmeExamples(unittest.TestCase):
         errors = policy.analyze(messages_without_leak).errors
         assert len(errors) == 0, "Expected no errors, but got: " + str(errors)
 
+    @unittest.skipUnless(extras_available(semgrep_extra), "semgrep is not installed")
     def test_code_check(self):
         from invariant.analyzer import Policy
 

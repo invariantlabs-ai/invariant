@@ -4,13 +4,15 @@ Relevant input objects for policy evaluation.
 In a separate file, for better separation of dependencies.
 """
 
+import os
 from typing import Optional, TypeVar
 
+from invariant.analyzer.language.ast import Node
 from invariant.analyzer.runtime.input import Input
 from invariant.analyzer.runtime.symbol_table import SymbolTable
-from invariant.analyzer.language.ast import Node
 
 R = TypeVar("R")
+
 
 class EvaluationContext:
     """
@@ -19,10 +21,23 @@ class EvaluationContext:
     and provide their own flow semantics (e.g. lookup in a graph).
     """
 
-    def __init__(self, symbol_table: Optional[SymbolTable] = None):
+    def __init__(
+        self, maximum_iterations: int | None = None, symbol_table: Optional[SymbolTable] = None
+    ):
         self.symbol_table = symbol_table
 
         self.evaluation_counter = 0
+        self.maximum_iterations = int(os.environ.get("INVARIANT_MAX_ITERATIONS", 100))
+
+    def increment_evaluation_counter(self):
+        self.evaluation_counter += 1
+        if (
+            self.maximum_iterations is not None
+            and self.evaluation_counter > self.maximum_iterations
+        ):
+            raise RuntimeError(
+                f"Maximum checking cycles exceeded: {self.evaluation_counter - 1} (please contact Invariant support if you need to increase this limit, or rewrite your rule to be less expensive)"
+            )
 
     def call_function(self, function, args, **kwargs):
         raise NotImplementedError("EvaluationContext must implement call_function()")

@@ -17,6 +17,8 @@ class Event(BaseModel):
         default_factory=dict, description="Metadata associated with the event"
     )
 
+    server: Optional[str] = None
+
 
 class Function(BaseModel):
     name: str
@@ -309,8 +311,18 @@ def image(*args) -> list[str]:
     return result
 
 
+ToolParameterType = Literal[
+    "object",
+    "array",
+    "string",
+    "number",
+    "integer",
+    "boolean",
+]  # extend as needed
+
+
 class ToolParameter(BaseModel):
-    type: Literal["object", "array", "string", "number", "boolean"]  # extend as needed
+    type: ToolParameterType | list[ToolParameterType]
     name: str
     description: str
     required: bool = False
@@ -351,7 +363,7 @@ class Tool(Event):
     inputSchema: list[ToolParameter]
 
     def __invariant_attribute__(self, name: str):
-        if name in ["name", "description", "inputSchema"]:
+        if name in ["name", "description", "inputSchema", "server"]:
             return getattr(self, name)
         raise InvariantAttributeError(
             f"Attribute {name} not found in Tool. Available attributes are: name, description, inputSchema"
