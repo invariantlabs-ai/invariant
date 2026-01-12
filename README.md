@@ -8,10 +8,8 @@
   <p align="center">
 <a href="https://discord.gg/dZuZfhKnJ4"><img src="https://img.shields.io/discord/1265409784409231483?style=plastic&logo=discord&color=blueviolet&logoColor=white" height=18/></a><br/><br/>
 
-<a href="https://explorer.invariantlabs.ai/docs">Getting Started</a> | 
-<a href="https://explorer.invariantlabs.ai/playground">Playground</a> | 
-<a href="https://explorer.invariantlabs.ai/docs">Documentation</a> | 
-<a href="https://explorer.invariantlabs.ai/docs/guardrails/">Guide</a>
+<a href="https://invariantlabs-ai.github.io/docs/mcp-scan/guardrails-reference/">Getting Started</a> |
+<a href="https://invariantlabs-ai.github.io/docs/mcp-scan/guardrails-reference/">Documentation</a>
   </p>
 </div>
 <br/>
@@ -20,7 +18,7 @@ Invariant Guardrails is a comprehensive rule-based guardrailing layer for LLM or
 
 <br/>
 <div align="center">
-<img src="https://explorer.invariantlabs.ai/docs/assets/invariant-overview.svg" width="520pt"/>
+<img src="https://invariantlabs-ai.github.io/docs/assets/invariant-overview.svg" width="520pt"/>
 </div>
 <br/>
 
@@ -44,7 +42,7 @@ Guardrails integrates transparently as MCP or LLM proxy, checking and intercepti
 
 ## Learn about writing rules
 
-To learn more about how to write rules, see our [guide for securing agents with rules](https://explorer.invariantlabs.ai/docs/guardrails/) or the [rule writing reference](https://explorer.invariantlabs.ai/docs/guardrails/rules/), or run snippets in the [playground](https://explorer.invariantlabs.ai/playground).
+To learn more about how to write rules, see our [guide for securing agents with rules](https://invariantlabs-ai.github.io/docs/mcp-scan/guardrails-reference/) or the [rule writing reference](https://invariantlabs-ai.github.io/docs/mcp-scan/guardrails-reference/).
 
 A simple rule in Guardrails looks like this:
 
@@ -56,19 +54,19 @@ raise "The one who must not be named" if:
 
 This rule will scan all LLM messages (including assistant and user messages) for the banned phrase, and error out LLM and MCP requests that violate the pattern.
 
-Here, `(msg: Message)` automatically is assigned every checkable message, whereas the second line executes like regular Python. To facilitate checking Guardrails comes with an extensive standard library of operations, also described in the [documentation](https://explorer.invariantlabs.ai/docs/)
+Here, `(msg: Message)` automatically is assigned every checkable message, whereas the second line executes like regular Python. To facilitate checking Guardrails comes with an extensive standard library of operations, also described in the [documentation](https://invariantlabs-ai.github.io/docs/mcp-scan/guardrails-reference/)
 
 ## Using Guardrails via Gateway
 
 Guardrails is integrated via [Gateway](https://github.com/invariantlabs-ai/invariant-gateway), which automatically evaluates your rules on each LLM and MCP request (before and after).
 
-To learn more about how to use Guardrails via its Gateway, go to the [Developer Quickstart Guide](https://explorer.invariantlabs.ai/docs/#getting-started-as-developer).
+To learn more about how to use Guardrails via its Gateway, go to the [Developer Quickstart Guide](https://invariantlabs-ai.github.io/docs/mcp-scan/guardrails-reference/).
 
 ## Using Guardrails programmatically
 
 You can also use the `invariant-ai` package directly, to load and evaluate guardrailing rules (policies) directly in code, given some agent trace. 
 
-The snippet below runs Guardrails entirely locally on your machine. You can also switch to `Policy.from_string(...)` from the `invariant.analyzer` package, which evaluates your rules via the Invariant Guardrails API (`INVARIANT_API_KEY` required, [get one here](https://explorer.invariantlabs.ai)).
+The snippet below runs Guardrails entirely locally on your machine.
 
 ```python
 from invariant.analyzer import LocalPolicy
@@ -125,7 +123,7 @@ policy.analyze(messages)
 # )
 ```
 
-To learn more about the supported trace format, please see [the documentation](https://explorer.invariantlabs.ai/docs/guardrails/basics/).
+To learn more about the supported trace format, please see [the documentation](https://invariantlabs-ai.github.io/docs/mcp-scan/guardrails-reference/).
 
 ## Contribution
 
