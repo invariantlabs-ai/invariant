@@ -1,17 +1,15 @@
 [project]
-name = "invariant-ai"
+name = "sonomos-firewall"
 version = "0.3.5"
-description = "Invariant Guardrails"
+description = "Sonomos AI Firewall"
 requires-python = ">= 3.10,<4"
 readme = "README.md"
 dependencies = [
     "pydantic>=2.9.2, <3.0.0",
     "requests>=2.32.3,<3",
     "nltk>=3.9.1,<4",
-    "openai>=1.54.4,<2",
     "Pillow>=10.1.0,<11",
     "beautifulsoup4>=4.12.3,<5",
-    "invariant-sdk>=0.0.11,<0.0.12",
     "diskcache>=5.6.3,<6",
     "pexpect>=4.9.0,<5",
     "lark>=1.1.9",
@@ -24,7 +22,7 @@ dependencies = [
 ]
 
 [project.scripts]
-invariant = "invariant.__main__:main"
+sonomos-firewall = "sonomos_firewall.__main__:main"
 
 [dependency-groups]
 dev = [
@@ -33,16 +31,9 @@ dev = [
 
 [project.optional-dependencies]
 extras = [
-    "openai-swarm>=0.1.1,<0.2",
-    "langgraph>=0.2.53,<0.3",
-    "langchain-openai>=0.2.10",
-    "langchain-community>=0.3.9,<0.4",
-    "anthropic>=0.40.0,<0.41",
     "presidio-analyzer>=2.2.354",
     "spacy>=3.7.5",
     "semgrep>=1.78.0",
-    "langchain>=0.2.1",
-    "langchainhub>=0.1.16",
     "transformers>=4.41.1",
     "torch>=2.3.0",
     "python-dotenv>=1.0.1",
@@ -50,13 +41,13 @@ extras = [
 ]
 
 [tool.hatch.build.targets.sdist]
-include = ["./invariant"]
+include = ["./sonomos_firewall"]
 
 [tool.hatch.build.targets.wheel]
-include = ["./invariant"]
+include = ["./sonomos_firewall"]
 
 [tool.hatch.build.targets.wheel.sources]
-"./invariant" = "invariant"
+"./sonomos_firewall" = "sonomos_firewall"
 
 [[tool.uv.index]]
 name = "pypi"
@@ -73,5 +64,5 @@ log_cli = true
 log_cli_level = "INFO"
 log_cli_format = "%(asctime)s [%(levelname)s] %(message)s"
 log_cli_date_format = "%Y-%m-%d %H:%M:%S"
-testpaths = ["invariant/tests"]
+testpaths = ["sonomos_firewall/tests"]
 pythonpath = ["."]
