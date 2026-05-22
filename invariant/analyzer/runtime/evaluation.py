@@ -1,7 +1,6 @@
 import asyncio
 import contextvars
 import json
-import re
 import sys
 from dataclasses import dataclass  # noqa: I001
 from itertools import product
@@ -639,9 +638,15 @@ class Interpreter(RaisingAsyncTransformation):
                     return [x in rvalue for x in lvalue]
 
                 if type(rvalue) is str and type(lvalue) is str:
+                    if lvalue == "":
+                        return True
+
                     # find all ranges where left matches right
-                    for m in re.finditer(lvalue, rvalue):
-                        self.mark(rvalue, m.start(), m.end())
+                    start = rvalue.find(lvalue)
+                    while start != -1:
+                        end = start + len(lvalue)
+                        self.mark(rvalue, start, end)
+                        start = rvalue.find(lvalue, end)
                     return lvalue in rvalue
 
                 return lvalue in rvalue

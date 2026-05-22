@@ -35,6 +35,20 @@ class TestBasicRanges(unittest.TestCase):
         assert "0.content:7-8" in all_json_ranges
         assert "0.content:0-8" not in all_json_ranges
 
+    def test_string_contains_marks_literal_ranges(self):
+        policy = Policy.from_string(
+            """
+        raise "found file marker" if:
+            (msg: ToolOutput)
+            "[File:" in msg.content
+        """
+        )
+        input = [{"role": "tool", "content": "[File: example.txt]"}]
+        result = policy.analyze(input, [])
+        all_json_ranges = get_all_json_ranges(result)
+
+        assert "0.content:0-6" in all_json_ranges
+
     def test_masking(self):
         policy = Policy.from_string(
             """
