@@ -1,3 +1,4 @@
+import os
 import unittest
 
 from invariant.analyzer import Policy
@@ -12,7 +13,12 @@ from invariant.analyzer.policy import analyze_trace
 from invariant.analyzer.traces import assistant, chunked, system, tool, tool_call, user
 
 
+def openai_api_key_available():
+    return os.environ.get("OPENAI_API_KEY") is not None
+
+
 class TestLLM(unittest.TestCase):
+    @unittest.skipUnless(openai_api_key_available(), "OPENAI_API_KEY is not set")
     def test_llm(self):
         policy_str = """
         from invariant import llm
@@ -99,8 +105,8 @@ class TestModerated(unittest.TestCase):
         self.assertEqual(len(analyze_trace(policy_str, trace).errors), 1)
 
     @unittest.skipUnless(
-        extras_available(openai_extra),
-        "At least one of transformers or torch are not installed",
+        extras_available(openai_extra) and openai_api_key_available(),
+        "openai is not installed or OPENAI_API_KEY is not set",
     )
     def test_moderated_openai(self):
         policy_str = """
@@ -259,16 +265,19 @@ class TestIsSimilarDetector(unittest.TestCase):
         ]
     ]
 
+    @unittest.skipUnless(openai_api_key_available(), "OPENAI_API_KEY is not set")
     def test_might_resemble(self):
         policy = self.policy_str.format(th="might_resemble")
         for trace, n_errors in zip(self.traces, [0, 1, 1, 1], strict=False):
             self.assertEqual(len(analyze_trace(policy, trace).errors), n_errors)
 
+    @unittest.skipUnless(openai_api_key_available(), "OPENAI_API_KEY is not set")
     def test_same_topic(self):
         policy = self.policy_str.format(th="same_topic")
         for trace, n_errors in zip(self.traces, [0, 0, 1, 1], strict=False):
             self.assertEqual(len(analyze_trace(policy, trace).errors), n_errors)
 
+    @unittest.skipUnless(openai_api_key_available(), "OPENAI_API_KEY is not set")
     def test_very_similar(self):
         policy = self.policy_str.format(th="very_similar")
         for trace, n_errors in zip(self.traces, [0, 0, 0, 1], strict=False):
