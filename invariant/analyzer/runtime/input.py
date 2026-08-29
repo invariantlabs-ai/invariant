@@ -523,7 +523,7 @@ class Input(Selectable):
                             )
 
                         tool_desc = tool.get("description")
-                        if tool_desc is None:
+                        if tool_desc is None or (isinstance(tool_desc, str) and not tool_desc.strip()):
                             tool_desc = "no description available"
                         if not isinstance(tool_desc, str):
                             try:
