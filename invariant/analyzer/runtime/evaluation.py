@@ -639,8 +639,8 @@ class Interpreter(RaisingAsyncTransformation):
                     return [x in rvalue for x in lvalue]
 
                 if type(rvalue) is str and type(lvalue) is str:
-                    # find all ranges where left matches right
-                    for m in re.finditer(lvalue, rvalue):
+                    # find all ranges where left matches right (literal substring, not regex)
+                    for m in re.finditer(re.escape(lvalue), rvalue):
                         self.mark(rvalue, m.start(), m.end())
                     return lvalue in rvalue
 
