@@ -35,6 +35,19 @@ class TestBasicRanges(unittest.TestCase):
         assert "0.content:7-8" in all_json_ranges
         assert "0.content:0-8" not in all_json_ranges
 
+    def test_literal_substring_with_regex_special_chars(self):
+        policy = Policy.from_string(
+            """
+        raise "Detected issue" if:
+            (msg: ToolOutput)
+            "[File:" in msg.content
+        """
+        )
+        input = [{"role": "tool", "content": "prefix [File: secret path", "tool_call_id": "1"}]
+        result = policy.analyze(input, [])
+        all_json_ranges = get_all_json_ranges(result)
+        assert any("content:" in r for r in all_json_ranges)
+
     def test_masking(self):
         policy = Policy.from_string(
             """
