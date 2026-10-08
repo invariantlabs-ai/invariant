@@ -1,11 +1,12 @@
+import logging
 import os
-from typing import Union
 
 import regex
 from openai import AsyncOpenAI
 
 from invariant.analyzer.runtime.functions import cached
-from invariant.analyzer.runtime.nodes import text
+
+logger = logging.getLogger(__name__)
 
 
 @cached
@@ -19,22 +20,23 @@ async def fuzzy_contains(search_text: str, query: str, query_similarity_threshol
     if error_tolerance > 10:
         error_tolerance = 10
     pattern = regex.compile(f'(?:{query}){{e<={error_tolerance}}}')
-    match = None
 
     match = pattern.search(search_text)
     if match:
         # Mark the matched text
         Interpreter.current().mark(search_text, match.span()[0], match.span()[1])
-    elif use_semantic:
+        return True
+
+    if use_semantic:
         # Only try semantic matching if regex matching failed and it's enabled
         try:
-            match = await _semantic_contains(search_text, query)
-            if match:
+            if await _semantic_contains(search_text, query):
                 Interpreter.current().mark(search_text, 0, len(search_text))
+                return True
         except Exception as e:
-            pass
+            logger.warning("Semantic matching failed for query %r: %s", query, e)
 
-    return match is not None
+    return False
 
 
 @cached

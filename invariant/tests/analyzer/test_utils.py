@@ -494,6 +494,74 @@ class TestFuzzyMatching(unittest.TestCase):
         self.assertEqual(len(analyze_trace(policy_str, trace_similar).errors), 1)
         self.assertEqual(len(analyze_trace(policy_str, trace_no_match).errors), 0)
 
+    def test_fuzzy_contains_semantic_yes(self):
+        from unittest.mock import AsyncMock, patch
+
+        policy_str = """
+        from invariant.detectors import fuzzy_contains
+
+        raise PolicyViolation("semantically contains sensitive phrase", msg) if:
+            (msg: Message)
+            fuzzy_contains(msg.content, "password")
+        """
+
+        # "hunter2" does not fuzzy-match "password", so the semantic branch decides.
+        semantic_mock = AsyncMock(return_value=True)
+        trace = [user("My login credentials are hunter2")]
+        with patch(
+            "invariant.analyzer.stdlib.invariant.detectors.fuzzy_matching._semantic_contains",
+            new=semantic_mock,
+        ):
+            self.assertEqual(len(analyze_trace(policy_str, trace).errors), 1)
+        semantic_mock.assert_awaited_once()
+
+    def test_fuzzy_contains_semantic_no(self):
+        from unittest.mock import AsyncMock, patch
+
+        policy_str = """
+        from invariant.detectors import fuzzy_contains
+
+        raise PolicyViolation("semantically contains sensitive phrase", msg) if:
+            (msg: Message)
+            fuzzy_contains(msg.content, "password")
+        """
+
+        # Regression test for https://github.com/invariantlabs-ai/invariant/issues/68:
+        # a semantic "no" must not report a match (`False is not None` is True).
+        semantic_mock = AsyncMock(return_value=False)
+        trace = [user("My login credentials are hunter2")]
+        with patch(
+            "invariant.analyzer.stdlib.invariant.detectors.fuzzy_matching._semantic_contains",
+            new=semantic_mock,
+        ):
+            self.assertEqual(len(analyze_trace(policy_str, trace).errors), 0)
+        semantic_mock.assert_awaited_once()
+
+    def test_fuzzy_contains_semantic_failure(self):
+        from unittest.mock import AsyncMock, patch
+
+        policy_str = """
+        from invariant.detectors import fuzzy_contains
+
+        raise PolicyViolation("semantically contains sensitive phrase", msg) if:
+            (msg: Message)
+            fuzzy_contains(msg.content, "password")
+        """
+
+        # A failed semantic call must not raise and must not report a match;
+        # the failure is logged instead of being silently swallowed.
+        trace = [user("My login credentials are hunter2")]
+        with patch(
+            "invariant.analyzer.stdlib.invariant.detectors.fuzzy_matching._semantic_contains",
+            new=AsyncMock(side_effect=RuntimeError("boom")),
+        ):
+            with self.assertLogs(
+                "invariant.analyzer.stdlib.invariant.detectors.fuzzy_matching",
+                level="WARNING",
+            ) as logs:
+                self.assertEqual(len(analyze_trace(policy_str, trace).errors), 0)
+        self.assertTrue(any("Semantic matching failed" in m for m in logs.output))
+
     def test_prompt_injection_detection(self):
         policy_str = """
         from invariant.detectors import fuzzy_contains
